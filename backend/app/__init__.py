@@ -1,0 +1,1 @@
+"""ShikkhaAI backend application package."""
