@@ -1,0 +1,9 @@
+pymupdf
+ebooklib
+beautifulsoup4
+chromadb
+sentence-transformers
+google-generativeai
+fastapi
+uvicorn
+pydantic
