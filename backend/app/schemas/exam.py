@@ -11,6 +11,7 @@ class ExamGenerateRequest(StrictRequestModel):
     student_id: int = Field(gt=0)
     subject: str = Field(min_length=1, max_length=100)
     topic: str = Field(min_length=1, max_length=150)
+    class_level: str = Field(default="8", min_length=1, max_length=3)
     difficulty: Literal["easy", "medium", "hard"] = "medium"
     num_questions: int = Field(default=5, ge=1, le=20)
 
@@ -42,7 +43,7 @@ class ExamResponse(BaseModel):
     subject: str
     topic: str
     difficulty: str
-    source: Literal["rag", "mock"]
+    source: Literal["rag", "mock", "gemini"]
     questions: list[ExamQuestion]
 
 

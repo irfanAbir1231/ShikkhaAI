@@ -7,23 +7,158 @@ from app.core.config import settings
 
 class RagClient:
     def generate_exam(self, payload: dict[str, Any]) -> dict[str, Any]:
-        if settings.mock_mode or not settings.rag_base_url:
+        if settings.mock_mode:
             return self._mock_exam(payload)
 
+        # Try direct in-process call first (no separate RAG server needed)
+        try:
+            from dotenv import load_dotenv
+            load_dotenv("rag/.env")
+            from rag.generate import generate_questions  # noqa: PLC0415
+
+            req = self._to_rag_request(payload)
+            result = generate_questions(
+                subject=req["subject"],
+                class_level=req["class_level"],
+                difficulty=req["difficulty"],
+                count=req["count"],
+                query_override=req.get("topic"),
+            )
+            data = self._adapt_rag_response(result)
+            return self._normalize_exam(data=data, request_payload=payload, source="rag")
+        except ImportError:
+            pass  # RAG module not in path — fall through to HTTP
+        except Exception as exc:
+            raise RuntimeError(f"RAG generation failed: {exc}") from exc
+
+        # Direct Gemini fallback: no RAG retrieval context, just Gemini generation
+        if settings.gemini_api_key:
+            return self._generate_via_gemini(payload)
+
+        # HTTP fallback: RAG service running separately on RAG_BASE_URL
+        if not settings.rag_base_url:
+            raise RuntimeError(
+                "No GEMINI_API_KEY, RAG module not importable, and RAG_BASE_URL not set."
+            )
         try:
             with httpx.Client(timeout=settings.rag_timeout_seconds) as client:
                 response = client.post(
                     f"{settings.rag_base_url}/generate-exam",
-                    json=payload,
+                    json=self._to_rag_request(payload),
                 )
                 response.raise_for_status()
-                data = response.json()
+                data = self._adapt_rag_response(response.json())
             return self._normalize_exam(data=data, request_payload=payload, source="rag")
-        except (httpx.HTTPError, ValueError, TypeError, KeyError):
-            return self._mock_exam(payload)
+        except httpx.ConnectError as exc:
+            raise RuntimeError(
+                f"RAG server at {settings.rag_base_url} is not reachable. "
+                "Run: uvicorn rag_server:app --port 8100"
+            ) from exc
+        except (httpx.HTTPError, ValueError, TypeError, KeyError) as exc:
+            raise RuntimeError(f"RAG HTTP call failed: {exc}") from exc
+
+    def _generate_via_gemini(self, payload: dict[str, Any]) -> dict[str, Any]:
+        import json
+        import re
+        from google import genai
+
+        req = self._to_rag_request(payload)
+        subject = req["subject"]
+        class_level = req["class_level"]
+        difficulty = req["difficulty"]
+        count = req["count"]
+        topic = req.get("topic") or subject
+
+        difficulty_focus = {
+            "easy": "basic definitions and facts",
+            "medium": "application and understanding",
+            "hard": "analysis and problem solving",
+        }.get(difficulty, "general understanding")
+
+        prompt = f"""You are ShikkhaAI, an exam question generator for Bangladeshi students.
+Generate {count} exam questions for Class {class_level} {subject.title()} on the topic: {topic}.
+Difficulty: {difficulty} ({difficulty_focus})
+Mix: mostly MCQ, 1-2 short answer.
+
+Respond with valid JSON only. No markdown. No explanation.
+
+{{
+  "questions": [
+    {{
+      "id": 1,
+      "type": "mcq",
+      "topic": "{topic}",
+      "difficulty": "{difficulty}",
+      "question": "<question text>",
+      "options": ["A. ...", "B. ...", "C. ...", "D. ..."],
+      "answer": "A"
+    }}
+  ]
+}}
+
+Rules:
+- MCQ must have exactly 4 options
+- answer field for MCQ is ONLY A/B/C/D
+- short_answer options must be []
+- output JSON ONLY"""
+
+        client = genai.Client(api_key=settings.gemini_api_key)
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt,
+        )
+        raw = re.sub(r"```json|```", "", response.text).strip()
+        result = json.loads(raw)
+        for i, q in enumerate(result.get("questions", []), 1):
+            q["id"] = i
+        data = self._adapt_rag_response(result)
+        return self._normalize_exam(data=data, request_payload=payload, source="gemini")
+
+    def _to_rag_request(self, payload: dict[str, Any]) -> dict[str, Any]:
+        """Map the backend ExamGenerateRequest shape to member1's RAG
+        /generate-exam contract (subject lowercase, class_level string,
+        count instead of num_questions, topic as a retrieval hint)."""
+        return {
+            "student_id": payload.get("student_id"),
+            "subject": str(payload.get("subject") or "").strip().lower(),
+            "class_level": str(payload.get("class_level") or "8"),
+            "difficulty": payload.get("difficulty") or "medium",
+            "count": int(payload.get("num_questions") or 7),
+            "topic": payload.get("topic"),
+        }
+
+    def _adapt_rag_response(self, data: Any) -> dict[str, Any]:
+        """Member1's RAG embeds the correct answer inside each question and
+        does not return a separate answer_key. _normalize_exam reads correct
+        answers only from answer_key, so synthesize it here."""
+        if not isinstance(data, dict):
+            raise ValueError("RAG response must be an object")
+
+        questions = data.get("questions")
+        if not isinstance(questions, list):
+            raise ValueError("RAG response did not include questions")
+
+        answer_key: list[dict[str, Any]] = []
+        for index, question in enumerate(questions, start=1):
+            if not isinstance(question, dict):
+                continue
+            question_id = str(question.get("id") or f"q{index}")
+            answer_key.append(
+                {
+                    "question_id": question_id,
+                    "type": question.get("type"),
+                    "correct_answer": question.get("answer", ""),
+                }
+            )
+
+        return {"questions": questions, "answer_key": answer_key}
 
     def detect_weak_topics(self, payload: dict[str, Any]) -> list[dict[str, Any]]:
-        if settings.mock_mode or not settings.rag_base_url:
+        if settings.mock_mode:
+            return self._mock_weak_topics(payload)
+
+        if not settings.rag_base_url:
+            # No HTTP endpoint — fall back gracefully (weak topic detection is non-critical)
             return self._mock_weak_topics(payload)
 
         try:

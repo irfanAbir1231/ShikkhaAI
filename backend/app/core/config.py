@@ -38,6 +38,7 @@ class Settings:
     rag_timeout_seconds: float
     mock_mode: bool
     cors_origins: list[str]
+    gemini_api_key: str | None
 
 
 @lru_cache
@@ -53,6 +54,7 @@ def get_settings() -> Settings:
         rag_timeout_seconds=_as_float(getenv("RAG_TIMEOUT_SECONDS"), 5.0),
         mock_mode=_as_bool(getenv("MOCK_MODE"), True),
         cors_origins=_as_list(getenv("CORS_ORIGINS"), ["*"]),
+        gemini_api_key=getenv("GEMINI_API_KEY"),
     )
 
 

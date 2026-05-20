@@ -1,0 +1,21 @@
+# RAG service dependencies.
+# IMPORTANT: install in a Python 3.11 venv — torch / sentence-transformers /
+# chromadb have no wheels for Python 3.14 (the backend's runtime).
+#
+#   py -3.11 -m venv .rag-venv
+#   .rag-venv\Scripts\activate
+#   pip install -r rag/requirements.txt
+#   uvicorn rag_server:app --port 8100
+
+pymupdf
+ebooklib
+beautifulsoup4
+chromadb
+sentence-transformers
+# Code uses `from google import genai` -> this is the google-genai SDK,
+# NOT the older google-generativeai package.
+google-genai
+fastapi
+uvicorn
+pydantic
+python-dotenv
