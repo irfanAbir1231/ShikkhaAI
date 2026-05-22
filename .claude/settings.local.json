@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Invoke-RestMethod -Uri \"http://127.0.0.1:8000/health\")",
+      "PowerShell(netstat -ano)",
+      "PowerShell(Start-Process -FilePath \"cmd.exe\" -ArgumentList \"/c `\"D:\\\\academic\\\\8th semester\\\\Extraprojects\\\\shikkhaai-backend\\\\start_backend.bat`\"\" -WindowStyle Normal)"
+    ]
+  }
+}
