@@ -8,8 +8,6 @@ from typing import Optional
 import chromadb
 from sentence_transformers import SentenceTransformer
 
-
-
 # Resolve relative to the repo root (rag/ is a package), so retrieval works
 # regardless of the directory uvicorn is launched from.
 CHROMA_DB_PATH = str(Path(__file__).resolve().parent.parent / "chroma_db")
@@ -30,11 +28,10 @@ model = SentenceTransformer(EMBED_MODEL)
 # CHROMA
 # ─────────────────────────────────────────────────────────────
 
+
 def get_collection():
 
-    client = chromadb.PersistentClient(
-        path=CHROMA_DB_PATH
-    )
+    client = chromadb.PersistentClient(path=CHROMA_DB_PATH)
 
     return client.get_collection(COLLECTION_NAME)
 
@@ -53,23 +50,12 @@ def retrieve_context(
     if total == 0:
         return []
 
-
-
-    query_embedding = model.encode(
-        query,
-        normalize_embeddings=True
-    ).tolist()
-
+    query_embedding = model.encode(query, normalize_embeddings=True).tolist()
 
     where = None
 
     if subject and class_level:
-        where = {
-            "$and": [
-                {"subject": subject},
-                {"class": class_level}
-            ]
-        }
+        where = {"$and": [{"subject": subject}, {"class": class_level}]}
 
     elif subject:
         where = {"subject": subject}
@@ -77,22 +63,16 @@ def retrieve_context(
     elif class_level:
         where = {"class": class_level}
 
-
     kwargs = {
         "query_embeddings": [query_embedding],
         "n_results": min(n_results, total),
-        "include": [
-            "documents",
-            "metadatas",
-            "distances"
-        ],
+        "include": ["documents", "metadatas", "distances"],
     }
 
     if where:
         kwargs["where"] = where
 
     results = collection.query(**kwargs)
-
 
     output = []
 
@@ -102,18 +82,18 @@ def retrieve_context(
 
     for doc, meta, dist in zip(docs, metas, dists):
 
-        output.append({
-            "text": doc,
-            "subject": meta.get("subject", ""),
-            "class": meta.get("class", ""),
-            "chapter": meta.get("chapter", ""),
-            "source": meta.get("source", ""),
-            "distance": round(float(dist), 4),
-        })
+        output.append(
+            {
+                "text": doc,
+                "subject": meta.get("subject", ""),
+                "class": meta.get("class", ""),
+                "chapter": meta.get("chapter", ""),
+                "source": meta.get("source", ""),
+                "distance": round(float(dist), 4),
+            }
+        )
 
     return output
-
-
 
 
 def build_rag_context(

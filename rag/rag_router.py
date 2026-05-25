@@ -16,23 +16,24 @@ router = APIRouter()
 
 
 class GenerateRequest(BaseModel):
-    student_id:  int
-    subject:     str
+    student_id: int
+    subject: str
     class_level: str
-    difficulty:  Optional[str] = "medium"
-    count:       Optional[int] = 7
+    difficulty: Optional[str] = "medium"
+    count: Optional[int] = 7
     # Optional retrieval hint. Backend passes the exam topic here so the
     # curriculum context is fetched for that topic instead of a generic query.
-    topic:       Optional[str] = None
+    topic: Optional[str] = None
 
 
 class RetrieveRequest(BaseModel):
-    query:       str
-    subject:     Optional[str] = None
+    query: str
+    subject: Optional[str] = None
     class_level: Optional[str] = None
 
 
 # ─── Endpoints ────────────────────────────────────────────────────────────────
+
 
 @router.post("/generate-exam")
 def generate_exam(req: GenerateRequest):

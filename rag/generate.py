@@ -1,6 +1,3 @@
-
-
-
 """
 generate.py — Gemini question generator
 """
@@ -15,8 +12,6 @@ from google import genai
 
 from .retrieve import build_rag_context
 
-
-
 GEMINI_MODEL = "gemini-2.5-flash"
 
 MOCK_OUTPUT_DIR = "./shared/mock_data"
@@ -28,7 +23,6 @@ DIFFICULTY_TOPIC_MAP = {
     "medium": "application and understanding",
     "hard": "analysis and problem solving",
 }
-
 
 
 _client: "genai.Client | None" = None
@@ -48,7 +42,6 @@ def _get_client() -> "genai.Client":
             )
         _client = genai.Client(api_key=api_key)
     return _client
-
 
 
 SYSTEM_PROMPT = """
@@ -73,25 +66,21 @@ def build_prompt(
     topic: str = None,
 ) -> str:
 
-    focus = DIFFICULTY_TOPIC_MAP.get(
-        difficulty,
-        "general understanding"
-    )
+    focus = DIFFICULTY_TOPIC_MAP.get(difficulty, "general understanding")
 
     topic_block = (
         f"\nTOPIC (STRICT):\n"
-        f"Every question MUST be about \"{topic}\". "
+        f'Every question MUST be about "{topic}". '
         f"Do NOT generate questions on other topics even if the curriculum "
         f"context covers them. Use the context only as background knowledge "
-        f"about \"{topic}\"; if context lacks coverage of \"{topic}\", "
-        f"still constrain questions to \"{topic}\" using standard "
+        f'about "{topic}"; if context lacks coverage of "{topic}", '
+        f'still constrain questions to "{topic}" using standard '
         f"Class {class_level} {subject.title()} knowledge.\n"
-        if topic else ""
+        if topic
+        else ""
     )
 
-    topic_field_hint = (
-        f'"{topic}"' if topic else "<specific topic from context>"
-    )
+    topic_field_hint = f'"{topic}"' if topic else "<specific topic from context>"
 
     return f"""
 CURRICULUM CONTEXT:
@@ -143,8 +132,6 @@ def extract_json(text: str) -> dict:
     return json.loads(text)
 
 
-
-
 def generate_questions(
     subject: str,
     class_level: str,
@@ -153,10 +140,7 @@ def generate_questions(
     query_override: str = None,
 ):
 
-    query = (
-        query_override
-        or f"{subject} class {class_level} {difficulty} questions"
-    )
+    query = query_override or f"{subject} class {class_level} {difficulty} questions"
 
     context = build_rag_context(
         query,
@@ -177,9 +161,7 @@ def generate_questions(
         topic=query_override,
     )
 
-    print(
-        f"[+] Generating {count} questions..."
-    )
+    print(f"[+] Generating {count} questions...")
 
     response = _get_client().models.generate_content(
         model=GEMINI_MODEL,
@@ -190,14 +172,10 @@ def generate_questions(
 
     result = extract_json(raw)
 
-    for i, q in enumerate(
-        result.get("questions", []),
-        1
-    ):
+    for i, q in enumerate(result.get("questions", []), 1):
         q["id"] = i
 
     return result
-
 
 
 def save_mock(data: dict):
@@ -223,25 +201,16 @@ def save_mock(data: dict):
     print(f"[✓] Saved to {MOCK_OUTPUT_FILE}")
 
 
-
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument(
-        "--subject",
-        required=True
-    )
+    parser.add_argument("--subject", required=True)
+
+    parser.add_argument("--class_level", required=True)
 
     parser.add_argument(
-        "--class_level",
-        required=True
-    )
-
-    parser.add_argument(
-        "--difficulty",
-        default="medium",
-        choices=["easy", "medium", "hard"]
+        "--difficulty", default="medium", choices=["easy", "medium", "hard"]
     )
 
     parser.add_argument(

@@ -233,7 +233,6 @@
 #         index_all()
 
 
-
 """
 optimized_ingest.py — Fast CPU-friendly PDF ingestion for RAG
 
@@ -264,8 +263,6 @@ import numpy as np
 import torch
 from sentence_transformers import SentenceTransformer
 
-
-
 CHROMA_DB_PATH = "./chroma_db"
 COLLECTION_NAME = "nctb_curriculum"
 UPLOADS_DIR = "./uploads"
@@ -281,7 +278,6 @@ MAX_PAGES = 15
 EMBED_BATCH = 128
 
 
-
 def load_model() -> SentenceTransformer:
     print("[1/5] Loading embedding model...")
 
@@ -294,18 +290,11 @@ def load_model() -> SentenceTransformer:
 
     try:
         # ONNX backend
-        model = SentenceTransformer(
-            EMBED_MODEL,
-            device=device,
-            backend="onnx"
-        )
+        model = SentenceTransformer(EMBED_MODEL, device=device, backend="onnx")
         print("      backend: ONNX")
     except Exception:
         # fallback
-        model = SentenceTransformer(
-            EMBED_MODEL,
-            device=device
-        )
+        model = SentenceTransformer(EMBED_MODEL, device=device)
         print("      backend: PyTorch fallback")
 
     print(f"      loaded in {time.time() - t:.1f}s\n")
@@ -317,21 +306,19 @@ def load_model() -> SentenceTransformer:
 # CHROMA
 # ─────────────────────────────────────────────────────────────
 
+
 def get_collection():
     print("[2/5] Connecting to ChromaDB...")
 
     client = chromadb.PersistentClient(path=CHROMA_DB_PATH)
 
     col = client.get_or_create_collection(
-        name=COLLECTION_NAME,
-        metadata={"hnsw:space": "cosine"}
+        name=COLLECTION_NAME, metadata={"hnsw:space": "cosine"}
     )
 
     print(f"      existing chunks: {col.count()}\n")
 
     return col
-
-
 
 
 def parse_filename(filename: str) -> dict:
@@ -345,17 +332,9 @@ def parse_filename(filename: str) -> dict:
     m = re.match(r"class_(\d+)_([a-z]+)_", name)
 
     if m:
-        return {
-            "class": m.group(1),
-            "subject": m.group(2),
-            "chapter": "1"
-        }
+        return {"class": m.group(1), "subject": m.group(2), "chapter": "1"}
 
-    return {
-        "class": "unknown",
-        "subject": name,
-        "chapter": "1"
-    }
+    return {"class": "unknown", "subject": name, "chapter": "1"}
 
 
 def clean_text(text: str) -> str:
@@ -383,14 +362,10 @@ def chunk_text(text: str) -> list[str]:
         # Try ending at sentence boundary
         if end < text_len:
 
-            best = max(
-                chunk.rfind(". "),
-                chunk.rfind("? "),
-                chunk.rfind("! ")
-            )
+            best = max(chunk.rfind(". "), chunk.rfind("? "), chunk.rfind("! "))
 
             if best > CHUNK_SIZE * 0.5:
-                chunk = chunk[:best + 1]
+                chunk = chunk[: best + 1]
 
         chunk = chunk.strip()
 
@@ -428,6 +403,7 @@ def file_hash(path: str) -> str:
 # PDF EXTRACTION
 # ─────────────────────────────────────────────────────────────
 
+
 def extract_pages(path: str) -> list[str]:
     """
     Faster cleaner extraction.
@@ -452,17 +428,12 @@ def extract_pages(path: str) -> list[str]:
     return pages
 
 
-
-
 def already_indexed(col, file_md5: str) -> bool:
     """
     Skip re-indexing identical PDFs.
     """
 
-    results = col.get(
-        where={"file_hash": file_md5},
-        limit=1
-    )
+    results = col.get(where={"file_hash": file_md5}, limit=1)
 
     return len(results["ids"]) > 0
 
@@ -526,15 +497,17 @@ def index_file(path: str, col, model) -> int:
 
             all_ids.append(chunk_id)
 
-            all_metas.append({
-                "source": filename,
-                "class": meta["class"],
-                "subject": meta["subject"],
-                "chapter": meta["chapter"],
-                "page": page_num + 1,
-                "chunk_index": chunk_counter,
-                "file_hash": md5
-            })
+            all_metas.append(
+                {
+                    "source": filename,
+                    "class": meta["class"],
+                    "subject": meta["subject"],
+                    "chapter": meta["chapter"],
+                    "page": page_num + 1,
+                    "chunk_index": chunk_counter,
+                    "file_hash": md5,
+                }
+            )
 
             chunk_counter += 1
 
@@ -559,14 +532,14 @@ def index_file(path: str, col, model) -> int:
 
     for i in range(0, total, EMBED_BATCH):
 
-        batch = all_chunks[i:i + EMBED_BATCH]
+        batch = all_chunks[i : i + EMBED_BATCH]
 
         vecs = model.encode(
             batch,
             batch_size=EMBED_BATCH,
             normalize_embeddings=True,
             convert_to_numpy=True,
-            show_progress_bar=False
+            show_progress_bar=False,
         )
 
         embeddings.append(vecs)
@@ -592,7 +565,7 @@ def index_file(path: str, col, model) -> int:
         ids=all_ids,
         documents=all_chunks,
         embeddings=embeddings.tolist(),
-        metadatas=all_metas
+        metadatas=all_metas,
     )
 
     print(f"stored in {time.time() - t:.1f}s")
@@ -606,6 +579,7 @@ def index_file(path: str, col, model) -> int:
 # ─────────────────────────────────────────────────────────────
 # BULK INDEX
 # ─────────────────────────────────────────────────────────────
+
 
 def index_all(upload_dir=UPLOADS_DIR):
 
@@ -626,11 +600,7 @@ def index_all(upload_dir=UPLOADS_DIR):
     total_chunks = 0
 
     for f in files:
-        total_chunks += index_file(
-            str(f),
-            col,
-            model
-        )
+        total_chunks += index_file(str(f), col, model)
 
     print("\n" + "=" * 60)
     print("INGESTION COMPLETE")
@@ -645,11 +615,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
 
-    parser.add_argument(
-        "--file",
-        default=None,
-        help="Single PDF file"
-    )
+    parser.add_argument("--file", default=None, help="Single PDF file")
 
     args = parser.parse_args()
 
@@ -659,11 +625,7 @@ if __name__ == "__main__":
 
         col = get_collection()
 
-        index_file(
-            args.file,
-            col,
-            model
-        )
+        index_file(args.file, col, model)
 
     else:
         index_all()
