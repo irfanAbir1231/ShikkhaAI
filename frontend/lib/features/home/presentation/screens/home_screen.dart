@@ -13,15 +13,18 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
-      appBar: const CustomAppBar(
+      appBar: CustomAppBar(
         title: 'ShikkhaAI',
         showGradient: true,
         actions: [
           Padding(
-            padding: EdgeInsets.only(right: 16),
-            child: CircleAvatar(
-              backgroundColor: Colors.white24,
-              child: Icon(Icons.person, color: Colors.white),
+            padding: const EdgeInsets.only(right: 16),
+            child: GestureDetector(
+              onTap: () => context.push(RouteNames.settings),
+              child: const CircleAvatar(
+                backgroundColor: Colors.white24,
+                child: Icon(Icons.person, color: Colors.white),
+              ),
             ),
           ),
         ],
@@ -50,21 +53,19 @@ class HomeScreen extends ConsumerWidget {
                   mainAxisSpacing: 12,
                   crossAxisSpacing: 12,
                   children: [
-                    const _QuickActionCard(
+                    _QuickActionCard(
                       icon: Icons.auto_stories,
                       label: 'Study Companion',
                       color: AppColors.primary,
+                      onTap: () => context.push(RouteNames.studyCompanion),
                     ),
-                    const _QuickActionCard(
+                    _QuickActionCard(
                       icon: Icons.edit_note,
                       label: 'Smart Exam',
                       color: AppColors.accent,
+                      onTap: () => context.push(RouteNames.exam),
                     ),
-                    const _QuickActionCard(
-                      icon: Icons.upload_file,
-                      label: 'Handwritten Eval',
-                      color: AppColors.success,
-                    ),
+
                     _QuickActionCard(
                       icon: Icons.analytics_outlined,
                       label: 'Analytics',

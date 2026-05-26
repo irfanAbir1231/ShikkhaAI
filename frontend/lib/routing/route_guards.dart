@@ -11,7 +11,9 @@ Future<String?> authGuard(BuildContext context, GoRouterState state) async {
   final settingsBox = await Hive.openBox<bool>(StorageKeys.settingsBox);
 
   final studentJson = studentBox.get(StorageKeys.studentData);
+  final authToken = studentBox.get(StorageKeys.authToken);
   final isRegistered = studentJson != null && studentJson.isNotEmpty;
+  final isAuthenticated = isRegistered && authToken != null && authToken.isNotEmpty;
   final isOnboarded = settingsBox.get(StorageKeys.isOnboarded) ?? false;
 
   final location = state.matchedLocation;
@@ -21,13 +23,13 @@ Future<String?> authGuard(BuildContext context, GoRouterState state) async {
       location == RouteNames.classSelection ||
       location == RouteNames.splash;
 
-  // Registered users should never see auth routes
-  if (isRegistered && isAuthRoute) {
+  // Authenticated users should never see auth routes
+  if (isAuthenticated && isAuthRoute) {
     return RouteNames.home;
   }
 
-  // Unregistered users should not access protected routes
-  if (!isRegistered && !isAuthRoute) {
+  // Unauthenticated users should not access protected routes
+  if (!isAuthenticated && !isAuthRoute) {
     if (!isOnboarded) return RouteNames.onboarding;
     return RouteNames.register;
   }

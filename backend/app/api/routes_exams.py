@@ -1,22 +1,48 @@
+import logging
 from typing import Any
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Path
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.core.responses import success_response
+from app.api.routes_students import get_current_student
+from app.core.responses import AppError, success_response
+from app.db.models import Attempt, Exam, Student
 from app.db.session import get_db
-from app.schemas.exam import ExamGenerateRequest, ExamSubmitRequest
+from app.schemas.exam import (
+    AttemptResponse,
+    ExamGenerateRequest,
+    ExamSubmitRequest,
+    ExamSummaryResponse,
+)
 from app.services.exam_service import ExamService
 
+logger = logging.getLogger("shikkhaai")
 router = APIRouter(prefix="/exam", tags=["exams"])
 exam_service = ExamService()
+
+
+def _verify_student_owns_resource(current_student: Student, student_id: int) -> None:
+    if current_student.id != student_id:
+        logger.warning(
+            "Auth mismatch: token student_id=%s != payload student_id=%s",
+            current_student.id,
+            student_id,
+        )
+        raise AppError(
+            code="FORBIDDEN",
+            message="You can only access your own resources.",
+            status_code=403,
+        )
 
 
 @router.post("/generate")
 def generate_exam(
     payload: ExamGenerateRequest,
     db: Session = Depends(get_db),
+    current_student: Student = Depends(get_current_student),
 ) -> dict[str, Any]:
+    _verify_student_owns_resource(current_student, payload.student_id)
     exam = exam_service.generate_exam(db=db, payload=payload)
     return success_response(exam)
 
@@ -25,6 +51,56 @@ def generate_exam(
 def submit_exam(
     payload: ExamSubmitRequest,
     db: Session = Depends(get_db),
+    current_student: Student = Depends(get_current_student),
 ) -> dict[str, Any]:
+    _verify_student_owns_resource(current_student, payload.student_id)
     result = exam_service.submit_exam(db=db, payload=payload)
     return success_response(result)
+
+
+@router.get("/{exam_id}/attempts")
+def list_exam_attempts(
+    exam_id: int = Path(gt=0),
+    db: Session = Depends(get_db),
+    current_student: Student = Depends(get_current_student),
+) -> dict[str, Any]:
+    exam = db.get(Exam, exam_id)
+    if exam is None:
+        raise AppError(
+            code="EXAM_NOT_FOUND",
+            message="Exam was not found.",
+            status_code=404,
+        )
+    _verify_student_owns_resource(current_student, exam.student_id)
+    attempts = db.scalars(
+        select(Attempt).where(Attempt.exam_id == exam_id).order_by(Attempt.created_at.desc())
+    ).all()
+    return success_response([_serialize_attempt(a) for a in attempts])
+
+
+def _serialize_attempt(attempt: Attempt) -> dict[str, Any]:
+    return AttemptResponse(
+        attempt_id=attempt.id,
+        exam_id=attempt.exam_id,
+        student_id=attempt.student_id,
+        score_percentage=attempt.score_percentage,
+        mcq_correct=attempt.mcq_correct,
+        mcq_total=attempt.mcq_total,
+        readiness_score=attempt.readiness_score,
+        weak_topics=attempt.weak_topics,
+        short_answer_feedback=attempt.short_answer_feedback,
+        created_at=attempt.created_at.isoformat(),
+    ).model_dump()
+
+
+def _serialize_exam(exam: Exam) -> dict[str, Any]:
+    return ExamSummaryResponse(
+        exam_id=exam.id,
+        student_id=exam.student_id,
+        subject=exam.subject,
+        topic=exam.topic,
+        difficulty=exam.difficulty,
+        num_questions=len(exam.questions) if isinstance(exam.questions, list) else 0,
+        source=exam.source,
+        created_at=exam.created_at.isoformat(),
+    ).model_dump()

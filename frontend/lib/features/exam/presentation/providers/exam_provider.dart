@@ -93,7 +93,8 @@ class ExamSessionNotifier extends StateNotifier<ExamSession?> {
 
   /// Generates and starts a new exam.
   Future<void> startExam(ExamConfig config) async {
-    final student = _ref.read(studentProvider);
+    // Read directly from repository (Hive) to avoid stale provider cache.
+    final student = _ref.read(authRepositoryProvider).currentStudent;
     if (student == null) {
       throw const ValidationFailure(
         message: 'Student not registered. Please register first.',
@@ -142,10 +143,10 @@ class ExamSessionNotifier extends StateNotifier<ExamSession?> {
   }
 
   /// Records an answer for the current question.
-  void answerQuestion(String questionId, String answer) {
+  Future<void> answerQuestion(String questionId, String answer) async {
     if (state == null) return;
     state = state!.setAnswer(questionId, answer);
-    _repo.saveSession(state!);
+    await _repo.saveSession(state!);
   }
 
   /// Toggles mark-for-review on a question.
@@ -165,7 +166,7 @@ class ExamSessionNotifier extends StateNotifier<ExamSession?> {
   Future<ExamResult?> submitExam() async {
     if (state == null) return null;
 
-    final student = _ref.read(studentProvider);
+    final student = _ref.read(authRepositoryProvider).currentStudent;
     if (student == null) {
       throw const ValidationFailure(
         message: 'Student not registered. Please register first.',
@@ -184,11 +185,15 @@ class ExamSessionNotifier extends StateNotifier<ExamSession?> {
       );
 
       return result.when(
-        success: (examResult) {
+        success: (examResult) async {
           _ref.read(examHistoryProvider.notifier).loadResults();
           _ref.read(currentResultProvider.notifier).state = examResult;
           _ref.read(examOperationProvider.notifier).state =
               const AsyncValue.data(null);
+          // Ensure the submitted session is persisted with all answers
+          if (state != null) {
+            await _repo.saveSession(state!);
+          }
           return examResult;
         },
         failure: (failure) {

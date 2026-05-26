@@ -30,3 +30,19 @@ def init_db() -> None:
     from app.db import models  # noqa: F401
 
     Base.metadata.create_all(bind=engine)
+    _migrate_add_password_column(engine)
+
+
+def _migrate_add_password_column(engine) -> None:
+    """Add password column to students table if missing (SQLite compat)."""
+    from sqlalchemy import inspect, text
+
+    if not engine.dialect.name.startswith("sqlite"):
+        return
+
+    inspector = inspect(engine)
+    columns = {col["name"] for col in inspector.get_columns("students")}
+    if "password" not in columns:
+        with engine.connect() as conn:
+            conn.execute(text("ALTER TABLE students ADD COLUMN password VARCHAR(255)"))
+            conn.commit()

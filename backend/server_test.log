@@ -1,0 +1,20 @@
+INFO:     Will watch for changes in these directories: ['D:\\academic\\8th semester\\Extraprojects\\shikkhaai-backend\\backend']
+INFO:     Uvicorn running on http://127.0.0.1:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [25752] using StatReload
+INFO:     Started server process [18896]
+INFO:     Waiting for application startup.
+2026-05-26 01:57:58,949 - shikkhaai - INFO - ShikkhaAI backend starting up — mock_mode=True
+INFO:     Application startup complete.
+INFO:     127.0.0.1:1409 - "GET /health HTTP/1.1" 200 OK
+2026-05-26 01:58:32,340 - shikkhaai - INFO - Registered student id=10 email=charlie@example.com
+INFO:     127.0.0.1:1428 - "POST /student/register HTTP/1.1" 200 OK
+2026-05-26 01:58:32,689 - shikkhaai - INFO - Generated exam for student_id=10 subject=science source=mock
+INFO:     127.0.0.1:1429 - "POST /exam/generate HTTP/1.1" 200 OK
+2026-05-26 01:58:32,966 - shikkhaai - INFO - Submitted exam_id=18 student_id=10 score=0.0% readiness=0.0
+INFO:     127.0.0.1:1430 - "POST /exam/submit HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1431 - "GET /student/10/exams HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1432 - "GET /student/10/attempts HTTP/1.1" 200 OK
+INFO:     127.0.0.1:12748 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1658 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1670 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:1688 - "GET /health HTTP/1.1" 200 OK

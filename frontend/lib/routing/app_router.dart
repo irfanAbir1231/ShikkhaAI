@@ -21,16 +21,14 @@ import '../features/study_companion/presentation/screens/study_companion_screen.
 import '../features/study_plan/presentation/screens/plan_create_screen.dart';
 import '../features/study_plan/presentation/screens/plan_detail_screen.dart';
 import '../features/study_plan/presentation/screens/plan_shell_screen.dart';
-import '../features/upload/presentation/screens/handwritten_result_screen.dart';
-import '../features/upload/presentation/screens/handwritten_upload_screen.dart';
-import '../features/upload/presentation/screens/upload_shell_screen.dart';
+import '../features/topics/presentation/screens/topics_shell_screen.dart';
 import 'route_guards.dart';
 import 'route_names.dart';
 
 final _rootNavigatorKey = GlobalKey<NavigatorState>();
 final _homeNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'home');
 final _examNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'exam');
-final _uploadNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'upload');
+final _topicsNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'topics');
 final _libraryNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'library');
 final _studyCompanionNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'study');
 final _planNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'plan');
@@ -168,28 +166,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               ),
             ],
           ),
-          // Upload tab
+          // Topics tab
           StatefulShellBranch(
-            navigatorKey: _uploadNavigatorKey,
+            navigatorKey: _topicsNavigatorKey,
             routes: [
               GoRoute(
-                path: RouteNames.upload,
-                builder: (context, state) => const UploadShellScreen(),
-                routes: [
-                  GoRoute(
-                    path: RouteNames.uploadHandwritten,
-                    builder: (context, state) => const HandwrittenUploadScreen(),
-                    routes: [
-                      GoRoute(
-                        path: 'result/:id',
-                        builder: (context, state) {
-                          final id = state.pathParameters['id']!;
-                          return HandwrittenResultScreen(id: id);
-                        },
-                      ),
-                    ],
-                  ),
-                ],
+                path: RouteNames.topics,
+                builder: (context, state) => const TopicsShellScreen(),
               ),
             ],
           ),

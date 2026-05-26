@@ -14,7 +14,7 @@ CHROMA_DB_PATH = str(Path(__file__).resolve().parent.parent / "chroma_db")
 COLLECTION_NAME = "nctb_curriculum"
 
 # MUST MATCH INGEST MODEL
-EMBED_MODEL = "sentence-transformers/paraphrase-MiniLM-L3-v2"
+EMBED_MODEL = "paraphrase-multilingual-MiniLM-L12-v2"
 
 
 # ─────────────────────────────────────────────────────────────

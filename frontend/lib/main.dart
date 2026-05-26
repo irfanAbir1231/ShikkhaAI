@@ -25,6 +25,7 @@ Future<void> main() async {
     await Hive.openBox<String>(StorageKeys.examSessionsBox);
     await Hive.openBox<String>(StorageKeys.examResultsBox);
     await Hive.openBox<String>(StorageKeys.studyPlansBox);
+    await Hive.openBox<String>(StorageKeys.topicsBox);
 
     log('Hive initialized at ${appDir.path}');
 

@@ -11,7 +11,7 @@ class RouteNames {
   // Shell routes (bottom nav tabs)
   static const String home = '/home';
   static const String exam = '/exam';
-  static const String upload = '/upload';
+  static const String topics = '/topics';
   static const String library = '/library';
   static const String studyCompanion = '/study';
   static const String plan = '/plan';
@@ -24,10 +24,7 @@ class RouteNames {
   static const String examSession = 'session/:id';
   static const String examResult = 'result/:id';
   static const String examHistory = 'history';
-  static const String uploadChapter = 'chapter';
-  static const String uploadHandwritten = 'handwritten';
-  static const String uploadHandwrittenResult = 'handwritten/result/:id';
-  static const String uploadHistory = 'history';
+
   static const String planCreate = 'create';
   static const String planDetail = 'detail/:id';
   static const String settings = '/settings';

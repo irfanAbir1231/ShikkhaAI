@@ -1,12 +1,17 @@
+import logging
+
 from sqlalchemy.orm import Session
 
 from app.core.responses import AppError
 from app.db.models import Attempt, Exam
+from app.db.transactions import safe_commit
 from app.external.rag_client import RagClient
 from app.schemas.exam import ExamGenerateRequest, ExamResponse, ExamSubmitRequest, ExamSubmitResponse
 from app.services.grading_service import GradingService
 from app.services.profile_service import ProfileService
 from app.services.student_service import StudentService
+
+logger = logging.getLogger("shikkhaai")
 
 
 class ExamService:
@@ -19,6 +24,12 @@ class ExamService:
     def generate_exam(self, db: Session, payload: ExamGenerateRequest) -> ExamResponse:
         self.student_service.fetch_student(db=db, student_id=payload.student_id)
         rag_exam = self.rag_client.generate_exam(payload.model_dump())
+        logger.info(
+            "Generated exam for student_id=%s subject=%s source=%s",
+            payload.student_id,
+            payload.subject,
+            rag_exam.get("source"),
+        )
 
         exam = Exam(
             student_id=payload.student_id,
@@ -30,7 +41,7 @@ class ExamService:
             source=rag_exam["source"],
         )
         db.add(exam)
-        db.commit()
+        safe_commit(db)
         db.refresh(exam)
 
         return ExamResponse(
@@ -61,6 +72,7 @@ class ExamService:
         short_answer_feedback = self.grading_service.grade_short_answers(
             answer_key=exam.answer_key,
             answers=answers,
+            questions=exam.questions,
         )
 
         touched_topics = self.profile_service.update_topic_performance(
@@ -93,8 +105,16 @@ class ExamService:
             readiness_score=readiness_score,
         )
         db.add(attempt)
-        db.commit()
+        safe_commit(db)
         db.refresh(attempt)
+
+        logger.info(
+            "Submitted exam_id=%s student_id=%s score=%s%% readiness=%s",
+            payload.exam_id,
+            payload.student_id,
+            grade_result.score_percentage,
+            readiness_score,
+        )
 
         return ExamSubmitResponse(
             attempt_id=attempt.id,
@@ -106,4 +126,5 @@ class ExamService:
             weak_topics=attempt.weak_topics,
             readiness_score=attempt.readiness_score,
             short_answer_feedback=attempt.short_answer_feedback,
+            mcq_feedback=grade_result.mcq_feedback,
         )

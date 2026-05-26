@@ -1,3 +1,4 @@
+import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import Any
@@ -19,11 +20,19 @@ from app.core.responses import (
 )
 from app.db.session import init_db
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
+logger = logging.getLogger("shikkhaai")
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+    logger.info("ShikkhaAI backend starting up — mock_mode=%s", settings.mock_mode)
     init_db()
     yield
+    logger.info("ShikkhaAI backend shutting down")
 
 
 app = FastAPI(title=settings.app_name, version="0.1.0", lifespan=lifespan)

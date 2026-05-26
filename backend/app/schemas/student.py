@@ -9,6 +9,7 @@ class StudentCreate(StrictRequestModel):
     name: str = Field(min_length=1, max_length=120)
     email: str = Field(min_length=3, max_length=255)
     grade_level: str = Field(min_length=1, max_length=50)
+    password: str = Field(min_length=6, max_length=128)
 
     @field_validator("name", "grade_level")
     @classmethod
@@ -34,3 +35,20 @@ class StudentResponse(BaseModel):
     name: str
     email: str
     grade_level: str
+
+
+class LoginRequest(StrictRequestModel):
+    email: str = Field(min_length=3, max_length=255)
+    password: str = Field(min_length=1, max_length=128)
+
+    @field_validator("email")
+    @classmethod
+    def normalize_email(cls, value: str) -> str:
+        return value.strip().lower()
+
+
+class TokenResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    access_token: str
+    token_type: str = "bearer"

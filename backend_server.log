@@ -1,0 +1,11 @@
+INFO:     Will watch for changes in these directories: ['d:\\academic\\8th semester\\Extraprojects\\shikkhaai-backend\\backend']
+INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+INFO:     Started reloader process [14036] using StatReload
+INFO:     Started server process [2620]
+INFO:     Waiting for application startup.
+2026-05-26 17:28:38,567 - shikkhaai - INFO - ShikkhaAI backend starting up — mock_mode=False
+INFO:     Application startup complete.
+INFO:     127.0.0.1:6023 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:9128 - "GET /health HTTP/1.1" 200 OK
+INFO:     127.0.0.1:11210 - "GET / HTTP/1.1" 404 Not Found
+INFO:     127.0.0.1:11210 - "GET /favicon.ico HTTP/1.1" 404 Not Found

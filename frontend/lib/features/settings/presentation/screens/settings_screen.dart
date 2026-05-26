@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../common_widgets/organisms/app_bar.dart';
 import '../../../../core/constants/storage_keys.dart';
 import '../../../../routing/route_names.dart';
+import '../../../auth/presentation/providers/auth_providers.dart';
 import 'package:hive/hive.dart';
 
 final themeModeProvider = StateNotifierProvider<ThemeModeNotifier, ThemeMode>((ref) {
@@ -69,9 +70,38 @@ class SettingsScreen extends ConsumerWidget {
           const Divider(),
           _SectionHeader(title: 'Account', themeMode: themeMode),
           ListTile(
-            leading: const Icon(Icons.logout),
+            leading: Icon(Icons.logout, color: Theme.of(context).colorScheme.error),
+            title: Text('Log Out', style: TextStyle(color: Theme.of(context).colorScheme.error)),
+            subtitle: const Text('Sign out and return to login'),
+            onTap: () async {
+              final confirmed = await showDialog<bool>(
+                context: context,
+                builder: (context) => AlertDialog(
+                  title: const Text('Log Out?'),
+                  content: const Text('Are you sure you want to log out?'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(false),
+                      child: const Text('Cancel'),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(true),
+                      child: const Text('Log Out'),
+                    ),
+                  ],
+                ),
+              );
+              if (confirmed == true && context.mounted) {
+                await ref.read(authRepositoryProvider).logout();
+                ref.read(authRefreshProvider.notifier).state++;
+                context.go(RouteNames.register);
+              }
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.refresh),
             title: const Text('Reset Onboarding'),
-            subtitle: const Text('Clear local data and restart setup'),
+            subtitle: const Text('Clear all local data and restart setup'),
             onTap: () async {
               final settingsBox =
                   await Hive.openBox<bool>(StorageKeys.settingsBox);
@@ -79,6 +109,7 @@ class SettingsScreen extends ConsumerWidget {
                   await Hive.openBox<String>(StorageKeys.studentBox);
               await settingsBox.put(StorageKeys.isOnboarded, false);
               await studentBox.delete(StorageKeys.studentData);
+              await studentBox.delete(StorageKeys.authToken);
               if (context.mounted) {
                 context.go(RouteNames.onboarding);
               }

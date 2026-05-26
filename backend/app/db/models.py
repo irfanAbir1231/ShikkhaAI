@@ -18,6 +18,7 @@ class Student(Base):
     name: Mapped[str] = mapped_column(String(120), nullable=False)
     email: Mapped[str] = mapped_column(String(255), unique=True, index=True, nullable=False)
     grade_level: Mapped[str] = mapped_column(String(50), nullable=False)
+    password: Mapped[str | None] = mapped_column(String(255), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
@@ -25,8 +26,14 @@ class Student(Base):
         onupdate=utc_now,
     )
 
-    exams: Mapped[list["Exam"]] = relationship(back_populates="student")
-    attempts: Mapped[list["Attempt"]] = relationship(back_populates="student")
+    exams: Mapped[list["Exam"]] = relationship(
+        back_populates="student",
+        cascade="all, delete-orphan",
+    )
+    attempts: Mapped[list["Attempt"]] = relationship(
+        back_populates="student",
+        cascade="all, delete-orphan",
+    )
     topic_performances: Mapped[list["TopicPerformance"]] = relationship(
         back_populates="student",
         cascade="all, delete-orphan",

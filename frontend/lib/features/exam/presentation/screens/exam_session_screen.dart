@@ -78,12 +78,17 @@ class _ExamSessionScreenState extends ConsumerState<ExamSessionScreen> {
     try {
       final result = await ref.read(examSessionProvider.notifier).submitExam();
       if (result != null && mounted) {
-        context.push('/exam/result/${result.attemptId}');
+        // Replace exam screen with result screen so user can't go back
+        context.go('/exam/result/${result.attemptId}');
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Submission failed: no result received')),
+        );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Submission failed: \$e')),
+          SnackBar(content: Text('Submission failed: $e')),
         );
       }
     } finally {

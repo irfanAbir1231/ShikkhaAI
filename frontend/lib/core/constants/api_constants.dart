@@ -18,7 +18,9 @@ class ApiConstants {
 
   // Endpoints
   static const String registerStudent = '/student/register';
+  static const String loginStudent = '/student/login';
   static const String studentById = '/student';
   static const String generateExam = '/exam/generate';
   static const String submitExam = '/exam/submit';
+  static const String studentTopics = '/student'; // GET /student/{id}/topics
 }

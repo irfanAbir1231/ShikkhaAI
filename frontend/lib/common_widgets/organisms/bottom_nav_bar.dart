@@ -17,7 +17,7 @@ class BottomNavBar extends StatelessWidget {
     _NavItem(icon: Icons.home_rounded, label: 'Home'),
     _NavItem(icon: Icons.psychology_alt_rounded, label: 'Study'),
     _NavItem(icon: Icons.edit_note_rounded, label: 'Exam'),
-    _NavItem(icon: Icons.upload_file_rounded, label: 'Upload'),
+    _NavItem(icon: Icons.topic_rounded, label: 'Topics'),
     _NavItem(icon: Icons.collections_bookmark_rounded, label: 'Library'),
     _NavItem(icon: Icons.calendar_month_rounded, label: 'Plan'),
   ];

@@ -33,6 +33,8 @@ class ExamQuestion(BaseModel):
     prompt: str
     options: list[str] = Field(default_factory=list)
     marks: int = Field(default=1, ge=1)
+    correct_answer: str = ""
+    explanation: str = ""
 
 
 class ExamResponse(BaseModel):
@@ -47,9 +49,13 @@ class ExamResponse(BaseModel):
     questions: list[ExamQuestion]
 
 
+_MAX_ANSWER_CHARS = 4000
+_MAX_ANSWERS_COUNT = 50
+
+
 class AnswerSubmission(StrictRequestModel):
     question_id: str = Field(min_length=1, max_length=80)
-    answer: str = Field(min_length=0, max_length=4000)
+    answer: str = Field(min_length=0, max_length=_MAX_ANSWER_CHARS)
 
     @field_validator("question_id")
     @classmethod
@@ -64,6 +70,13 @@ class ExamSubmitRequest(StrictRequestModel):
     student_id: int = Field(gt=0)
     exam_id: int = Field(gt=0)
     answers: list[AnswerSubmission] = Field(min_length=1)
+
+    @field_validator("answers")
+    @classmethod
+    def limit_answer_count(cls, value: list[AnswerSubmission]) -> list[AnswerSubmission]:
+        if len(value) > _MAX_ANSWERS_COUNT:
+            raise ValueError(f"too many answers (max {_MAX_ANSWERS_COUNT})")
+        return value
 
 
 class ShortAnswerFeedback(BaseModel):
@@ -83,6 +96,15 @@ class WeakTopic(BaseModel):
     score: float | None = None
 
 
+class McqFeedback(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    question_id: str
+    correct: bool
+    correct_answer: str = ""
+    submitted_answer: str = ""
+
+
 class ExamSubmitResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -95,3 +117,35 @@ class ExamSubmitResponse(BaseModel):
     weak_topics: list[WeakTopic]
     readiness_score: float
     short_answer_feedback: list[ShortAnswerFeedback]
+    mcq_feedback: list[McqFeedback] = Field(default_factory=list)
+
+
+# ─── History Response Schemas ────────────────────────────────────────────────
+
+
+class ExamSummaryResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    exam_id: int
+    student_id: int
+    subject: str
+    topic: str
+    difficulty: str
+    num_questions: int
+    source: str
+    created_at: str
+
+
+class AttemptResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    attempt_id: int
+    exam_id: int
+    student_id: int
+    score_percentage: float
+    mcq_correct: int
+    mcq_total: int
+    readiness_score: float
+    weak_topics: list[WeakTopic]
+    short_answer_feedback: list[ShortAnswerFeedback]
+    created_at: str

@@ -32,16 +32,47 @@ class McqOptions extends ConsumerWidget {
             text: question.options[i],
             isSelected: selectedAnswer == question.options[i],
             isCorrect: showFeedback &&
-                question.options[i] == question.correctAnswer,
+                _optionMatchesCorrectAnswer(question.options[i]),
             isWrong: showFeedback &&
                 selectedAnswer == question.options[i] &&
-                selectedAnswer != question.correctAnswer,
+                !_optionMatchesCorrectAnswer(question.options[i]),
             onTap: () => onSelect(question.options[i]),
           ),
           const SizedBox(height: 10),
         ],
       ],
     );
+  }
+
+  /// Checks whether [option] is the correct answer, handling both
+  /// full-text answers and single-letter A-D references.
+  bool _optionMatchesCorrectAnswer(String option) {
+    final correct = question.correctAnswer;
+    if (correct == null || correct.isEmpty) return false;
+
+    final expected = correct.trim().toUpperCase();
+    final opt = option.trim();
+
+    // Exact match (case-insensitive)
+    if (opt.toUpperCase() == expected) return true;
+
+    // Single-letter A-D match
+    if (expected.length == 1 &&
+        {'A', 'B', 'C', 'D'}.contains(expected)) {
+      // Option starts with letter prefix (e.g. "A. Bangladesh")
+      if (opt.toUpperCase().startsWith('$expected.') ||
+          opt.toUpperCase().startsWith('$expected ')) {
+        return true;
+      }
+      // Match by index: A=0, B=1, C=2, D=3
+      final correctIndex = expected.codeUnitAt(0) - 'A'.codeUnitAt(0);
+      final optionIndex = question.options.indexWhere(
+        (o) => o.trim().toUpperCase() == opt.toUpperCase(),
+      );
+      if (optionIndex == correctIndex) return true;
+    }
+
+    return false;
   }
 }
 

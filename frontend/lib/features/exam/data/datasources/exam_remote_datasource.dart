@@ -89,6 +89,7 @@ class ExamRemoteDataSource {
       mcqTotal: json['mcq_total'] as int,
       shortAnswerFeedback: _mapShortAnswerFeedback(json['short_answer_feedback']),
       weakTopics: _mapWeakTopics(json['weak_topics']),
+      mcqFeedback: _mapMcqFeedback(json['mcq_feedback']),
       readinessScore: (json['readiness_score'] as num).toDouble(),
       timeTakenSeconds: timeTakenSeconds.clamp(0, 99999),
       submittedAt: session.endTime ?? DateTime.now(),
@@ -119,8 +120,8 @@ class ExamRemoteDataSource {
               .toList() ??
           const [],
       marks: json['marks'] as int? ?? 1,
-      correctAnswer: null,
-      explanation: null,
+      correctAnswer: json['correct_answer'] as String?,
+      explanation: json['explanation'] as String?,
       difficulty: defaultDifficulty,
       subParts: null,
     );
@@ -146,6 +147,13 @@ class ExamRemoteDataSource {
     if (raw is! List<dynamic>) return const [];
     return raw
         .map((e) => WeakTopic.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  List<McqFeedback> _mapMcqFeedback(dynamic raw) {
+    if (raw is! List<dynamic>) return const [];
+    return raw
+        .map((e) => McqFeedback.fromJson(e as Map<String, dynamic>))
         .toList();
   }
 }

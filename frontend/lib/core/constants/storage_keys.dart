@@ -16,11 +16,13 @@ class StorageKeys {
   static const String syncQueueBox = 'sync_queue';
   static const String chatSessionsBox = 'chat_sessions';
   static const String chatSettingsBox = 'chat_settings';
+  static const String topicsBox = 'topics';
 
   // Settings keys
   static const String isDarkMode = 'is_dark_mode';
   static const String isOnboarded = 'is_onboarded';
   static const String studentId = 'student_id';
   static const String studentData = 'student_data';
+  static const String authToken = 'auth_token';
   static const String languageCode = 'language_code';
 }

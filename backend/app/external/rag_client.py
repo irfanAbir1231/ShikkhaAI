@@ -1,8 +1,11 @@
+import logging
 from typing import Any
 
 import httpx
 
 from app.core.config import settings
+
+logger = logging.getLogger("shikkhaai")
 
 
 class RagClient:
@@ -54,7 +57,18 @@ class RagClient:
                 f"RAG server at {settings.rag_base_url} is not reachable. "
                 "Run: uvicorn rag_server:app --port 8100"
             ) from exc
-        except (httpx.HTTPError, ValueError, TypeError, KeyError) as exc:
+        except ValueError as exc:
+            error_msg = str(exc)
+            if "did not include questions" in error_msg:
+                logger.warning(
+                    "RAG service returned empty questions (subject=%s, topic=%s). "
+                    "Falling back to mock exam.",
+                    payload.get("subject"),
+                    payload.get("topic"),
+                )
+                return self._mock_exam(payload)
+            raise RuntimeError(f"RAG HTTP call failed: {exc}") from exc
+        except (httpx.HTTPError, TypeError, KeyError) as exc:
             raise RuntimeError(f"RAG HTTP call failed: {exc}") from exc
 
     def _generate_via_gemini(self, payload: dict[str, Any]) -> dict[str, Any]:
@@ -214,6 +228,10 @@ Rules:
             if not isinstance(options, list):
                 options = []
 
+            key_item = answer_by_id.get(question_id, {})
+            correct_answer = key_item.get("correct_answer") or key_item.get("answer") or ""
+            explanation = str(question.get("explanation") or "")
+
             normalized_questions.append(
                 {
                     "id": question_id,
@@ -222,11 +240,11 @@ Rules:
                     "prompt": prompt,
                     "options": [str(option) for option in options],
                     "marks": int(question.get("marks") or 1),
+                    "correct_answer": str(correct_answer),
+                    "explanation": explanation,
                 }
             )
 
-            key_item = answer_by_id.get(question_id, {})
-            correct_answer = key_item.get("correct_answer") or key_item.get("answer") or ""
             normalized_answer_key.append(
                 {
                     "question_id": question_id,
@@ -308,6 +326,8 @@ Rules:
                     "prompt": template["prompt"],
                     "options": template["options"],
                     "marks": 1,
+                    "correct_answer": template["answer"],
+                    "explanation": "",
                 }
             )
             answer_key.append(

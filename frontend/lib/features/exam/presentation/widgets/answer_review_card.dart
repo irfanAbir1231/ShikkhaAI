@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../common_widgets/molecules/app_card.dart';
 import '../../../../theme/color_tokens.dart';
+import '../../data/models/exam_answer_model.dart';
 import '../../data/models/exam_question_model.dart';
 import '../../data/models/exam_result_model.dart';
 
@@ -11,10 +12,12 @@ class AnswerReviewCard extends StatelessWidget {
     super.key,
     required this.questions,
     required this.result,
+    this.userAnswers = const {},
   });
 
   final List<ExamQuestion> questions;
   final ExamResult result;
+  final Map<String, ExamAnswer> userAnswers;
 
   @override
   Widget build(BuildContext context) {
@@ -37,6 +40,7 @@ class AnswerReviewCard extends StatelessWidget {
             index: index + 1,
             question: question,
             result: result,
+            userAnswers: userAnswers,
           );
         }),
       ],
@@ -49,15 +53,17 @@ class _ReviewItem extends StatelessWidget {
     required this.index,
     required this.question,
     required this.result,
+    required this.userAnswers,
   });
 
   final int index;
   final ExamQuestion question;
   final ExamResult result;
+  final Map<String, ExamAnswer> userAnswers;
 
   @override
   Widget build(BuildContext context) {
-    final feedback = result.shortAnswerFeedback
+    final shortFeedback = result.shortAnswerFeedback
         .firstWhere((f) => f.questionId == question.id, orElse: () {
       return const ShortAnswerFeedback(
         questionId: '',
@@ -67,9 +73,52 @@ class _ReviewItem extends StatelessWidget {
       );
     });
 
-    final isCorrect = feedback.status == 'correct' ||
-        (question.isMcq && feedback.status == 'unknown');
-    final isPartial = feedback.status == 'partial';
+    // Primary source for MCQ review: backend's per-question feedback.
+    // This avoids depending on fragile local session storage.
+    final mcqFeedback = result.mcqFeedback
+        .firstWhere((f) => f.questionId == question.id, orElse: () {
+      return const McqFeedback(
+        questionId: '',
+        correct: false,
+        correctAnswer: '',
+        submittedAnswer: '',
+      );
+    });
+
+    // Fallback to local session answers if backend feedback is missing
+    // (e.g. for exams taken before this update).
+    final String userAnswer;
+    final String correctAnswer;
+    final bool isCorrect;
+    final bool isPartial;
+
+    if (question.isMcq) {
+      if (mcqFeedback.questionId.isNotEmpty) {
+        // Use backend feedback as primary source
+        userAnswer = mcqFeedback.submittedAnswer;
+        correctAnswer = mcqFeedback.correctAnswer;
+        isCorrect = mcqFeedback.correct;
+        isPartial = false;
+      } else {
+        // Fallback to local session + question.correctAnswer
+        final submitted = userAnswers[question.id]?.answer ?? '';
+        userAnswer = submitted;
+        correctAnswer = question.correctAnswer ?? '';
+        isCorrect = _evaluateMcqLocal(
+          submitted: submitted,
+          expected: correctAnswer,
+          options: question.options,
+        );
+        isPartial = false;
+      }
+    } else {
+      // Short answer / CQ: use local session + backend short-answer feedback
+      userAnswer = userAnswers[question.id]?.answer ?? '';
+      correctAnswer = question.correctAnswer ?? '';
+      isCorrect = shortFeedback.status == 'correct';
+      isPartial = shortFeedback.status == 'partial';
+    }
+
     final statusColor = isCorrect
         ? AppColors.success
         : isPartial
@@ -121,24 +170,26 @@ class _ReviewItem extends StatelessWidget {
                     const SizedBox(height: 8),
                     _AnswerRow(
                       label: 'Your Answer:',
-                      value: feedback.status == 'unknown' && question.isMcq
-                          ? 'Not answered'
-                          : feedback.questionId.isEmpty
-                              ? 'Not answered'
-                              : 'See below',
+                      value: userAnswer.isEmpty ? 'Not answered' : userAnswer,
                       color: AppColors.textSecondary,
                     ),
-                    if (question.correctAnswer != null &&
-                        question.correctAnswer!.isNotEmpty)
+                    if (correctAnswer.isNotEmpty)
                       _AnswerRow(
                         label: 'Correct Answer:',
-                        value: question.correctAnswer!,
+                        value: correctAnswer,
                         color: AppColors.success,
                       ),
-                    if (feedback.awardedMarks > 0 || feedback.status != 'unknown')
+                    if (question.isMcq)
                       _AnswerRow(
                         label: 'Marks:',
-                        value: '${feedback.awardedMarks.toStringAsFixed(1)} / ${question.marks}',
+                        value: '${isCorrect ? question.marks : 0} / ${question.marks}',
+                        color: statusColor,
+                      )
+                    else if (shortFeedback.awardedMarks > 0 ||
+                        shortFeedback.status != 'unknown')
+                      _AnswerRow(
+                        label: 'Marks:',
+                        value: '${shortFeedback.awardedMarks.toStringAsFixed(1)} / ${question.marks}',
                         color: statusColor,
                       ),
                   ],
@@ -168,6 +219,32 @@ class _ReviewItem extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  /// Local fallback evaluation when backend mcq_feedback is not available.
+  static bool _evaluateMcqLocal({
+    required String submitted,
+    required String expected,
+    required List<String> options,
+  }) {
+    final sub = submitted.trim();
+    final exp = expected.trim().toUpperCase();
+    if (sub.isEmpty) return false;
+    if (sub.toUpperCase() == exp) return true;
+
+    if (exp.length == 1 && {'A', 'B', 'C', 'D'}.contains(exp)) {
+      if (sub.toUpperCase().startsWith('$exp.') ||
+          sub.toUpperCase().startsWith('$exp ')) {
+        return true;
+      }
+      if (options.isNotEmpty) {
+        final correctIndex = exp.codeUnitAt(0) - 'A'.codeUnitAt(0);
+        if (correctIndex >= 0 && correctIndex < options.length) {
+          return sub.toUpperCase() == options[correctIndex].trim().toUpperCase();
+        }
+      }
+    }
+    return false;
   }
 }
 

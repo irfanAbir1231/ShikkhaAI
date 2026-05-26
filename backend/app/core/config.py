@@ -39,6 +39,8 @@ class Settings:
     mock_mode: bool
     cors_origins: list[str]
     gemini_api_key: str | None
+    secret_key: str
+    access_token_expire_minutes: float
 
 
 @lru_cache
@@ -51,10 +53,12 @@ def get_settings() -> Settings:
             "postgresql+psycopg2://postgres:postgres@localhost:5432/shikkhaai",
         ),
         rag_base_url=rag_base_url.rstrip("/") if rag_base_url else None,
-        rag_timeout_seconds=_as_float(getenv("RAG_TIMEOUT_SECONDS"), 5.0),
-        mock_mode=_as_bool(getenv("MOCK_MODE"), True),
+        rag_timeout_seconds=_as_float(getenv("RAG_TIMEOUT_SECONDS"), 60.0),
+        mock_mode=_as_bool(getenv("MOCK_MODE"), False),
         cors_origins=_as_list(getenv("CORS_ORIGINS"), ["*"]),
         gemini_api_key=getenv("GEMINI_API_KEY"),
+        secret_key=getenv("SECRET_KEY", "shikkhaai-dev-secret-change-in-production"),
+        access_token_expire_minutes=_as_float(getenv("ACCESS_TOKEN_EXPIRE_MINUTES"), 60.0),
     )
 
 

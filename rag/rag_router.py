@@ -32,6 +32,11 @@ class RetrieveRequest(BaseModel):
     class_level: Optional[str] = None
 
 
+class WeakTopicsRequest(BaseModel):
+    student_id: int
+    topics: list[dict]
+
+
 # ─── Endpoints ────────────────────────────────────────────────────────────────
 
 
@@ -78,3 +83,26 @@ def context(req: RetrieveRequest):
         class_level=req.class_level,
     )
     return {"context": ctx}
+
+
+@router.post("/weak-topics")
+def weak_topics(req: WeakTopicsRequest):
+    """
+    Returns weak topics based on performance data.
+    Mirrors the backend's local weak-topic heuristic so the RAG service
+    can be used as a drop-in replacement for the mock fallback.
+    """
+    weak: list[dict] = []
+    for item in req.topics:
+        score = float(item.get("score") or 0.0)
+        consistency_score = float(item.get("consistency_score") or 0.0)
+        last_score = float(item.get("last_score") or 0.0)
+        if score < 60.0 or consistency_score < 50.0 or last_score < 50.0:
+            weak.append(
+                {
+                    "topic": str(item.get("topic") or "Unknown"),
+                    "reason": "Low topic average or inconsistent recent performance",
+                    "score": round(score, 2),
+                }
+            )
+    return {"weak_topics": weak}

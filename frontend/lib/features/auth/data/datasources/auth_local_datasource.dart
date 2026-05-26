@@ -41,7 +41,22 @@ class AuthLocalDataSource {
       _studentBox.delete(StorageKeys.studentData);
 
   // ------------------------------------------------------------------
+  // Auth Token
+  // ------------------------------------------------------------------
+  String? getToken() {
+    return _studentBox.get(StorageKeys.authToken);
+  }
+
+  Future<void> saveToken(String token) =>
+      _studentBox.put(StorageKeys.authToken, token);
+
+  Future<void> clearToken() =>
+      _studentBox.delete(StorageKeys.authToken);
+
+  // ------------------------------------------------------------------
   // Helpers
   // ------------------------------------------------------------------
   bool get isRegistered => getStudent() != null;
+
+  bool get isAuthenticated => getToken() != null && getStudent() != null;
 }

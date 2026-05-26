@@ -23,10 +23,10 @@ class ShortAnswerFeedback {
 
   factory ShortAnswerFeedback.fromJson(Map<String, dynamic> json) {
     return ShortAnswerFeedback(
-      questionId: json['questionId'] as String,
+      questionId: (json['questionId'] ?? json['question_id']) as String,
       status: json['status'] as String,
       feedback: json['feedback'] as String,
-      awardedMarks: (json['awardedMarks'] as num).toDouble(),
+      awardedMarks: ((json['awardedMarks'] ?? json['awarded_marks']) as num).toDouble(),
     );
   }
 }
@@ -58,6 +58,37 @@ class WeakTopic {
   }
 }
 
+/// Feedback for a single MCQ question.
+class McqFeedback {
+  const McqFeedback({
+    required this.questionId,
+    required this.correct,
+    this.correctAnswer = '',
+    this.submittedAnswer = '',
+  });
+
+  final String questionId;
+  final bool correct;
+  final String correctAnswer;
+  final String submittedAnswer;
+
+  Map<String, dynamic> toJson() => {
+        'questionId': questionId,
+        'correct': correct,
+        'correctAnswer': correctAnswer,
+        'submittedAnswer': submittedAnswer,
+      };
+
+  factory McqFeedback.fromJson(Map<String, dynamic> json) {
+    return McqFeedback(
+      questionId: (json['questionId'] ?? json['question_id']) as String,
+      correct: json['correct'] as bool? ?? false,
+      correctAnswer: (json['correctAnswer'] ?? json['correct_answer']) as String? ?? '',
+      submittedAnswer: (json['submittedAnswer'] ?? json['submitted_answer']) as String? ?? '',
+    );
+  }
+}
+
 /// Final graded result of an exam attempt.
 class ExamResult {
   const ExamResult({
@@ -71,6 +102,7 @@ class ExamResult {
     required this.mcqTotal,
     this.shortAnswerFeedback = const [],
     this.weakTopics = const [],
+    this.mcqFeedback = const [],
     required this.readinessScore,
     required this.timeTakenSeconds,
     required this.submittedAt,
@@ -89,6 +121,7 @@ class ExamResult {
   final int mcqTotal;
   final List<ShortAnswerFeedback> shortAnswerFeedback;
   final List<WeakTopic> weakTopics;
+  final List<McqFeedback> mcqFeedback;
   final double readinessScore;
   final int timeTakenSeconds;
   final DateTime submittedAt;
@@ -140,6 +173,7 @@ class ExamResult {
         'shortAnswerFeedback':
             shortAnswerFeedback.map((f) => f.toJson()).toList(),
         'weakTopics': weakTopics.map((t) => t.toJson()).toList(),
+        'mcqFeedback': mcqFeedback.map((f) => f.toJson()).toList(),
         'readinessScore': readinessScore,
         'timeTakenSeconds': timeTakenSeconds,
         'submittedAt': submittedAt.toIso8601String(),
@@ -164,6 +198,10 @@ class ExamResult {
           const [],
       weakTopics: (json['weakTopics'] as List<dynamic>?)
               ?.map((e) => WeakTopic.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          const [],
+      mcqFeedback: (json['mcqFeedback'] as List<dynamic>?)
+              ?.map((e) => McqFeedback.fromJson(e as Map<String, dynamic>))
               .toList() ??
           const [],
       readinessScore: (json['readinessScore'] as num).toDouble(),

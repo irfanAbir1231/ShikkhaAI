@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../common_widgets/animations/animated_fade_slide.dart';
 import '../../../../common_widgets/organisms/app_bar.dart';
+import '../../../../routing/route_names.dart';
 import '../../../../theme/color_tokens.dart';
 import '../../data/models/exam_result_model.dart';
 import '../providers/exam_provider.dart';
@@ -24,6 +25,7 @@ class ExamResultScreen extends ConsumerStatefulWidget {
 
 class _ExamResultScreenState extends ConsumerState<ExamResultScreen> {
   ExamResult? _result;
+  bool _loaded = false;
 
   @override
   void initState() {
@@ -40,9 +42,17 @@ class _ExamResultScreenState extends ConsumerState<ExamResultScreen> {
     final current = ref.read(currentResultProvider);
 
     if (current != null && current.attemptId == widget.attemptId) {
-      setState(() => _result = current);
+      setState(() {
+        _result = current;
+        _loaded = true;
+      });
     } else if (fromRepo != null) {
-      setState(() => _result = fromRepo);
+      setState(() {
+        _result = fromRepo;
+        _loaded = true;
+      });
+    } else {
+      setState(() => _loaded = true);
     }
   }
 
@@ -64,11 +74,35 @@ class _ExamResultScreenState extends ConsumerState<ExamResultScreen> {
   Widget build(BuildContext context) {
     final result = _result;
 
-    if (result == null) {
+    if (result == null && !_loaded) {
       return const Scaffold(
         appBar: CustomAppBar(title: 'Exam Result'),
         body: Center(
           child: CircularProgressIndicator(color: AppColors.primary),
+        ),
+      );
+    }
+
+    if (result == null) {
+      return Scaffold(
+        appBar: const CustomAppBar(title: 'Exam Result'),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, size: 48, color: AppColors.danger),
+              const SizedBox(height: 16),
+              const Text(
+                'Result not found',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 8),
+              ElevatedButton(
+                onPressed: () => context.go(RouteNames.home),
+                child: const Text('Go Home'),
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -152,14 +186,67 @@ class _ExamResultScreenState extends ConsumerState<ExamResultScreen> {
   Widget _buildAnswerReview(ExamResult result) {
     final session = ref.read(examRepositoryProvider).getSessionById(result.examId);
     if (session == null) {
-      return const SizedBox.shrink();
+      return const Padding(
+        padding: EdgeInsets.only(top: 24),
+        child: Text(
+          'Answer review not available for this attempt.',
+          style: TextStyle(
+            fontSize: 14,
+            color: AppColors.textSecondary,
+          ),
+        ),
+      );
     }
+
+    // Defensive: warn if some answers appear to be missing from local storage
+    final answeredCount = session.answers.length;
+    final hasMissingAnswers = answeredCount < session.totalQuestions;
 
     return AnimatedFadeSlide(
       delay: const Duration(milliseconds: 300),
-      child: AnswerReviewCard(
-        questions: session.questions,
-        result: result,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (hasMissingAnswers)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.warning.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: AppColors.warning.withValues(alpha: 0.3),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.info_outline,
+                      color: AppColors.warning,
+                      size: 18,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Some answers may not be displayed ($answeredCount/${session.totalQuestions} saved locally).',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: AppColors.warning,
+                          height: 1.4,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          AnswerReviewCard(
+            questions: session.questions,
+            result: result,
+            userAnswers: session.answers,
+          ),
+        ],
       ),
     );
   }

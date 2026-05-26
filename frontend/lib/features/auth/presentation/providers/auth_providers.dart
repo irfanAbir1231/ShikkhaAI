@@ -19,9 +19,17 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
 });
 
 // ------------------------------------------------------------------
+// Auth state refresh signal
+// ------------------------------------------------------------------
+/// Bumps this to force [studentProvider] (and any auth-derived provider)
+/// to re-read Hive instead of returning a stale cached value.
+final authRefreshProvider = StateProvider<int>((ref) => 0);
+
+// ------------------------------------------------------------------
 // Derived state
 // ------------------------------------------------------------------
 final studentProvider = Provider<Student?>((ref) {
+  ref.watch(authRefreshProvider);
   return ref.watch(authRepositoryProvider).currentStudent;
 });
 
@@ -33,11 +41,22 @@ final isRegisteredProvider = Provider<bool>((ref) {
   return ref.watch(authRepositoryProvider).isRegistered;
 });
 
+final isAuthenticatedProvider = Provider<bool>((ref) {
+  return ref.watch(authRepositoryProvider).isAuthenticated;
+});
+
 // ------------------------------------------------------------------
 // Registration form fields (ephemeral)
 // ------------------------------------------------------------------
 final registrationNameProvider = StateProvider<String>((ref) => '');
 final registrationEmailProvider = StateProvider<String>((ref) => '');
+final registrationPasswordProvider = StateProvider<String>((ref) => '');
+
+// ------------------------------------------------------------------
+// Login form fields (ephemeral)
+// ------------------------------------------------------------------
+final loginEmailProvider = StateProvider<String>((ref) => '');
+final loginPasswordProvider = StateProvider<String>((ref) => '');
 
 // ------------------------------------------------------------------
 // Registration API call
@@ -57,6 +76,7 @@ class RegisterStudentNotifier extends AsyncNotifier<void> {
     required String name,
     required String email,
     required String gradeLevel,
+    required String password,
   }) async {
     state = const AsyncValue.loading();
     try {
@@ -65,10 +85,57 @@ class RegisterStudentNotifier extends AsyncNotifier<void> {
         name: name,
         email: email,
         gradeLevel: gradeLevel,
+        password: password,
       );
 
       return result.when(
         success: (student) {
+          ref.read(authRefreshProvider.notifier).state++;
+          state = const AsyncValue.data(null);
+          return student;
+        },
+        failure: (failure) {
+          state = AsyncValue.error(failure.message, StackTrace.current);
+          throw Exception(failure.message);
+        },
+      );
+    } catch (e, st) {
+      final message = e is Failure ? e.message : e.toString();
+      state = AsyncValue.error(message, st);
+      rethrow;
+    }
+  }
+}
+
+// ------------------------------------------------------------------
+// Login API call
+// ------------------------------------------------------------------
+final loginProvider =
+    AsyncNotifierProvider<LoginNotifier, void>(
+  LoginNotifier.new,
+);
+
+class LoginNotifier extends AsyncNotifier<void> {
+  @override
+  Future<void> build() async {
+    // Nothing to preload
+  }
+
+  Future<Student> login({
+    required String email,
+    required String password,
+  }) async {
+    state = const AsyncValue.loading();
+    try {
+      final repo = ref.read(authRepositoryProvider);
+      final result = await repo.login(
+        email: email,
+        password: password,
+      );
+
+      return result.when(
+        success: (student) {
+          ref.read(authRefreshProvider.notifier).state++;
           state = const AsyncValue.data(null);
           return student;
         },

@@ -82,10 +82,10 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
   void _routeNext() {
     try {
-      final isRegistered = ref.read(isRegisteredProvider);
+      final isAuthenticated = ref.read(isAuthenticatedProvider);
       final isOnboarded = ref.read(isOnboardedProvider);
 
-      if (isRegistered) {
+      if (isAuthenticated) {
         context.go(RouteNames.home);
       } else if (isOnboarded) {
         context.go(RouteNames.register);

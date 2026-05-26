@@ -28,12 +28,14 @@ class _ClassSelectionScreenState extends ConsumerState<ClassSelectionScreen> {
 
     final name = ref.read(registrationNameProvider);
     final email = ref.read(registrationEmailProvider);
+    final password = ref.read(registrationPasswordProvider);
 
     try {
       await ref.read(registerStudentProvider.notifier).register(
             name: name,
             email: email,
             gradeLevel: _selectedGrade!,
+            password: password,
           );
 
       if (mounted) {

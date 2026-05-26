@@ -25,25 +25,54 @@ class AuthRepository {
 
   bool get isRegistered => _local.isRegistered;
 
+  bool get isAuthenticated => _local.isAuthenticated;
+
   Future<void> markOnboarded() => _local.setOnboarded(true);
 
   // ------------------------------------------------------------------
   // Remote
   // ------------------------------------------------------------------
 
-  /// Registers a new student and persists locally on success.
+  /// Registers a new student, stores token locally, and persists student on success.
   Future<Result<Student>> registerStudent({
     required String name,
     required String email,
     required String gradeLevel,
+    required String password,
   }) async {
     try {
-      final student = await _remote.register(
+      final response = await _remote.register(
         name: name,
         email: email,
         gradeLevel: gradeLevel,
+        password: password,
       );
+      final studentJson = response['student'] as Map<String, dynamic>;
+      final token = response['access_token'] as String;
+      final student = Student.fromJson(studentJson);
       await _local.saveStudent(student);
+      await _local.saveToken(token);
+      return Result.success(student);
+    } on AppException catch (e) {
+      return Result.failure(mapExceptionToFailure(e));
+    }
+  }
+
+  /// Logs in an existing student and persists token + student locally.
+  Future<Result<Student>> login({
+    required String email,
+    required String password,
+  }) async {
+    try {
+      final response = await _remote.login(
+        email: email,
+        password: password,
+      );
+      final studentJson = response['student'] as Map<String, dynamic>;
+      final token = response['access_token'] as String;
+      final student = Student.fromJson(studentJson);
+      await _local.saveStudent(student);
+      await _local.saveToken(token);
       return Result.success(student);
     } on AppException catch (e) {
       return Result.failure(mapExceptionToFailure(e));
@@ -62,6 +91,7 @@ class AuthRepository {
 
   Future<void> logout() async {
     await _local.clearStudent();
+    await _local.clearToken();
     await _local.setOnboarded(false);
   }
 }
