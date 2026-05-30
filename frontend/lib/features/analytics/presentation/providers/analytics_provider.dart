@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../data/models/analytics_models.dart';
 import '../../domain/repositories/analytics_repository.dart';
 
@@ -18,7 +19,13 @@ final analyticsTimeRangeProvider = StateProvider<AnalyticsTimeRange>(
 
 /// Main analytics data provider.
 final analyticsSummaryProvider = FutureProvider<AnalyticsSummary>(
-  (ref) => ref.watch(analyticsRepositoryProvider).fetchAnalytics(),
+  (ref) {
+    final student = ref.watch(studentProvider);
+    if (student == null) {
+      throw Exception('Not authenticated');
+    }
+    return ref.watch(analyticsRepositoryProvider).fetchAnalytics(student.id);
+  },
 );
 
 /// Filtered topic accuracy based on selected time range.

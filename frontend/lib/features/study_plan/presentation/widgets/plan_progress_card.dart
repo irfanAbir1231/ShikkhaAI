@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../../../theme/gradients.dart';
+import '../../../../l10n/app_localizations.dart';
+import '../../../../theme/color_tokens.dart';
+import '../../../../theme/neu_decoration.dart';
 import '../../data/models/study_plan_models.dart';
 
 /// Circular progress card with plan stats.
@@ -13,12 +15,13 @@ class PlanProgressCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     final daysLeft = plan.config.daysUntilExam;
+    final l10n = AppLocalizations.of(context);
 
     return Container(
       padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: AppGradients.hero,
-        borderRadius: BorderRadius.circular(20),
+      decoration: NeuDecoration.colored(
+        color: AppColors.primary,
+        radius: 20,
       ),
       child: Row(
         children: [
@@ -61,7 +64,7 @@ class PlanProgressCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  daysLeft > 0 ? '$daysLeft days until exam' : 'Exam day!',
+                  daysLeft > 0 ? l10n.planDaysUntilExam(daysLeft) : l10n.planExamDay,
                   style: textTheme.titleMedium?.copyWith(
                         color: Colors.white,
                         fontWeight: FontWeight.w700,
@@ -70,19 +73,19 @@ class PlanProgressCard extends StatelessWidget {
                 const SizedBox(height: 8),
                 _StatRow(
                   icon: Icons.check_circle,
-                  label: '${plan.completedTasksCount}/${plan.totalTasksCount} tasks',
+                  label: l10n.planTasksCount(plan.completedTasksCount, plan.totalTasksCount),
                   textTheme: textTheme,
                 ),
                 const SizedBox(height: 4),
                 _StatRow(
                   icon: Icons.schedule,
-                  label: '${plan.totalStudyHours} hours total',
+                  label: l10n.planHoursTotal('${plan.totalStudyHours}'),
                   textTheme: textTheme,
                 ),
                 const SizedBox(height: 4),
                 _StatRow(
                   icon: Icons.trending_up,
-                  label: '${plan.config.dailyStudyMinutes} min/day',
+                  label: l10n.planMinPerDay(plan.config.dailyStudyMinutes),
                   textTheme: textTheme,
                 ),
               ],
@@ -111,11 +114,15 @@ class _StatRow extends StatelessWidget {
       children: [
         Icon(icon, color: Colors.white.withValues(alpha: 0.8), size: 16),
         const SizedBox(width: 8),
-        Text(
-          label,
-          style: textTheme.bodySmall?.copyWith(
-                color: Colors.white.withValues(alpha: 0.85),
-              ),
+        Expanded(
+          child: Text(
+            label,
+            style: textTheme.bodySmall?.copyWith(
+                  color: Colors.white.withValues(alpha: 0.85),
+                ),
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
+          ),
         ),
       ],
     );

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../common_widgets/molecules/app_text_field.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../../theme/color_tokens.dart';
 
 /// Structured sub-part inputs for Creative Question (CQ).
@@ -89,7 +90,7 @@ class _CqAnswerInputState extends State<CqAnswerInput> {
               Expanded(
                 child: AppTextField(
                   controller: _controllers[part],
-                  hint: 'Answer for $part',
+                  hint: AppLocalizations.of(context).cqAnswerHint(part),
                   maxLines: 4,
                   onChanged: (_) => _notifyChange(),
                 ),

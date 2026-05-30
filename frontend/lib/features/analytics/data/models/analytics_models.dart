@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../../theme/color_tokens.dart';
+
 /// Type of practice suggestion.
 enum SuggestionType {
   quickPractice,
@@ -29,10 +31,10 @@ extension SuggestionTypeExt on SuggestionType {
 
   Color get color {
     return switch (this) {
-      SuggestionType.quickPractice => const Color(0xFF6366F1),
-      SuggestionType.deepDive => const Color(0xFF22D3EE),
-      SuggestionType.revision => const Color(0xFFFBBF24),
-      SuggestionType.mockTest => const Color(0xFF34D399),
+      SuggestionType.quickPractice => AppColors.primary,
+      SuggestionType.deepDive => AppColors.primaryLight,
+      SuggestionType.revision => AppColors.primaryDark,
+      SuggestionType.mockTest => AppColors.success,
     };
   }
 }
@@ -88,10 +90,10 @@ class TopicAccuracy {
         'chapter': chapter,
         'subject': subject,
         'accuracy': accuracy,
-        'totalQuestions': totalQuestions,
-        'correctAnswers': correctAnswers,
+        'total_questions': totalQuestions,
+        'correct_answers': correctAnswers,
         'trend': trend,
-        'lastAttempted': lastAttempted.toIso8601String(),
+        'last_attempted': lastAttempted.toIso8601String(),
       };
 
   factory TopicAccuracy.fromJson(Map<String, dynamic> json) => TopicAccuracy(
@@ -99,10 +101,12 @@ class TopicAccuracy {
         chapter: json['chapter'] as String,
         subject: json['subject'] as String,
         accuracy: (json['accuracy'] as num).toDouble(),
-        totalQuestions: json['totalQuestions'] as int,
-        correctAnswers: json['correctAnswers'] as int,
+        totalQuestions: json['total_questions'] as int? ?? json['totalQuestions'] as int,
+        correctAnswers: json['correct_answers'] as int? ?? json['correctAnswers'] as int,
         trend: (json['trend'] as num).toDouble(),
-        lastAttempted: DateTime.parse(json['lastAttempted'] as String),
+        lastAttempted: DateTime.parse(
+          json['last_attempted'] as String? ?? json['lastAttempted'] as String,
+        ),
       );
 }
 
@@ -154,25 +158,25 @@ class WeakChapter {
   }
 
   Map<String, dynamic> toJson() => {
-        'chapterName': chapterName,
+        'chapter_name': chapterName,
         'subject': subject,
         'accuracy': accuracy,
-        'weaknessRank': weaknessRank,
-        'relatedTopics': relatedTopics,
-        'suggestedAction': suggestedAction,
+        'weakness_rank': weaknessRank,
+        'related_topics': relatedTopics,
+        'suggested_action': suggestedAction,
         'trend': trend,
-        'timeSpentMinutes': timeSpentMinutes,
+        'time_spent_minutes': timeSpentMinutes,
       };
 
   factory WeakChapter.fromJson(Map<String, dynamic> json) => WeakChapter(
-        chapterName: json['chapterName'] as String,
+        chapterName: json['chapter_name'] as String? ?? json['chapterName'] as String,
         subject: json['subject'] as String,
         accuracy: (json['accuracy'] as num).toDouble(),
-        weaknessRank: json['weaknessRank'] as int,
-        relatedTopics: (json['relatedTopics'] as List).cast<String>(),
-        suggestedAction: json['suggestedAction'] as String,
+        weaknessRank: json['weakness_rank'] as int? ?? json['weaknessRank'] as int,
+        relatedTopics: (json['related_topics'] as List? ?? json['relatedTopics'] as List).cast<String>(),
+        suggestedAction: json['suggested_action'] as String? ?? json['suggestedAction'] as String,
         trend: (json['trend'] as num).toDouble(),
-        timeSpentMinutes: json['timeSpentMinutes'] as int,
+        timeSpentMinutes: json['time_spent_minutes'] as int? ?? json['timeSpentMinutes'] as int,
       );
 }
 
@@ -206,19 +210,19 @@ class ImprovementPoint {
 
   Map<String, dynamic> toJson() => {
         'date': date.toIso8601String(),
-        'overallScore': overallScore,
-        'topicScores': topicScores,
-        'examId': examId,
+        'overall_score': overallScore,
+        'topic_scores': topicScores,
+        'exam_id': examId,
       };
 
   factory ImprovementPoint.fromJson(Map<String, dynamic> json) =>
       ImprovementPoint(
         date: DateTime.parse(json['date'] as String),
-        overallScore: (json['overallScore'] as num).toDouble(),
-        topicScores: (json['topicScores'] as Map<String, dynamic>).map(
+        overallScore: (json['overall_score'] as num? ?? json['overallScore'] as num).toDouble(),
+        topicScores: (json['topic_scores'] as Map<String, dynamic>? ?? json['topicScores'] as Map<String, dynamic>).map(
           (k, v) => MapEntry(k, (v as num).toDouble()),
         ),
-        examId: json['examId'] as String?,
+        examId: json['exam_id'] as String? ?? json['examId'] as String?,
       );
 }
 
@@ -256,20 +260,22 @@ class DailyActivity {
 
   Map<String, dynamic> toJson() => {
         'date': date.toIso8601String(),
-        'isActive': isActive,
-        'performanceScore': performanceScore,
-        'questionsAnswered': questionsAnswered,
-        'studyMinutes': studyMinutes,
+        'is_active': isActive,
+        'performance_score': performanceScore,
+        'questions_answered': questionsAnswered,
+        'study_minutes': studyMinutes,
       };
 
   factory DailyActivity.fromJson(Map<String, dynamic> json) => DailyActivity(
         date: DateTime.parse(json['date'] as String),
-        isActive: json['isActive'] as bool,
-        performanceScore: json['performanceScore'] != null
-            ? (json['performanceScore'] as num).toDouble()
-            : null,
-        questionsAnswered: json['questionsAnswered'] as int?,
-        studyMinutes: json['studyMinutes'] as int?,
+        isActive: json['is_active'] as bool? ?? json['isActive'] as bool,
+        performanceScore: json['performance_score'] != null
+            ? (json['performance_score'] as num).toDouble()
+            : json['performanceScore'] != null
+                ? (json['performanceScore'] as num).toDouble()
+                : null,
+        questionsAnswered: json['questions_answered'] as int? ?? json['questionsAnswered'] as int?,
+        studyMinutes: json['study_minutes'] as int? ?? json['studyMinutes'] as int?,
       );
 }
 
@@ -298,16 +304,16 @@ class DailyStreakData {
   }
 
   Map<String, dynamic> toJson() => {
-        'currentStreak': currentStreak,
-        'longestStreak': longestStreak,
-        'last30Days': last30Days.map((e) => e.toJson()).toList(),
+        'current_streak': currentStreak,
+        'longest_streak': longestStreak,
+        'last_30_days': last30Days.map((e) => e.toJson()).toList(),
       };
 
   factory DailyStreakData.fromJson(Map<String, dynamic> json) =>
       DailyStreakData(
-        currentStreak: json['currentStreak'] as int,
-        longestStreak: json['longestStreak'] as int,
-        last30Days: (json['last30Days'] as List)
+        currentStreak: json['current_streak'] as int? ?? json['currentStreak'] as int,
+        longestStreak: json['longest_streak'] as int? ?? json['longestStreak'] as int,
+        last30Days: (json['last_30_days'] as List? ?? json['last30Days'] as List)
             .map((e) => DailyActivity.fromJson(e as Map<String, dynamic>))
             .toList(),
       );
@@ -325,6 +331,7 @@ class PracticeSuggestion {
     required this.estimatedMinutes,
     required this.potentialImpact,
     required this.subject,
+    this.noteId,
   });
 
   final String id;
@@ -336,6 +343,7 @@ class PracticeSuggestion {
   final int estimatedMinutes;
   final double potentialImpact; // 0-100
   final String subject;
+  final String? noteId; // pre-generated weak-topic note id
 
   PracticeSuggestion copyWith({
     String? id,
@@ -347,6 +355,7 @@ class PracticeSuggestion {
     int? estimatedMinutes,
     double? potentialImpact,
     String? subject,
+    String? noteId,
   }) {
     return PracticeSuggestion(
       id: id ?? this.id,
@@ -358,6 +367,7 @@ class PracticeSuggestion {
       estimatedMinutes: estimatedMinutes ?? this.estimatedMinutes,
       potentialImpact: potentialImpact ?? this.potentialImpact,
       subject: subject ?? this.subject,
+      noteId: noteId ?? this.noteId,
     );
   }
 
@@ -368,9 +378,10 @@ class PracticeSuggestion {
         'topic': topic,
         'type': type.name,
         'difficulty': difficulty,
-        'estimatedMinutes': estimatedMinutes,
-        'potentialImpact': potentialImpact,
+        'estimated_minutes': estimatedMinutes,
+        'potential_impact': potentialImpact,
         'subject': subject,
+        'note_id': noteId,
       };
 
   factory PracticeSuggestion.fromJson(Map<String, dynamic> json) =>
@@ -381,9 +392,10 @@ class PracticeSuggestion {
         topic: json['topic'] as String,
         type: SuggestionType.values.byName(json['type'] as String),
         difficulty: json['difficulty'] as String,
-        estimatedMinutes: json['estimatedMinutes'] as int,
-        potentialImpact: (json['potentialImpact'] as num).toDouble(),
+        estimatedMinutes: json['estimated_minutes'] as int? ?? json['estimatedMinutes'] as int,
+        potentialImpact: (json['potential_impact'] as num? ?? json['potentialImpact'] as num).toDouble(),
         subject: json['subject'] as String,
+        noteId: json['note_id']?.toString(),
       );
 }
 
@@ -433,37 +445,37 @@ class AnalyticsSummary {
   }
 
   Map<String, dynamic> toJson() => {
-        'topicAccuracy': topicAccuracy.map((e) => e.toJson()).toList(),
-        'weakChapters': weakChapters.map((e) => e.toJson()).toList(),
-        'improvementHistory':
+        'topic_accuracy': topicAccuracy.map((e) => e.toJson()).toList(),
+        'weak_chapters': weakChapters.map((e) => e.toJson()).toList(),
+        'improvement_history':
             improvementHistory.map((e) => e.toJson()).toList(),
-        'streakData': streakData.toJson(),
-        'practiceSuggestions':
+        'streak_data': streakData.toJson(),
+        'practice_suggestions':
             practiceSuggestions.map((e) => e.toJson()).toList(),
-        'averageAccuracy': averageAccuracy,
-        'totalQuestionsAttempted': totalQuestionsAttempted,
-        'totalStudyMinutes': totalStudyMinutes,
+        'average_accuracy': averageAccuracy,
+        'total_questions_attempted': totalQuestionsAttempted,
+        'total_study_minutes': totalStudyMinutes,
       };
 
   factory AnalyticsSummary.fromJson(Map<String, dynamic> json) =>
       AnalyticsSummary(
-        topicAccuracy: (json['topicAccuracy'] as List)
+        topicAccuracy: (json['topic_accuracy'] as List? ?? json['topicAccuracy'] as List)
             .map((e) => TopicAccuracy.fromJson(e as Map<String, dynamic>))
             .toList(),
-        weakChapters: (json['weakChapters'] as List)
+        weakChapters: (json['weak_chapters'] as List? ?? json['weakChapters'] as List)
             .map((e) => WeakChapter.fromJson(e as Map<String, dynamic>))
             .toList(),
-        improvementHistory: (json['improvementHistory'] as List)
+        improvementHistory: (json['improvement_history'] as List? ?? json['improvementHistory'] as List)
             .map((e) => ImprovementPoint.fromJson(e as Map<String, dynamic>))
             .toList(),
         streakData:
-            DailyStreakData.fromJson(json['streakData'] as Map<String, dynamic>),
-        practiceSuggestions: (json['practiceSuggestions'] as List)
+            DailyStreakData.fromJson(json['streak_data'] as Map<String, dynamic>? ?? json['streakData'] as Map<String, dynamic>),
+        practiceSuggestions: (json['practice_suggestions'] as List? ?? json['practiceSuggestions'] as List)
             .map((e) =>
                 PracticeSuggestion.fromJson(e as Map<String, dynamic>))
             .toList(),
-        averageAccuracy: (json['averageAccuracy'] as num).toDouble(),
-        totalQuestionsAttempted: json['totalQuestionsAttempted'] as int,
-        totalStudyMinutes: json['totalStudyMinutes'] as int,
+        averageAccuracy: (json['average_accuracy'] as num? ?? json['averageAccuracy'] as num).toDouble(),
+        totalQuestionsAttempted: json['total_questions_attempted'] as int? ?? json['totalQuestionsAttempted'] as int,
+        totalStudyMinutes: json['total_study_minutes'] as int? ?? json['totalStudyMinutes'] as int,
       );
 }

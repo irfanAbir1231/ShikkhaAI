@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../common_widgets/molecules/app_text_field.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../../theme/color_tokens.dart';
 
 /// Multi-line text input for short answer questions.
@@ -51,7 +52,7 @@ class _ShortAnswerInputState extends State<ShortAnswerInput> {
       children: [
         AppTextField(
           controller: _controller,
-          hint: 'Type your answer here...',
+          hint: AppLocalizations.of(context).shortAnswerHint,
           maxLines: 6,
           maxLength: widget.maxLength,
           onChanged: widget.onChanged,

@@ -28,4 +28,7 @@ class RouteNames {
   static const String planCreate = 'create';
   static const String planDetail = 'detail/:id';
   static const String settings = '/settings';
+
+  // Library nested
+  static const String libraryNoteDetail = 'note/:id';
 }

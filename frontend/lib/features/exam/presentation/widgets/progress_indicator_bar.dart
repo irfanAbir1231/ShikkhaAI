@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../l10n/app_localizations.dart';
 import '../../../../theme/color_tokens.dart';
 
 import '../providers/exam_provider.dart';
@@ -20,6 +21,7 @@ class ExamProgressBar extends ConsumerWidget {
     final answered = session.answeredCount;
     final marked = session.markedCount;
     final unanswered = total - answered;
+    final l10n = AppLocalizations.of(context);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -61,15 +63,15 @@ class ExamProgressBar extends ConsumerWidget {
           children: [
             _LegendDot(
               color: AppColors.success,
-              label: '$answered Answered',
+              label: l10n.progressAnswered(answered),
             ),
             _LegendDot(
               color: AppColors.warning,
-              label: '$marked Marked',
+              label: l10n.progressMarked(marked),
             ),
             _LegendDot(
               color: AppColors.divider,
-              label: '$unanswered Left',
+              label: l10n.progressLeft(unanswered),
             ),
           ],
         ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 
 import '../../../../common_widgets/molecules/app_card.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../../theme/color_tokens.dart';
 
 import '../../data/models/exam_question_model.dart';
@@ -21,6 +22,7 @@ class QuestionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return AppCard(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       padding: const EdgeInsets.all(20),
@@ -37,7 +39,7 @@ class QuestionCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  question.type.label,
+                  question.type.localizedLabel(l10n),
                   style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
@@ -52,7 +54,7 @@ class QuestionCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
-                  '${question.marks} Mark${question.marks > 1 ? 's' : ''}',
+                  l10n.qCardMarks(question.marks),
                   style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
@@ -64,7 +66,7 @@ class QuestionCard extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            'Question $questionNumber of $totalQuestions',
+            l10n.qCardQuestionXofY(questionNumber, totalQuestions),
             style: const TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w500,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../l10n/app_localizations.dart';
 import '../../../../theme/color_tokens.dart';
 import '../../data/models/explanation_mode.dart';
 
@@ -30,7 +31,7 @@ class ModeBadge extends StatelessWidget {
           ),
           const SizedBox(width: 4),
           Text(
-            mode.label,
+            mode.localizedLabel(AppLocalizations.of(context)),
             style: const TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.w600,

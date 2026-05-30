@@ -4,9 +4,10 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../common_widgets/organisms/app_bar.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../../routing/route_names.dart';
 import '../../../../theme/color_tokens.dart';
-import '../../../../theme/gradients.dart';
+import '../../../../theme/neu_decoration.dart';
 import '../../data/models/study_plan_models.dart';
 import '../providers/study_plan_provider.dart';
 import '../widgets/weak_subject_picker.dart';
@@ -28,9 +29,10 @@ class _PlanCreateScreenState extends ConsumerState<PlanCreateScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       appBar: CustomAppBar(
-        title: 'Create Study Plan',
+        title: l10n.planCreateTitle,
         leading: IconButton(
           icon: const Icon(Icons.close),
           onPressed: () => context.pop(),
@@ -67,7 +69,7 @@ class _PlanCreateScreenState extends ConsumerState<PlanCreateScreen> {
                           ),
                           padding: const EdgeInsets.symmetric(vertical: 14),
                         ),
-                        child: const Text('Back'),
+                        child: Text(l10n.commonBack),
                       ),
                     ),
                   if (_currentStep > 0) const SizedBox(width: 12),
@@ -97,7 +99,7 @@ class _PlanCreateScreenState extends ConsumerState<PlanCreateScreen> {
                               ),
                             )
                           : Text(
-                              _currentStep == 2 ? 'Generate Plan' : 'Next',
+                              _currentStep == 2 ? l10n.planGenerate : l10n.commonNext,
                             ),
                     ),
                   ),
@@ -185,19 +187,20 @@ class _StepExamDate extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final daysLeft = examDate.difference(DateTime.now()).inDays;
+    final l10n = AppLocalizations.of(context);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'When is your exam?',
+          l10n.planWhenExam,
           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
         ),
         const SizedBox(height: 8),
         Text(
-          'We\'ll create a schedule that leads up to your exam date.',
+          l10n.planWhenExamDesc,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -206,7 +209,7 @@ class _StepExamDate extends StatelessWidget {
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
-            gradient: AppGradients.cardShine,
+            color: AppColors.cardBg,
             borderRadius: BorderRadius.circular(16),
           ),
           child: Column(
@@ -223,7 +226,7 @@ class _StepExamDate extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    'days\nleft',
+                    l10n.planDaysLeftStacked,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                           color: AppColors.textSecondary,
                           height: 1.2,
@@ -248,7 +251,7 @@ class _StepExamDate extends StatelessWidget {
           child: OutlinedButton.icon(
             onPressed: () => _pickDate(context),
             icon: const Icon(Icons.calendar_today),
-            label: const Text('Change Date'),
+            label: Text(l10n.planChangeDate),
             style: OutlinedButton.styleFrom(
               foregroundColor: AppColors.primary,
               side: const BorderSide(color: AppColors.primary),
@@ -306,19 +309,20 @@ class _StepDailyTime extends StatelessWidget {
     final hours = dailyMinutes / 60;
     final daysLeft = examDate.difference(DateTime.now()).inDays;
     final totalHours = (dailyMinutes * daysLeft) / 60;
+    final l10n = AppLocalizations.of(context);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'How much time can you\nstudy daily?',
+          l10n.planDailyTimeQuestion,
           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
         ),
         const SizedBox(height: 8),
         Text(
-          'We\'ll distribute your subjects across available time.',
+          l10n.planDailyTimeDesc,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: AppColors.textSecondary,
               ),
@@ -326,9 +330,9 @@ class _StepDailyTime extends StatelessWidget {
         const SizedBox(height: 32),
         Container(
           padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            gradient: AppGradients.hero,
-            borderRadius: BorderRadius.circular(20),
+          decoration: NeuDecoration.colored(
+            color: AppColors.primary,
+            radius: 20,
           ),
           child: Column(
             children: [
@@ -343,7 +347,7 @@ class _StepDailyTime extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                '${dailyMinutes.toInt()} minutes per day',
+                l10n.planMinutesPerDay(dailyMinutes.toInt()),
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: Colors.white.withValues(alpha: 0.85),
                     ),
@@ -371,23 +375,23 @@ class _StepDailyTime extends StatelessWidget {
           child: Column(
             children: [
               _PreviewRow(
-                label: 'Study Duration',
-                value: '$daysLeft days',
+                label: l10n.planStudyDuration,
+                value: l10n.planDaysValue(daysLeft),
               ),
               const Divider(),
               _PreviewRow(
-                label: 'Daily Study Time',
-                value: '${dailyMinutes.toInt()} min',
+                label: l10n.planDailyStudyTime,
+                value: l10n.minutesShort(dailyMinutes.toInt()),
               ),
               const Divider(),
               _PreviewRow(
-                label: 'Total Study Hours',
-                value: '${totalHours.toStringAsFixed(0)} hours',
+                label: l10n.planTotalStudyHours,
+                value: l10n.planHoursValue(totalHours.toStringAsFixed(0)),
               ),
               const Divider(),
               _PreviewRow(
-                label: 'Subjects',
-                value: subjects.isEmpty ? 'General Study' : subjects.join(', '),
+                label: l10n.planSubjectsLabel,
+                value: subjects.isEmpty ? l10n.planGeneralStudy : subjects.join(', '),
               ),
             ],
           ),

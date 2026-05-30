@@ -22,7 +22,7 @@ class DioClient {
 
     dio.interceptors.addAll([
       AuthInterceptor(),
-      RetryInterceptor(dio: dio, retries: 2),
+      RetryInterceptor(dio: dio, retries: 1),
       LoggingInterceptor(),
     ]);
   }

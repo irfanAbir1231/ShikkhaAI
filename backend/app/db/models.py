@@ -180,10 +180,13 @@ class Attempt(Base):
 
 class TopicPerformance(Base):
     __tablename__ = "topic_performance"
-    __table_args__ = (UniqueConstraint("student_id", "topic", name="uq_topic_performance_student_topic"),)
+    __table_args__ = (
+        UniqueConstraint("student_id", "subject", "topic", name="uq_topic_performance_student_subject_topic"),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     student_id: Mapped[int] = mapped_column(ForeignKey("students.id"), index=True, nullable=False)
+    subject: Mapped[str] = mapped_column(String(100), nullable=False, default="General")
     topic: Mapped[str] = mapped_column(String(150), nullable=False)
     attempts_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     average_score: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)

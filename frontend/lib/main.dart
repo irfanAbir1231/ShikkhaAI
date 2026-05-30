@@ -26,6 +26,13 @@ Future<void> main() async {
     await Hive.openBox<String>(StorageKeys.examResultsBox);
     await Hive.openBox<String>(StorageKeys.studyPlansBox);
     await Hive.openBox<String>(StorageKeys.topicsBox);
+    await Hive.openBox<String>(StorageKeys.savedNotesBox);
+    await Hive.openBox<String>(StorageKeys.savedQuizzesBox);
+    await Hive.openBox<String>(StorageKeys.syncQueueBox);
+    await Hive.openBox<String>(StorageKeys.dashboardStatsBox);
+    await Hive.openBox<String>(StorageKeys.chaptersBox);
+    await Hive.openBox<String>(StorageKeys.explanationsBox);
+    await Hive.openBox<String>(StorageKeys.appPrefsBox);
 
     log('Hive initialized at ${appDir.path}');
 

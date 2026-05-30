@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../common_widgets/animations/animated_fade_slide.dart';
 import '../../../../common_widgets/organisms/app_bar.dart';
 import '../../../../common_widgets/organisms/empty_state.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../../theme/color_tokens.dart';
 import '../../data/models/exam_result_model.dart';
 import '../providers/exam_provider.dart';
@@ -16,10 +17,11 @@ class ExamHistoryScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final history = ref.watch(examHistoryProvider);
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
       appBar: CustomAppBar(
-        title: 'Exam History',
+        title: l10n.examHistoryTitle,
         actions: [
           if (history.isNotEmpty)
             IconButton(
@@ -29,10 +31,10 @@ class ExamHistoryScreen extends ConsumerWidget {
         ],
       ),
       body: history.isEmpty
-          ? const EmptyState(
+          ? EmptyState(
               icon: Icons.history,
-              title: 'No History',
-              message: 'Your completed exams will appear here.',
+              title: l10n.examNoHistoryTitle,
+              message: l10n.examNoHistoryMsg,
             )
           : ListView.builder(
               padding: const EdgeInsets.all(16),
@@ -73,26 +75,25 @@ class ExamHistoryScreen extends ConsumerWidget {
   }
 
   void _showClearConfirm(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Clear All History?'),
-        content: const Text(
-          'This will permanently delete all exam results. This action cannot be undone.',
-        ),
+        title: Text(l10n.examClearHistoryTitle),
+        content: Text(l10n.examClearHistoryBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(l10n.commonCancel),
           ),
           TextButton(
             onPressed: () {
               ref.read(examHistoryProvider.notifier).clearAll();
               Navigator.pop(context);
             },
-            child: const Text(
-              'Clear All',
-              style: TextStyle(color: AppColors.danger),
+            child: Text(
+              l10n.examClearAll,
+              style: const TextStyle(color: AppColors.danger),
             ),
           ),
         ],
@@ -170,7 +171,7 @@ class _HistoryCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      _formatDate(result.submittedAt),
+                      _formatDate(context, result.submittedAt),
                       style: TextStyle(
                         fontSize: 11,
                         color: AppColors.textSecondary.withValues(alpha: 0.7),
@@ -207,17 +208,18 @@ class _HistoryCard extends StatelessWidget {
     );
   }
 
-  String _formatDate(DateTime date) {
+  String _formatDate(BuildContext context, DateTime date) {
+    final l10n = AppLocalizations.of(context);
     final now = DateTime.now();
     final diff = now.difference(date);
     if (diff.inDays == 0) {
       if (diff.inHours == 0) {
-        return '${diff.inMinutes}m ago';
+        return l10n.timeMinutesAgo(diff.inMinutes);
       }
-      return '${diff.inHours}h ago';
+      return l10n.timeHoursAgo(diff.inHours);
     }
-    if (diff.inDays == 1) return 'Yesterday';
-    if (diff.inDays < 7) return '${diff.inDays} days ago';
+    if (diff.inDays == 1) return l10n.timeYesterday;
+    if (diff.inDays < 7) return l10n.timeDaysAgo(diff.inDays);
     return '${date.day}/${date.month}/${date.year}';
   }
 }

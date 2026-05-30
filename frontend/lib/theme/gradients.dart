@@ -1,35 +1,42 @@
 import 'package:flutter/material.dart';
 
-/// Shared gradient definitions used across the app.
+import 'color_tokens.dart';
+
+/// Shared gradient definitions — now solid colors for backward compat.
 class AppGradients {
   const AppGradients._();
 
+  // Hero — solid primary.
   static const LinearGradient hero = LinearGradient(
-    colors: [Color(0xFF6366F1), Color(0xFF22D3EE)],
+    colors: [AppColors.primary, AppColors.primary],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
 
+  // Subtle white card sheen — solid cardBg.
   static const LinearGradient cardShine = LinearGradient(
-    colors: [Color(0xFFFFFFFF), Color(0xFFF1F5F9)],
+    colors: [AppColors.cardBg, AppColors.cardBg],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
 
+  // Success — solid green.
   static const LinearGradient success = LinearGradient(
-    colors: [Color(0xFF34D399), Color(0xFF059669)],
+    colors: [AppColors.success, AppColors.success],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
 
+  // Warning / progress — solid yellow.
   static const LinearGradient warning = LinearGradient(
-    colors: [Color(0xFFFBBF24), Color(0xFFD97706)],
+    colors: [AppColors.warning, AppColors.warning],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
 
+  // Danger — solid orange-red.
   static const LinearGradient danger = LinearGradient(
-    colors: [Color(0xFFF87171), Color(0xFFDC2626)],
+    colors: [AppColors.danger, AppColors.danger],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );

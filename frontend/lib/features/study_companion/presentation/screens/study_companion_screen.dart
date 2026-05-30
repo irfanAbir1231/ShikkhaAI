@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../l10n/app_localizations.dart';
 import '../../../../theme/color_tokens.dart';
+
 import '../../data/models/chat_message_model.dart';
 import '../../data/models/explanation_mode.dart';
 import '../providers/study_companion_provider.dart';
@@ -22,7 +24,7 @@ class StudyCompanionScreen extends ConsumerStatefulWidget {
 
 class _StudyCompanionScreenState extends ConsumerState<StudyCompanionScreen> {
   final _scrollController = ScrollController();
-  final _listKey = GlobalKey<AnimatedListState>();
+  int _lastMessageCount = 0;
 
   @override
   void dispose() {
@@ -31,53 +33,50 @@ class _StudyCompanionScreenState extends ConsumerState<StudyCompanionScreen> {
   }
 
   void _scrollToBottom() {
-    if (_scrollController.hasClients) {
-      Future.delayed(const Duration(milliseconds: 100), () {
-        if (_scrollController.hasClients) {
-          _scrollController.animateTo(
-            _scrollController.position.maxScrollExtent,
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeOut,
-          );
-        }
-      });
-    }
+    if (!_scrollController.hasClients) return;
+    _scrollController.animateTo(
+      _scrollController.position.maxScrollExtent,
+      duration: const Duration(milliseconds: 240),
+      curve: Curves.easeOut,
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final session = ref.watch(currentChatProvider);
-    final messages = session?.messages ?? <ChatMessage>[];
+    final messages = session?.messages ?? const <ChatMessage>[];
     final selectedMode = ref.watch(explanationModeProvider);
     final hasMessages = messages.isNotEmpty;
 
-    // Check if the last message is loading
-    final isLoading = messages.isNotEmpty && messages.last.isLoading;
+    final isLoading = hasMessages && messages.last.isLoading;
 
-    // Auto-scroll when messages change
-    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+    // Only auto-scroll when a new message is appended (or when the last
+    // message is still streaming). Rebuilds caused by typing in the input
+    // field no longer trigger an unwanted scroll.
+    final shouldScroll =
+        messages.length > _lastMessageCount || isLoading;
+    _lastMessageCount = messages.length;
+    if (shouldScroll) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+    }
 
     return Scaffold(
       drawer: const ChatHistoryDrawer(),
+      backgroundColor: Theme.of(context).colorScheme.surface,
       body: Column(
         children: [
-          // App Bar area
-          _buildAppBar(context, hasMessages),
-          // Content area
+          _buildAppBar(context, hasMessages, selectedMode),
           Expanded(
             child: hasMessages
                 ? _buildMessageList(messages)
-                : _buildEmptyState(selectedMode),
+                : _buildEmptyState(),
           ),
-          // Mode selector (above input)
-          if (hasMessages)
-            ExplanationModeSelector(
-              selectedMode: selectedMode,
-              onModeSelected: (mode) {
-                ref.read(currentChatProvider.notifier).setMode(mode);
-              },
-            ),
-          // Input bar
+          _ModeSelectorHeader(
+            selectedMode: selectedMode,
+            onModeSelected: (mode) {
+              ref.read(currentChatProvider.notifier).setMode(mode);
+            },
+          ),
           MessageInputBar(
             isLoading: isLoading,
             onSend: (text) {
@@ -89,15 +88,20 @@ class _StudyCompanionScreenState extends ConsumerState<StudyCompanionScreen> {
     );
   }
 
-  Widget _buildAppBar(BuildContext context, bool hasMessages) {
+  Widget _buildAppBar(
+    BuildContext context,
+    bool hasMessages,
+    ExplanationMode selectedMode,
+  ) {
     final textTheme = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
 
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [AppColors.primary, AppColors.accent],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
+          colors: [Color(0xFFB87A4B), Color(0xFF8B5A2B), Color(0xFF6B3E1F)],
         ),
       ),
       child: SafeArea(
@@ -106,22 +110,18 @@ class _StudyCompanionScreenState extends ConsumerState<StudyCompanionScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
           child: Row(
             children: [
-              // Drawer/menu button
               Builder(
-                builder: (context) {
-                  return IconButton(
-                    icon: const Icon(Icons.menu_rounded, color: Colors.white),
-                    onPressed: () => Scaffold.of(context).openDrawer(),
-                  );
-                },
+                builder: (context) => IconButton(
+                  icon: const Icon(Icons.menu_rounded, color: Colors.white),
+                  onPressed: () => Scaffold.of(context).openDrawer(),
+                ),
               ),
-              // Avatar
               Container(
                 width: 36,
                 height: 36,
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.2),
-                  shape: BoxShape.circle,
+                  color: Colors.white.withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Icon(
                   Icons.psychology_alt_rounded,
@@ -130,28 +130,30 @@ class _StudyCompanionScreenState extends ConsumerState<StudyCompanionScreen> {
                 ),
               ),
               const SizedBox(width: 12),
-              // Title
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'AI Study Companion',
+                      l10n.scTitle,
                       style: textTheme.titleMedium?.copyWith(
                         color: Colors.white,
                         fontWeight: FontWeight.w700,
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     Text(
-                      'Always here to help',
+                      selectedMode.localizedLabel(l10n),
                       style: textTheme.bodySmall?.copyWith(
                         color: Colors.white.withValues(alpha: 0.85),
                       ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
               ),
-              // New chat button
               if (hasMessages)
                 IconButton(
                   icon: const Icon(
@@ -161,7 +163,7 @@ class _StudyCompanionScreenState extends ConsumerState<StudyCompanionScreen> {
                   onPressed: () {
                     ref.read(currentChatProvider.notifier).startNewChat();
                   },
-                  tooltip: 'New Chat',
+                  tooltip: l10n.scNewChat,
                 ),
             ],
           ),
@@ -170,37 +172,101 @@ class _StudyCompanionScreenState extends ConsumerState<StudyCompanionScreen> {
     );
   }
 
-  Widget _buildEmptyState(ExplanationMode selectedMode) {
+  Widget _buildEmptyState() {
     return SingleChildScrollView(
-      child: Column(
-        children: [
-          WelcomeCard(
-            onSuggestionTap: (suggestion) {
-              ref.read(currentChatProvider.notifier).sendMessage(suggestion);
-            },
-          ),
-          const SizedBox(height: 8),
-          ExplanationModeSelector(
-            selectedMode: selectedMode,
-            onModeSelected: (mode) {
-              ref.read(currentChatProvider.notifier).setMode(mode);
-            },
-          ),
-          const SizedBox(height: 24),
-        ],
+      child: WelcomeCard(
+        onSuggestionTap: (suggestion) {
+          ref.read(currentChatProvider.notifier).sendMessage(suggestion);
+        },
       ),
     );
   }
 
   Widget _buildMessageList(List<ChatMessage> messages) {
     return ListView.builder(
-      key: _listKey,
       controller: _scrollController,
       padding: const EdgeInsets.symmetric(vertical: 12),
       itemCount: messages.length,
       itemBuilder: (context, index) {
         return ChatMessageBubble(message: messages[index]);
       },
+    );
+  }
+}
+
+/// Persistent header + horizontal mode selector shown above the input bar.
+/// Makes "Study Mode" discoverable at all times — not hidden inside the
+/// empty-state welcome card.
+class _ModeSelectorHeader extends StatelessWidget {
+  const _ModeSelectorHeader({
+    required this.selectedMode,
+    required this.onModeSelected,
+  });
+
+  final ExplanationMode selectedMode;
+  final ValueChanged<ExplanationMode> onModeSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final divider = isDark ? AppColors.dividerDark : AppColors.divider;
+    final l10n = AppLocalizations.of(context);
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        border: Border(top: BorderSide(color: divider, width: 1)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+            child: Row(
+              children: [
+                Container(
+                  width: 4,
+                  height: 14,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  l10n.scStudyMode,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.4,
+                    color: isDark
+                        ? AppColors.textPrimaryDark
+                        : AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    selectedMode.localizedSubtitle(l10n),
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: isDark
+                          ? AppColors.textSecondaryDark
+                          : AppColors.textSecondary,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          ExplanationModeSelector(
+            selectedMode: selectedMode,
+            onModeSelected: onModeSelected,
+          ),
+        ],
+      ),
     );
   }
 }

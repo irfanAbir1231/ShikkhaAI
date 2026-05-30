@@ -6,9 +6,10 @@ import 'package:intl/intl.dart';
 import '../../../../common_widgets/animations/animated_fade_slide.dart';
 import '../../../../common_widgets/organisms/app_bar.dart';
 import '../../../../common_widgets/organisms/empty_state.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../../routing/route_names.dart';
 import '../../../../theme/color_tokens.dart';
-import '../../../../theme/gradients.dart';
+import '../../../../theme/neu_decoration.dart';
 import '../../data/models/study_plan_models.dart';
 import '../providers/study_plan_provider.dart';
 import '../widgets/daily_schedule_timeline.dart';
@@ -26,12 +27,13 @@ class PlanShellScreen extends ConsumerWidget {
     final activePlan = ref.watch(activePlanProvider);
     final selectedDate = ref.watch(selectedPlanDateProvider);
     final selectedDay = ref.watch(selectedDayScheduleProvider);
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
-      appBar: const CustomAppBar(
-        title: 'Study Plan',
+      appBar: CustomAppBar(
+        title: l10n.drawerStudyPlan,
         showGradient: true,
-        actions: [
+        actions: const [
           Padding(
             padding: EdgeInsets.only(right: 16),
             child: Icon(Icons.calendar_month, color: Colors.white),
@@ -73,7 +75,7 @@ class PlanShellScreen extends ConsumerWidget {
                         // Other plans
                         if (plans.length > 1) ...[
                           Text(
-                            'Other Plans',
+                            l10n.planOtherPlans,
                             style: Theme.of(context)
                                 .textTheme
                                 .titleMedium
@@ -99,7 +101,7 @@ class PlanShellScreen extends ConsumerWidget {
                           child: OutlinedButton.icon(
                             onPressed: () => _goToCreate(context),
                             icon: const Icon(Icons.add),
-                            label: const Text('Create New Plan'),
+                            label: Text(l10n.planCreateNew),
                             style: OutlinedButton.styleFrom(
                               foregroundColor: AppColors.primary,
                               side: const BorderSide(color: AppColors.primary),
@@ -145,14 +147,14 @@ class _EmptyPlansView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Column(
       children: [
-        const Expanded(
+        Expanded(
           child: EmptyState(
             icon: Icons.calendar_month_outlined,
-            title: 'No Study Plan Yet',
-            message:
-                'Create a personalized study plan to track your progress and stay on schedule.',
+            title: l10n.planNoPlansTitle,
+            message: l10n.planNoPlansMsg,
           ),
         ),
         Padding(
@@ -163,7 +165,7 @@ class _EmptyPlansView extends StatelessWidget {
             child: ElevatedButton.icon(
               onPressed: onCreate,
               icon: const Icon(Icons.add),
-              label: const Text('Create Study Plan'),
+              label: Text(l10n.planCreatePlan),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.primary,
                 foregroundColor: Colors.white,
@@ -197,6 +199,7 @@ class _DayHeader extends StatelessWidget {
     final isToday = date.year == today.year &&
         date.month == today.month &&
         date.day == today.day;
+    final l10n = AppLocalizations.of(context);
 
     return Row(
       children: [
@@ -206,16 +209,19 @@ class _DayHeader extends StatelessWidget {
             children: [
               Text(
                 isToday
-                    ? 'Today\'s Schedule'
+                    ? l10n.planTodaysSchedule
                     : DateFormat('EEEE, MMM d').format(date),
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
               ),
               if (daySchedule != null && !daySchedule!.isRestDay) ...[
                 const SizedBox(height: 4),
                 Text(
-                  '${daySchedule!.tasks.length} tasks · ${daySchedule!.totalMinutes} minutes',
+                  l10n.planTasksMinutes(
+                      daySchedule!.tasks.length, daySchedule!.totalMinutes),
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: AppColors.textSecondary,
                       ),
@@ -227,12 +233,12 @@ class _DayHeader extends StatelessWidget {
         if (isToday)
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              gradient: AppGradients.hero,
-              borderRadius: BorderRadius.circular(20),
+            decoration: NeuDecoration.colored(
+              color: AppColors.primary,
+              radius: 20,
             ),
             child: Text(
-              'Today',
+              l10n.planToday,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: Colors.white,
                     fontWeight: FontWeight.w600,

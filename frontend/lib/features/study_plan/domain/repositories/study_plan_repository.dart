@@ -53,6 +53,31 @@ class StudyPlanRepository implements StudyPlanRepositoryInterface {
   }
 
   @override
+  Future<StudyPlan> updateTask(
+    String planId,
+    String dayDate,
+    StudyTask updatedTask,
+  ) async {
+    final plan = _local.getPlanById(planId);
+    if (plan == null) throw Exception('Plan not found');
+
+    final targetDate = DateTime.parse(dayDate);
+    final updatedDays = plan.days.map((day) {
+      if (_isSameDay(day.date, targetDate)) {
+        final updatedTasks = day.tasks
+            .map((t) => t.id == updatedTask.id ? updatedTask : t)
+            .toList();
+        return day.copyWith(tasks: updatedTasks);
+      }
+      return day;
+    }).toList();
+
+    final updatedPlan = plan.copyWith(days: updatedDays);
+    await _local.savePlan(updatedPlan);
+    return updatedPlan;
+  }
+
+  @override
   Future<void> updatePlan(StudyPlan plan) async {
     await _local.savePlan(plan);
   }

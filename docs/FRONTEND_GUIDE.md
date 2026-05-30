@@ -23,6 +23,10 @@ The app follows a **feature-first clean architecture** with atomic-design widget
 |---------|-------------|-------|
 | **Auth (Onboarding → Registration → Login)** | ✅ Yes | Calls `POST /student/register` and `POST /student/login`, persists student + JWT token to Hive. Dual-mode login/register screen. |
 | **Exam (Config → Session → Result → History)** | ✅ Yes | Full lifecycle with timer, navigation grid, review. Calls `POST /exam/generate` and `POST /exam/submit` with Bearer token auth |
+| **Dashboard** | ✅ Yes | Calls `GET /student/{id}/dashboard`. Shows readiness, weak subjects, streak, recent quizzes, recommendations from real attempt data |
+| **Analytics (Weakness)** | ✅ Yes | Calls `GET /student/{id}/analytics`. Shows topic accuracy, weak chapters, improvement history, streak calendar, practice suggestions |
+| **Topics** | ✅ Yes | Calls `GET /student/{id}/topics`. Shows curriculum topics grouped by subject with completion percentages (falls back to attempt history if no curriculum seeded) |
+| **Library / Notes** | ✅ Yes | Calls `POST /notes`, `GET /notes`, `DELETE /notes/{id}`. Offline-first with Hive local cache. Auto-populated with AI-generated notes after exam submission |
 | **Settings** | ❌ No (local only) | Theme toggle, reset onboarding, logout. Persists to Hive |
 | **Splash / Onboarding** | ❌ No (local only) | Animated splash, 3-page onboarding with `PageView` |
 | **HomeScreen Quick Actions** | ✅ Wired | Study Companion, Smart Exam, Handwritten Eval, Analytics cards all have working `onTap` handlers |
@@ -31,8 +35,6 @@ The app follows a **feature-first clean architecture** with atomic-design widget
 
 | Feature | Backend API? | Notes |
 |---------|-------------|-------|
-| **Dashboard** | ❌ No | Rich UI with charts, skeleton loaders. Uses `MockDashboardService` with hardcoded data |
-| **Analytics (Weakness)** | ❌ No | Heatmaps, radar charts, streak calendar, weak chapters list, practice suggestions. Uses `MockAnalyticsService`. **Models already have `toJson`/`fromJson`.** |
 | **Study Companion (Chat)** | ❌ No | Full chat UI with 7 explanation modes + file attachment (PDF picker). Returns **same photosynthesis text** for every query. File content is never sent anywhere. |
 | **Study Plan** | ❌ No | Calendar view, task completion, per-task timer with '+10 min' extension, practice exam integration. Weak topics auto-suggested from analytics. Uses `MockStudyPlanService` for local generation. **Models already have `toJson`/`fromJson`.** |
 
@@ -42,14 +44,13 @@ The app follows a **feature-first clean architecture** with atomic-design widget
 |---------|--------|-------|
 | **Upload (Handwritten)** | ⚠️ Partial | Image picker → preview → mock OCR evaluation. Works end-to-end but with fake scoring |
 | **Upload (PDF)** | 🚧 Shell | CTA card has `onTap: () {}` — completely non-functional |
-| **Library** | 🚧 Shell | TabBar with Notes/Quizzes exists, but both are `EmptyState` placeholders. No data layer (models, datasources, repository) exists. `savedNotesBox` is declared in `StorageKeys` but never opened in `main.dart` |
+| **Library (Quizzes tab)** | 🚧 Shell | Quizzes tab is still an `EmptyState` placeholder. Saved quizzes feature not yet built |
 
 ### ❌ Missing / Broken
 
 | Issue | Impact |
 |-------|--------|
-| Dashboard, Analytics, Study Companion, Study Plan use mock services | These features do not reflect real student data |
-| Dashboard refresh is a no-op | `RefreshIndicator.onRefresh` is empty |
+| Study Companion, Study Plan use mock services | These features do not reflect real student data |
 | No offline sync queue | `syncQueueBox` is defined but never used |
 | No tests | Only default `widget_test.dart` exists |
 
@@ -97,6 +98,10 @@ This simulates a brand-new user installing the app for the first time.
 - [ ] Exam generation calls `POST /exam/generate` with `Authorization: Bearer <token>` header
 - [ ] Exam submission calls `POST /exam/submit` with the same auth header
 - [ ] Exam history calls `GET /student/{id}/attempts` with auth header
+- [ ] Dashboard calls `GET /student/{id}/dashboard` and loads real data after at least one exam
+- [ ] Analytics calls `GET /student/{id}/analytics` and shows real weak topics
+- [ ] Topics tab calls `GET /student/{id}/topics` and shows curriculum or fallback
+- [ ] Library shows AI-generated notes after exam submission (auto-created for weak topics)
 - [ ] Logout clears token from Hive; subsequent app restarts go to login screen
 
 ---
@@ -163,132 +168,45 @@ Verify unauthenticated users cannot access protected screens.
 
 ## Step-by-Step Completion Plan
 
-### Phase 1: Fix Bugs & Polish Existing Features
+### Phase 1: Fix Bugs & Polish Existing Features ✅ Done
 
-#### 1.1 Make Dashboard Refresh Actually Work
+#### 1.1 Make Dashboard Refresh Actually Work ✅
 
-**File:** `frontend/lib/features/dashboard/presentation/screens/dashboard_screen.dart`
-
-The `RefreshIndicator.onRefresh` is currently empty. Implement it:
-
-```dart
-RefreshIndicator(
-  color: AppColors.primary,
-  onRefresh: () async {
-    ref.invalidate(dashboardDataProvider);
-    await ref.read(dashboardDataProvider.future);
-  },
-  child: ...
-)
-```
-
-Also wire the **Retry** button in `_DashboardError`:
-
-```dart
-ElevatedButton.icon(
-  onPressed: () => ref.invalidate(dashboardDataProvider),
-  icon: const Icon(Icons.refresh),
-  label: const Text('Retry'),
-)
-```
+The `RefreshIndicator.onRefresh` and Retry button in `_DashboardError` are now wired to invalidate and refetch `dashboardDataProvider`.
 
 ---
 
-### Phase 2: Replace Mock Services with Real API Calls
+### Phase 2: Replace Mock Services with Real API Calls ✅ Partially Done
 
-This is the **largest phase**. For each mock feature, you need to:
+The following features are now wired to real backend APIs:
 
-1. Define API contract models with `toJson()` / `fromJson()` *(Analytics & Study Plan already done)*
-2. Create a remote data source that calls the backend
-3. Update the repository to use the remote data source
-4. Update providers to handle loading / error states
+- ✅ **Dashboard** → `GET /student/{id}/dashboard`
+- ✅ **Analytics** → `GET /student/{id}/analytics`
+- ✅ **Topics** → `GET /student/{id}/topics`
+- ✅ **Notes / Library** → `POST /notes`, `GET /notes`, `DELETE /notes/{id}`
 
-#### 2.1 Dashboard → Real Backend Integration
+The following features still use mock services and need future integration:
 
-**Backend dependency:** `GET /student/{id}/dashboard`
+- 🎨 **Study Companion** → needs `POST /study-companion/ask` (RAG-powered)
+- 🎨 **Study Plan** → needs `POST /study-plan/generate`
 
-**Frontend tasks:**
-
-1. **Add serialization to dashboard models:**
-
-**File:** `frontend/lib/features/dashboard/data/models/dashboard_models.dart`
-
-Add `toJson()` and `fromJson()` to all dashboard model classes (`ReadinessScore`, `WeakSubject`, `StreakData`, `ImprovementPoint`, `TopicAccuracy`, `RecentQuiz`, `AIRecommendation`, `DashboardData`).
-
-2. **Create remote data source:**
-
-**New file:** `frontend/lib/features/dashboard/data/datasources/dashboard_remote_datasource.dart`
-
-```dart
-class DashboardRemoteDataSource {
-  final Dio _dio;
-  DashboardRemoteDataSource(this._dio);
-
-  Future<DashboardData> fetchDashboard(int studentId) async {
-    final response = await _dio.get('/student/$studentId/dashboard');
-    return DashboardData.fromJson(response.data['data']);
-  }
-}
-```
-
-3. **Update repository:**
-
-**File:** `frontend/lib/features/dashboard/data/repositories/dashboard_repository.dart`
-
-Replace `MockDashboardService` with `DashboardRemoteDataSource`.
-
-4. **Update provider:**
+#### 2.1 Dashboard → Real Backend Integration ✅ Done
 
 **File:** `frontend/lib/features/dashboard/presentation/providers/dashboard_provider.dart`
 
-```dart
-final dashboardDataProvider = FutureProvider.family<DashboardData, int>(
-  (ref, studentId) async {
-    final repo = ref.watch(dashboardRepositoryProvider);
-    return await repo.fetchDashboard(studentId);
-  },
-);
-```
+Now uses `DashboardRemoteDataSource().fetchDashboard(student.id)` instead of `MockDashboardService`.
 
-#### 2.2 Analytics → Real Backend Integration
-
-**Backend dependency:** `GET /student/{id}/analytics`
-
-**Frontend tasks:**
-
-1. **Create remote data source:**
-
-**New file:** `frontend/lib/features/analytics/data/datasources/analytics_remote_datasource.dart`
-
-```dart
-class AnalyticsRemoteDataSource {
-  final Dio _dio;
-  AnalyticsRemoteDataSource(this._dio);
-
-  Future<AnalyticsSummary> fetchAnalytics(int studentId) async {
-    final response = await _dio.get('/student/$studentId/analytics');
-    return AnalyticsSummary.fromJson(response.data['data']);
-  }
-}
-```
-
-2. **Update repository:**
+#### 2.2 Analytics → Real Backend Integration ✅ Done
 
 **File:** `frontend/lib/features/analytics/domain/repositories/analytics_repository.dart`
 
-Replace `MockAnalyticsService` with `AnalyticsRemoteDataSource`.
+Now uses `AnalyticsRemoteDataSource().fetchAnalytics(studentId)` instead of `MockAnalyticsService`.
 
-3. **Update provider:**
+#### 2.3 Topics → Real Backend Integration ✅ Done
 
-**File:** `frontend/lib/features/analytics/presentation/providers/analytics_provider.dart`
+**File:** `frontend/lib/features/topics/presentation/providers/topics_provider.dart`
 
-Change `analyticsSummaryProvider` to accept `studentId`:
-
-```dart
-final analyticsSummaryProvider = FutureProvider.family<AnalyticsSummary, int>(
-  (ref, studentId) => ref.watch(analyticsRepositoryProvider).fetchAnalytics(studentId),
-);
-```
+Now injects `TopicsRemoteDataSource` into `TopicsRepository`, enabling real API calls with local cache fallback.
 
 #### 2.3 Analytics — Wire Up "Practice Now" Buttons
 
@@ -1417,12 +1335,13 @@ lib/
   features/
     auth/                   # ✅ Fully implemented (register + login + JWT)
     exam/                   # ✅ Fully implemented
-    dashboard/              # 🎨 UI done, needs API
-    analytics/              # 🎨 UI done, models serialized, needs API
+    dashboard/              # ✅ Wired to real API
+    analytics/              # ✅ Wired to real API
+    topics/                 # ✅ Wired to real API
+    library/                # ✅ Notes wired to real API (Quizzes tab still placeholder)
     study_companion/        # 🎨 UI done, file picker ready, needs RAG API + source chips
     study_plan/             # 🎨 UI done, models serialized, needs API
     upload/                 # ⚠️ Partial
-    library/                # 🚧 Shell
     settings/               # ✅ Functional
     onboarding/             # ✅ Functional
     splash/                 # ✅ Functional
@@ -1486,15 +1405,17 @@ flutter build web        # Web
 
 ### Bug Fixes
 - [x] Wire up HomeScreen quick-action `onTap`s (already done)
-- [ ] Implement dashboard refresh indicator
-- [ ] Wire dashboard error retry button
+- [x] Implement dashboard refresh indicator
+- [x] Wire dashboard error retry button
 
 ### Backend Integration
-- [ ] Add `toJson`/`fromJson` to dashboard models
+- [x] Add `toJson`/`fromJson` to dashboard models (snake_case compatible)
 - [x] Add `toJson`/`fromJson` to analytics models (already done)
 - [x] Add `toJson`/`fromJson` to study plan models (already done)
-- [ ] Create `DashboardRemoteDataSource` + wire to backend
-- [ ] Create `AnalyticsRemoteDataSource` + wire to backend
+- [x] Create `DashboardRemoteDataSource` + wire to backend
+- [x] Create `AnalyticsRemoteDataSource` + wire to backend
+- [x] Create `TopicsRemoteDataSource` + wire to backend
+- [x] Create `NoteRemoteDataSource` + wire to backend
 - [ ] Create `StudyCompanionRemoteDataSource` + wire to backend (`POST /study-companion/ask` with RAG + `pdf_context`)
 - [ ] Create `PdfUploadRemoteDataSource` inside Study Companion for temporary text extraction
 - [ ] Add `sources` field to `ChatMessage` model + render source chips in AI bubbles
@@ -1506,8 +1427,9 @@ flutter build web        # Web
 - [ ] Populate Practice Suggestions from backend (via analytics or dedicated endpoint)
 
 ### New Backend Endpoints Needed
-- [ ] `GET /student/{id}/dashboard`
-- [ ] `GET /student/{id}/analytics`
+- [x] `GET /student/{id}/dashboard` ✅ Implemented
+- [x] `GET /student/{id}/analytics` ✅ Implemented
+- [x] `GET /student/{id}/topics` ✅ Implemented
 - [ ] `POST /practice/generate` (or `practice_mode` on `/exam/generate`)
 - [ ] `POST /study-companion/ask` (RAG-powered with `pdf_context` support)
 - [ ] `POST /rag/ask` (RAG service retrieval + Gemini Q&A)
@@ -1516,15 +1438,15 @@ flutter build web        # Web
 - [ ] `GET /study-plan/{id}` + `DELETE /study-plan/{id}` (optional)
 - [ ] `PUT /study-plan/tasks/{task_id}/progress` (optional for MVP)
 - [ ] `POST /upload/pdf`
-- [ ] `GET /notes` + `POST /notes` + `DELETE /notes/{id}` (backend)
+- [x] `GET /notes` + `POST /notes` + `DELETE /notes/{id}` ✅ Implemented
 - [ ] `GET /library/quizzes`
 
 ### Missing Features
 - [ ] Implement PDF text extraction in Study Companion (temporary, not permanent storage)
 - [ ] Wire Upload Shell PDF CTA to Study Companion with auto-pick flag
-- [ ] Build Library `NotesTab` with topic grouping + `NoteDetailScreen`
-- [ ] Create `NoteModel` + `NoteLocalDataSource` + `NoteRemoteDataSource` + `NoteRepository`
-- [ ] Open `savedNotesBox` in `main.dart`
+- [x] Build Library `NotesTab` with topic grouping + `NoteDetailScreen` ✅ Implemented
+- [x] Create `NoteModel` + `NoteLocalDataSource` + `NoteRemoteDataSource` + `NoteRepository` ✅ Implemented
+- [ ] Open `savedNotesBox` in `main.dart` (if not already opened)
 - [ ] Add "Save as Note" button to Study Companion AI bubbles (`chat_message_bubble.dart`)
 - [ ] Add "Save as Note" button to Practice Suggestion cards (`practice_suggestions_card.dart`)
 - [ ] Build `SaveNoteBottomSheet` widget for title/topic confirmation

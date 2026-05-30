@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../common_widgets/molecules/app_card.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../../theme/color_tokens.dart';
 import '../../data/models/exam_result_model.dart';
 
@@ -12,29 +13,30 @@ class WeakTopicsList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     if (weakTopics.isEmpty) {
-      return const AppCard(
-        padding: EdgeInsets.all(20),
+      return AppCard(
+        padding: const EdgeInsets.all(20),
         child: Row(
           children: [
-            Icon(Icons.check_circle, color: AppColors.success, size: 28),
-            SizedBox(width: 12),
+            const Icon(Icons.check_circle, color: AppColors.success, size: 28),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Great job!',
-                    style: TextStyle(
+                    l10n.weakGreatJob,
+                    style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
                       color: AppColors.textPrimary,
                     ),
                   ),
-                  SizedBox(height: 2),
+                  const SizedBox(height: 2),
                   Text(
-                    'No weak topics detected. Keep up the good work!',
-                    style: TextStyle(
+                    l10n.weakNoWeakTopics,
+                    style: const TextStyle(
                       fontSize: 13,
                       color: AppColors.textSecondary,
                     ),
@@ -50,9 +52,9 @@ class WeakTopicsList extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Topics to Review',
-          style: TextStyle(
+        Text(
+          l10n.weakTopicsToReview,
+          style: const TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w700,
             color: AppColors.textPrimary,

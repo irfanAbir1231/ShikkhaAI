@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../common_widgets/molecules/app_card.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../../theme/color_tokens.dart';
 import '../../data/models/analytics_models.dart';
 
@@ -27,7 +28,7 @@ class ImprovementLineChart extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Text(
-            'Improvement Over Time',
+            AppLocalizations.of(context).dashImprovementOverTime,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w600,
                 ),
@@ -108,14 +109,7 @@ class ImprovementLineChart extends StatelessWidget {
                     color: AppColors.primary,
                     belowBarData: BarAreaData(
                       show: true,
-                      gradient: LinearGradient(
-                        colors: [
-                          AppColors.primary.withValues(alpha: 0.3),
-                          AppColors.primary.withValues(alpha: 0.02),
-                        ],
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                      ),
+                      color: AppColors.primary.withValues(alpha: 0.15),
                     ),
                     dotData: FlDotData(
                       show: true,

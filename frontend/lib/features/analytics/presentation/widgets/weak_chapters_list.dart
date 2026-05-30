@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../common_widgets/molecules/app_card.dart';
+import '../../../../l10n/app_localizations.dart';
+import '../../../../routing/route_names.dart';
 import '../../../../theme/color_tokens.dart';
-import '../../../../theme/gradients.dart';
+
 import '../../data/models/analytics_models.dart';
 
 /// Expandable list of weak chapters with actionable insights.
@@ -19,7 +22,7 @@ class WeakChaptersList extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Text(
-            'Weak Chapters Detected',
+            AppLocalizations.of(context).weakChaptersDetected,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w600,
                 ),
@@ -48,9 +51,11 @@ class _WeakChapterCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
     final barColor = _accuracyColor(chapter.accuracy);
-    final trendColor =
-        chapter.isImproving ? AppColors.success : AppColors.danger;
+    final trendColor = chapter.isImproving
+        ? AppColors.success
+        : (chapter.isDeclining ? AppColors.primaryDark : AppColors.textSecondary);
     final trendIcon = chapter.isImproving
         ? Icons.trending_up_rounded
         : (chapter.isDeclining
@@ -62,14 +67,15 @@ class _WeakChapterCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Header: wood badge + title + trend
           Row(
             children: [
               Container(
-                width: 32,
-                height: 32,
+                width: 36,
+                height: 36,
                 decoration: BoxDecoration(
-                  gradient: AppGradients.danger,
-                  borderRadius: BorderRadius.circular(8),
+                  borderRadius: BorderRadius.circular(10),
+                  color: const Color(0xFF8B5A2B),
                 ),
                 child: Center(
                   child: Text(
@@ -77,6 +83,7 @@ class _WeakChapterCard extends StatelessWidget {
                     style: textTheme.bodySmall?.copyWith(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
+                      fontSize: 12,
                     ),
                   ),
                 ),
@@ -116,30 +123,30 @@ class _WeakChapterCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
           // Accuracy bar
           ClipRRect(
             borderRadius: BorderRadius.circular(4),
             child: LinearProgressIndicator(
               value: chapter.accuracy / 100,
               minHeight: 8,
-              backgroundColor: AppColors.divider.withValues(alpha: 0.5),
+              backgroundColor: AppColors.primarySoft.withValues(alpha: 0.5),
               valueColor: AlwaysStoppedAnimation<Color>(barColor),
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                '${chapter.accuracy.toStringAsFixed(0)}% accuracy',
+                l10n.homeAccuracyPercent(chapter.accuracy.toStringAsFixed(0)),
                 style: textTheme.bodySmall?.copyWith(
                   color: AppColors.textSecondary,
                   fontSize: 11,
                 ),
               ),
               Text(
-                '${chapter.timeSpentMinutes} min spent',
+                l10n.minutesSpent(chapter.timeSpentMinutes),
                 style: textTheme.bodySmall?.copyWith(
                   color: AppColors.textSecondary,
                   fontSize: 11,
@@ -147,22 +154,26 @@ class _WeakChapterCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          // Related topics
+          const SizedBox(height: 14),
+          // Related topics — wood-themed chips
           Wrap(
-            spacing: 6,
-            runSpacing: 6,
+            spacing: 8,
+            runSpacing: 8,
             children: chapter.relatedTopics.map((topic) {
               return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.08),
+                  color: AppColors.primaryWash,
                   borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: AppColors.primaryLight.withValues(alpha: 0.4),
+                    width: 1,
+                  ),
                 ),
                 child: Text(
                   topic,
                   style: textTheme.bodySmall?.copyWith(
-                    color: AppColors.primary,
+                    color: AppColors.primaryDark,
                     fontSize: 11,
                     fontWeight: FontWeight.w500,
                   ),
@@ -170,26 +181,33 @@ class _WeakChapterCard extends StatelessWidget {
               );
             }).toList(),
           ),
-          const SizedBox(height: 12),
-          // Suggested action
+          const SizedBox(height: 14),
+          // Suggested action — warm cream tip box
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: AppColors.warning.withValues(alpha: 0.06),
+              color: AppColors.primaryWash,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: AppColors.warning.withValues(alpha: 0.2),
+                color: AppColors.primaryLight.withValues(alpha: 0.3),
               ),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(
-                  Icons.lightbulb_outline,
-                  color: AppColors.warning,
-                  size: 18,
+                Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryLight.withValues(alpha: 0.2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.lightbulb_outline,
+                    color: AppColors.primaryDark,
+                    size: 16,
+                  ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 10),
                 Expanded(
                   child: Text(
                     chapter.suggestedAction,
@@ -202,23 +220,60 @@ class _WeakChapterCard extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 12),
-          // Action button
+          const SizedBox(height: 14),
+          // Action button — wood textured
           SizedBox(
             width: double.infinity,
-            height: 40,
-            child: OutlinedButton.icon(
-              onPressed: () {},
-              icon: const Icon(Icons.play_arrow_rounded, size: 18),
-              label: const Text('Practice Now'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.primary,
-                side: const BorderSide(color: AppColors.primary),
-                shape: RoundedRectangleBorder(
+            height: 44,
+            child: GestureDetector(
+              onTap: () {
+                context.push(
+                  '${RouteNames.exam}/${RouteNames.examConfig}',
+                  extra: {
+                    'subject': chapter.subject,
+                    'topic': chapter.chapterName,
+                    'difficulty': 'easy',
+                  },
+                );
+              },
+              child: Container(
+                decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Color(0xFFB87A4B), Color(0xFF8B5A2B), Color(0xFF6B3E1F)],
+                  ),
+                  border: Border.all(
+                    color: const Color(0xFFC19A6B).withValues(alpha: 0.5),
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF6B3E1F).withValues(alpha: 0.3),
+                      offset: const Offset(0, 4),
+                      blurRadius: 10,
+                      spreadRadius: -2,
+                    ),
+                  ],
                 ),
-                textStyle: textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.play_arrow_rounded,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      l10n.homePracticeNow,
+                      style: textTheme.bodyMedium?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -230,7 +285,7 @@ class _WeakChapterCard extends StatelessWidget {
 
   Color _accuracyColor(double accuracy) {
     if (accuracy >= 80) return AppColors.success;
-    if (accuracy >= 60) return AppColors.warning;
-    return AppColors.danger;
+    if (accuracy >= 60) return AppColors.primary;
+    return AppColors.primaryDark;
   }
 }

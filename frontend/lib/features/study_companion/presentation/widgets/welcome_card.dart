@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../../../common_widgets/molecules/app_card.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../../theme/color_tokens.dart';
-import '../../../../theme/gradients.dart';
+
 
 /// Large gradient welcome card shown when chat is empty.
 class WelcomeCard extends StatelessWidget {
@@ -13,24 +14,36 @@ class WelcomeCard extends StatelessWidget {
 
   final ValueChanged<String> onSuggestionTap;
 
-  static const _suggestions = [
-    'Explain Photosynthesis',
-    'Important questions from Chapter 3',
-    'Common mistakes in algebra',
-    'Exam tips for Biology',
-    'Summary of Newton\'s Laws',
-  ];
-
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
+    final suggestions = [
+      l10n.scSuggestion1,
+      l10n.scSuggestion2,
+      l10n.scSuggestion3,
+      l10n.scSuggestion4,
+      l10n.scSuggestion5,
+    ];
 
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
           AppCard(
-            gradient: AppGradients.hero,
+            decoration: const BoxDecoration(
+              borderRadius: BorderRadius.all(Radius.circular(20)),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Color(0xFFB87A4B), Color(0xFF8B5A2B), Color(0xFF6B3E1F)],
+              ),
+              border: Border.fromBorderSide(
+                BorderSide(
+                  color: Color(0xFFC19A6B),
+                ),
+              ),
+            ),
             padding: const EdgeInsets.all(24),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -55,7 +68,7 @@ class WelcomeCard extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'AI Study Companion',
+                            l10n.scTitle,
                             style: textTheme.titleLarge?.copyWith(
                               color: Colors.white,
                               fontWeight: FontWeight.w700,
@@ -63,7 +76,7 @@ class WelcomeCard extends StatelessWidget {
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            'Your personal tutor, always ready',
+                            l10n.scWelcomeTagline,
                             style: textTheme.bodyMedium?.copyWith(
                               color: Colors.white.withValues(alpha: 0.85),
                             ),
@@ -75,7 +88,7 @@ class WelcomeCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 20),
                 Text(
-                  'What would you like to learn?',
+                  l10n.scWelcomeQuestion,
                   style: textTheme.titleMedium?.copyWith(
                     color: Colors.white,
                     fontWeight: FontWeight.w600,
@@ -83,7 +96,7 @@ class WelcomeCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'Upload a chapter or ask a question. Choose an explanation mode below.',
+                  l10n.scWelcomeSubtitle,
                   style: textTheme.bodyMedium?.copyWith(
                     color: Colors.white.withValues(alpha: 0.8),
                     height: 1.5,
@@ -98,7 +111,7 @@ class WelcomeCard extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4),
               child: Text(
-                'Quick Start',
+                l10n.scQuickStart,
                 style: textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.w600,
                   color: AppColors.textPrimary,
@@ -110,7 +123,7 @@ class WelcomeCard extends StatelessWidget {
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: _suggestions.map((s) {
+            children: suggestions.map((s) {
               return ActionChip(
                 avatar: const Icon(
                   Icons.auto_awesome_rounded,

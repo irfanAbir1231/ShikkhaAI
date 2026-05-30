@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../theme/color_tokens.dart';
+import '../../../../theme/neu_decoration.dart';
 import '../../../../common_widgets/animations/animated_fade_slide.dart';
 
 /// Single onboarding page with an illustrated header, title, and description.
@@ -10,14 +11,14 @@ class OnboardingPage extends StatelessWidget {
     required this.icon,
     required this.title,
     required this.description,
-    required this.gradient,
+    required this.color,
     this.delay = Duration.zero,
   });
 
   final IconData icon;
   final String title;
   final String description;
-  final Gradient gradient;
+  final Color color;
   final Duration delay;
 
   @override
@@ -33,18 +34,17 @@ class OnboardingPage extends StatelessWidget {
             child: Container(
               width: 180,
               height: 180,
-              decoration: BoxDecoration(
-                gradient: gradient,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.primary.withValues(alpha: 0.25),
-                    blurRadius: 40,
-                    spreadRadius: 4,
-                  ),
-                ],
+              decoration: NeuDecoration.colored(
+                color: color,
+                radius: 90,
               ),
-              child: Icon(icon, size: 72, color: Colors.white),
+              child: Icon(
+                icon,
+                size: 72,
+                color: color == AppColors.warning
+                    ? AppColors.textPrimary
+                    : Colors.white,
+              ),
             ),
           ),
           const SizedBox(height: 48),

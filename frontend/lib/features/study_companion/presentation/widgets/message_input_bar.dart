@@ -2,8 +2,9 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../l10n/app_localizations.dart';
 import '../../../../theme/color_tokens.dart';
-import '../../../../theme/gradients.dart';
+import '../../../../theme/neu_decoration.dart';
 import '../providers/study_companion_provider.dart';
 import 'file_attachment_chip.dart';
 
@@ -99,7 +100,7 @@ class _MessageInputBarState extends ConsumerState<MessageInputBar> {
                         onChanged: (_) => setState(() {}),
                         onSubmitted: (_) => _send(),
                         decoration: InputDecoration(
-                          hintText: 'Ask anything about your studies...',
+                          hintText: AppLocalizations.of(context).scInputHint,
                           hintStyle: TextStyle(
                             color: colors.onSurface.withValues(alpha: 0.4),
                             fontSize: 14,
@@ -123,20 +124,15 @@ class _MessageInputBarState extends ConsumerState<MessageInputBar> {
                       duration: const Duration(milliseconds: 200),
                       width: 44,
                       height: 44,
-                      decoration: BoxDecoration(
-                        gradient: canSend ? AppGradients.hero : null,
-                        color: canSend ? null : colors.surfaceContainerHighest,
-                        shape: BoxShape.circle,
-                        boxShadow: canSend
-                            ? [
-                                BoxShadow(
-                                  color: AppColors.primary.withValues(alpha: 0.3),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ]
-                            : null,
-                      ),
+                      decoration: canSend
+                          ? NeuDecoration.colored(
+                              color: AppColors.primary,
+                              radius: 14,
+                            )
+                          : BoxDecoration(
+                              color: AppColors.divider,
+                              borderRadius: BorderRadius.circular(14),
+                            ),
                       child: Icon(
                         Icons.arrow_upward_rounded,
                         color: canSend ? Colors.white : colors.onSurface.withValues(alpha: 0.3),
@@ -174,7 +170,7 @@ class _MessageInputBarState extends ConsumerState<MessageInputBar> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not pick file: $e')),
+          SnackBar(content: Text(AppLocalizations.of(context).scFilePickError('$e'))),
         );
       }
     }

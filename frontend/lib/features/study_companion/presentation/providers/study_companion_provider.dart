@@ -5,7 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
 
 import '../../../../core/constants/storage_keys.dart';
+import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../data/datasources/study_companion_local_datasource.dart';
+import '../../data/datasources/study_companion_remote_datasource.dart';
 import '../../data/models/chat_message_model.dart';
 import '../../data/models/chat_session_model.dart';
 import '../../data/models/explanation_mode.dart';
@@ -26,6 +28,7 @@ final studyCompanionRepositoryProvider = Provider<StudyCompanionRepository>(
     final settingsBox = Hive.box<String>(StorageKeys.chatSettingsBox);
     return StudyCompanionRepository(
       localDataSource: StudyCompanionLocalDataSource(sessionsBox, settingsBox),
+      remoteDataSource: StudyCompanionRemoteDataSource(),
     );
   },
 );
@@ -119,6 +122,21 @@ class CurrentChatNotifier extends StateNotifier<ChatSession?> {
     final mode = _ref.read(explanationModeProvider);
     final file = _ref.read(fileAttachmentProvider);
 
+    // Resolve student info for the API call
+    final student = _ref.read(studentProvider);
+    final studentId = student?.id;
+    final classLevel = student?.gradeLevel ?? '8';
+    const subject = 'science'; // ChromaDB currently only has class 8 science
+
+    if (studentId == null) {
+      // No authenticated student — show a local error message
+      _appendErrorMessage(
+        'You must be logged in to use the AI Study Companion.',
+        mode,
+      );
+      return;
+    }
+
     // Create session if needed
     final sessionId = state?.id ?? _generateId();
     final now = DateTime.now();
@@ -173,6 +191,9 @@ class CurrentChatNotifier extends StateNotifier<ChatSession?> {
       query: text.trim(),
       mode: mode,
       fileName: file?.$1,
+      studentId: studentId,
+      subject: subject,
+      classLevel: classLevel,
     );
 
     var lastContent = '';
@@ -201,6 +222,22 @@ class CurrentChatNotifier extends StateNotifier<ChatSession?> {
     }).toList();
     state = state!.copyWith(
       messages: updatedMessages,
+      updatedAt: DateTime.now(),
+    );
+  }
+
+  void _appendErrorMessage(String errorText, ExplanationMode mode) {
+    if (state == null) return;
+    final errorMessage = ChatMessage(
+      id: _generateId(),
+      role: MessageRole.ai,
+      content: errorText,
+      explanationMode: mode,
+      timestamp: DateTime.now(),
+      isLoading: false,
+    );
+    state = state!.copyWith(
+      messages: [...state!.messages, errorMessage],
       updatedAt: DateTime.now(),
     );
   }

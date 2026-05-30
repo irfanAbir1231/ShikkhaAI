@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../common_widgets/organisms/app_bar.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../../theme/color_tokens.dart';
 import '../../data/models/study_plan_models.dart';
 import '../providers/study_plan_provider.dart';
@@ -35,10 +36,11 @@ class PlanDetailScreen extends ConsumerWidget {
       ),
     );
 
+    final l10n = AppLocalizations.of(context);
     if (plan.id.isEmpty) {
-      return const Scaffold(
-        appBar: CustomAppBar(title: 'Plan Detail'),
-        body: Center(child: CircularProgressIndicator()),
+      return Scaffold(
+        appBar: CustomAppBar(title: l10n.planDetailTitle),
+        body: const Center(child: CircularProgressIndicator()),
       );
     }
 
@@ -47,7 +49,7 @@ class PlanDetailScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: CustomAppBar(
-        title: plan.config.planTitle ?? 'Study Plan',
+        title: plan.config.planTitle ?? l10n.planDefaultTitle,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.pop(),
@@ -90,14 +92,18 @@ class PlanDetailScreen extends ConsumerWidget {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              DateFormat('EEEE, MMM d').format(selectedDate),
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .titleMedium
-                                  ?.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                            Expanded(
+                              child: Text(
+                                DateFormat('EEEE, MMM d').format(selectedDate),
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleMedium
+                                    ?.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                              ),
                             ),
                             if (_isToday(selectedDate))
                               Container(
@@ -110,7 +116,7 @@ class PlanDetailScreen extends ConsumerWidget {
                                   borderRadius: BorderRadius.circular(20),
                                 ),
                                 child: Text(
-                                  'Today',
+                                  l10n.planToday,
                                   style: Theme.of(context)
                                       .textTheme
                                       .bodySmall
@@ -129,7 +135,7 @@ class PlanDetailScreen extends ConsumerWidget {
                           Container(
                             padding: const EdgeInsets.all(24),
                             child: Text(
-                              'No schedule for this day.',
+                              l10n.planNoScheduleDay,
                               style: Theme.of(context)
                                   .textTheme
                                   .bodyMedium
@@ -160,17 +166,16 @@ class PlanDetailScreen extends ConsumerWidget {
   }
 
   void _confirmDelete(BuildContext context, WidgetRef ref, String planId) {
+    final l10n = AppLocalizations.of(context);
     showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Plan?'),
-        content: const Text(
-          'This will permanently delete your study plan and all progress.',
-        ),
+        title: Text(l10n.planDeleteTitle),
+        content: Text(l10n.planDeleteBody),
         actions: [
           TextButton(
             onPressed: () => context.pop(),
-            child: const Text('Cancel'),
+            child: Text(l10n.commonCancel),
           ),
           TextButton(
             onPressed: () {
@@ -179,7 +184,7 @@ class PlanDetailScreen extends ConsumerWidget {
               context.pop();
             },
             style: TextButton.styleFrom(foregroundColor: AppColors.danger),
-            child: const Text('Delete'),
+            child: Text(l10n.commonDelete),
           ),
         ],
       ),

@@ -28,48 +28,53 @@ class RagClient:
                 query_override=req.get("topic"),
             )
             data = self._adapt_rag_response(result)
+            logger.info("Using in-process RAG for exam generation")
             return self._normalize_exam(data=data, request_payload=payload, source="rag")
         except ImportError:
             pass  # RAG module not in path — fall through to HTTP
         except Exception as exc:
             raise RuntimeError(f"RAG generation failed: {exc}") from exc
 
+        # HTTP RAG service: preferred when running separately on RAG_BASE_URL
+        if settings.rag_base_url:
+            try:
+                with httpx.Client(timeout=settings.rag_timeout_seconds) as client:
+                    response = client.post(
+                        f"{settings.rag_base_url}/generate-exam",
+                        json=self._to_rag_request(payload),
+                    )
+                    response.raise_for_status()
+                    data = self._adapt_rag_response(response.json())
+                logger.info("Using HTTP RAG service at %s", settings.rag_base_url)
+                return self._normalize_exam(data=data, request_payload=payload, source="rag")
+            except httpx.ConnectError as exc:
+                logger.warning(
+                    "RAG server at %s is not reachable. Falling back to direct Gemini.",
+                    settings.rag_base_url,
+                )
+                # Fall through to Gemini below instead of hard-failing
+            except ValueError as exc:
+                error_msg = str(exc)
+                if "did not include questions" in error_msg:
+                    logger.warning(
+                        "RAG service returned empty questions (subject=%s, topic=%s). "
+                        "Falling back to mock exam.",
+                        payload.get("subject"),
+                        payload.get("topic"),
+                    )
+                    return self._mock_exam(payload)
+                logger.warning("RAG HTTP call failed: %s. Falling back to direct Gemini.", error_msg)
+            except (httpx.HTTPError, TypeError, KeyError) as exc:
+                logger.warning("RAG HTTP call failed: %s. Falling back to direct Gemini.", exc)
+
         # Direct Gemini fallback: no RAG retrieval context, just Gemini generation
         if settings.gemini_api_key:
+            logger.info("Falling back to direct Gemini for exam generation")
             return self._generate_via_gemini(payload)
 
-        # HTTP fallback: RAG service running separately on RAG_BASE_URL
-        if not settings.rag_base_url:
-            raise RuntimeError(
-                "No GEMINI_API_KEY, RAG module not importable, and RAG_BASE_URL not set."
-            )
-        try:
-            with httpx.Client(timeout=settings.rag_timeout_seconds) as client:
-                response = client.post(
-                    f"{settings.rag_base_url}/generate-exam",
-                    json=self._to_rag_request(payload),
-                )
-                response.raise_for_status()
-                data = self._adapt_rag_response(response.json())
-            return self._normalize_exam(data=data, request_payload=payload, source="rag")
-        except httpx.ConnectError as exc:
-            raise RuntimeError(
-                f"RAG server at {settings.rag_base_url} is not reachable. "
-                "Run: uvicorn rag_server:app --port 8100"
-            ) from exc
-        except ValueError as exc:
-            error_msg = str(exc)
-            if "did not include questions" in error_msg:
-                logger.warning(
-                    "RAG service returned empty questions (subject=%s, topic=%s). "
-                    "Falling back to mock exam.",
-                    payload.get("subject"),
-                    payload.get("topic"),
-                )
-                return self._mock_exam(payload)
-            raise RuntimeError(f"RAG HTTP call failed: {exc}") from exc
-        except (httpx.HTTPError, TypeError, KeyError) as exc:
-            raise RuntimeError(f"RAG HTTP call failed: {exc}") from exc
+        raise RuntimeError(
+            "No GEMINI_API_KEY, RAG module not importable, and RAG_BASE_URL not set."
+        )
 
     def _generate_via_gemini(self, payload: dict[str, Any]) -> dict[str, Any]:
         import json
@@ -167,6 +172,61 @@ Rules:
 
         return {"questions": questions, "answer_key": answer_key}
 
+    def ask(self, payload: dict[str, Any]) -> dict[str, Any]:
+        if settings.mock_mode:
+            return self._mock_ask(payload)
+
+        # Try direct in-process call first
+        try:
+            from dotenv import load_dotenv
+            load_dotenv("rag/.env")
+            from rag.generate import generate_answer  # noqa: PLC0415
+
+            result = generate_answer(
+                query=payload["message"],
+                mode=payload["mode"],
+                subject=payload["subject"],
+                class_level=payload["class_level"],
+                pdf_context=payload.get("pdf_context"),
+            )
+            return {"response": result.get("response", ""), "sources": result.get("sources", [])}
+        except ImportError:
+            pass
+        except Exception as exc:
+            raise RuntimeError(f"RAG ask failed: {exc}") from exc
+
+        # HTTP fallback (RAG service only — no direct Gemini for study companion)
+        if not settings.rag_base_url:
+            raise RuntimeError(
+                "RAG module not importable and RAG_BASE_URL not set. "
+                "The study companion requires the RAG service to be available."
+            )
+        try:
+            with httpx.Client(timeout=settings.rag_timeout_seconds) as client:
+                response = client.post(
+                    f"{settings.rag_base_url}/ask",
+                    json={
+                        "query": payload["message"],
+                        "mode": payload["mode"],
+                        "subject": payload["subject"],
+                        "class_level": payload["class_level"],
+                        "pdf_context": payload.get("pdf_context"),
+                    },
+                )
+                response.raise_for_status()
+                data = response.json()
+            return {
+                "response": data.get("response", ""),
+                "sources": data.get("sources", []),
+            }
+        except httpx.ConnectError as exc:
+            raise RuntimeError(
+                f"RAG server at {settings.rag_base_url} is not reachable. "
+                "Run: uvicorn rag_server:app --port 8100"
+            ) from exc
+        except (httpx.HTTPError, TypeError, KeyError) as exc:
+            raise RuntimeError(f"RAG HTTP ask failed: {exc}") from exc
+
     def detect_weak_topics(self, payload: dict[str, Any]) -> list[dict[str, Any]]:
         if settings.mock_mode:
             return self._mock_weak_topics(payload)
@@ -189,6 +249,13 @@ Rules:
             return [self._normalize_weak_topic(topic) for topic in weak_topics]
         except (httpx.HTTPError, ValueError, TypeError, KeyError):
             return self._mock_weak_topics(payload)
+
+    def _mock_ask(self, payload: dict[str, Any]) -> dict[str, Any]:
+        return {
+            "response": f"[Mock mode] You asked: **{payload.get('message', '')}**\n\n"
+            "This is a mock response. Enable real RAG by setting MOCK_MODE=false.",
+            "sources": [],
+        }
 
     def _normalize_exam(
         self,

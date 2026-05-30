@@ -2,6 +2,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../common_widgets/molecules/app_card.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../../theme/color_tokens.dart';
 import '../../data/models/dashboard_models.dart';
 import 'section_header.dart';
@@ -19,7 +20,7 @@ class TopicAccuracyChart extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SectionHeader(title: 'Topic Accuracy'),
+        SectionHeader(title: AppLocalizations.of(context).dashTopicAccuracy),
         AppCard(
           child: SizedBox(
             height: 240,
@@ -72,11 +73,7 @@ class TopicAccuracyChart extends StatelessWidget {
                           borderRadius: const BorderRadius.vertical(
                             top: Radius.circular(6),
                           ),
-                          gradient: LinearGradient(
-                            colors: [color, color.withValues(alpha: 0.7)],
-                            begin: Alignment.bottomCenter,
-                            end: Alignment.topCenter,
-                          ),
+                          color: color,
                         ),
                       ],
                     );
@@ -102,7 +99,8 @@ class TopicAccuracyChart extends StatelessWidget {
                               ),
                             ),
                             TextSpan(
-                              text: '(${item.totalQuestions} Qs)',
+                              text: AppLocalizations.of(context)
+                                  .dashQuestionsCount(item.totalQuestions),
                               style: const TextStyle(
                                 color: Colors.white60,
                                 fontSize: 11,

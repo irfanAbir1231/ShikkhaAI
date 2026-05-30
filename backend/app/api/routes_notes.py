@@ -8,7 +8,8 @@ from app.api.routes_students import get_current_student
 from app.core.responses import success_response
 from app.db.models import Student
 from app.db.session import get_db
-from app.schemas.note import NoteCreate, NoteResponse
+from app.core.responses import AppError
+from app.schemas.note import NoteCreate, NoteGenerateRequest, NoteResponse
 from app.services.note_service import NoteService
 
 logger = logging.getLogger("shikkhaai")
@@ -23,6 +24,32 @@ def create_note(
     current_student: Student = Depends(get_current_student),
 ) -> dict[str, Any]:
     note = note_service.create_note(db=db, student_id=current_student.id, payload=payload)
+    return success_response(NoteResponse.model_validate(note).model_dump())
+
+
+@router.post("/generate")
+def generate_note(
+    payload: NoteGenerateRequest,
+    db: Session = Depends(get_db),
+    current_student: Student = Depends(get_current_student),
+) -> dict[str, Any]:
+    from app.services.note_generation_service import NoteGenerationService
+
+    gen_service = NoteGenerationService()
+    try:
+        note = gen_service.generate_note_for_topic(
+            db=db,
+            student_id=current_student.id,
+            topic=payload.topic,
+            subject=payload.subject,
+            class_level=current_student.grade_level,
+        )
+    except RuntimeError as exc:
+        raise AppError(
+            code="NOTE_GENERATION_FAILED",
+            message=str(exc),
+            status_code=503,
+        ) from exc
     return success_response(NoteResponse.model_validate(note).model_dump())
 
 

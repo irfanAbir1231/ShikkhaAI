@@ -8,6 +8,9 @@ abstract class StudyCompanionRepositoryInterface {
     required String query,
     required ExplanationMode mode,
     String? fileName,
+    required int studentId,
+    required String subject,
+    required String classLevel,
   });
 
   /// Gets all saved chat sessions, most recent first.

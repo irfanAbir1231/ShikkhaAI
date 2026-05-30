@@ -1,0 +1,539 @@
+{
+  "@@locale": "en",
+  "appName": "ShikkhaAI",
+
+  "navHome": "Home",
+  "navStudy": "Study",
+  "navExam": "Exam",
+  "navTopics": "Topics",
+  "navLibrary": "Library",
+  "navPlan": "Plan",
+
+  "commonCancel": "Cancel",
+  "commonConfirm": "Confirm",
+  "commonSave": "Save",
+  "commonDelete": "Delete",
+  "commonRetry": "Retry",
+  "commonClose": "Close",
+  "commonNext": "Next",
+  "commonBack": "Back",
+  "commonDone": "Done",
+  "commonContinue": "Continue",
+  "commonLoading": "Loading...",
+  "commonError": "Something went wrong",
+  "commonSearch": "Search",
+  "commonSeeAll": "See All",
+  "commonYes": "Yes",
+  "commonNo": "No",
+
+  "settingsTitle": "Settings",
+  "settingsAppearance": "Appearance",
+  "settingsSystemDefault": "System Default",
+  "settingsLight": "Light",
+  "settingsDark": "Dark",
+  "settingsLanguage": "Language",
+  "settingsLanguageEnglish": "English",
+  "settingsLanguageBangla": "বাংলা",
+  "settingsAccount": "Account",
+  "settingsLogOut": "Log Out",
+  "settingsLogOutSubtitle": "Sign out and return to login",
+  "settingsLogOutConfirmTitle": "Log Out?",
+  "settingsLogOutConfirmBody": "Are you sure you want to log out?",
+  "settingsResetOnboarding": "Reset Onboarding",
+  "settingsResetOnboardingSubtitle": "Clear all local data and restart setup",
+  "settingsAbout": "About",
+  "settingsVersion": "Version 1.0.0",
+
+  "drawerDashboard": "Dashboard",
+  "drawerStudyCompanion": "Study Companion",
+  "drawerSmartExam": "Smart Exam",
+  "drawerStudyPlan": "Study Plan",
+  "drawerAnalytics": "Analytics",
+  "drawerHelpFeedback": "Help & Feedback",
+  "drawerGreeting": "Hi, Student",
+  "drawerStreakTagline": "Keep up the streak!",
+  "drawerFooter": "ShikkhaAI · v1.0.0",
+
+  "splashTagline": "AI-powered study companion",
+  "appVersionShort": "v1.0.0",
+
+  "onboardSkip": "Skip",
+  "onboardGetStarted": "Get Started",
+  "onboard1Title": "Smart Study Companion",
+  "onboard1Desc": "Upload your textbooks and notes. ShikkhaAI reads, understands, and creates personalized study materials just for you.",
+  "onboard2Title": "AI-Powered Exams",
+  "onboard2Desc": "Generate custom exam questions from any chapter. Practice with instant feedback and detailed explanations.",
+  "onboard3Title": "Track Your Progress",
+  "onboard3Desc": "Visual dashboards, study plans, and performance analytics to help you improve consistently.",
+
+  "authValidateName": "Please enter your name",
+  "authValidateNameShort": "Name must be at least 2 characters",
+  "authValidateNameLong": "Name must be less than 120 characters",
+  "authValidateEmail": "Please enter your email",
+  "authValidateEmailInvalid": "Please enter a valid email address",
+  "authValidatePassword": "Please enter a password",
+  "authValidatePasswordShort": "Password must be at least 6 characters",
+  "authWelcomeBack": "Welcome Back",
+  "authCreateProfile": "Create Your Profile",
+  "authLoginSubtitle": "Sign in to continue your learning journey.",
+  "authRegisterSubtitle": "Tell us a little about yourself so we can personalize your study experience.",
+  "authFullName": "Full Name",
+  "authFullNameHint": "Enter your full name",
+  "authEmailLabel": "Email Address",
+  "authEmailHint": "your.email@example.com",
+  "authPassword": "Password",
+  "authPasswordHint": "Enter your password",
+  "authSignIn": "Sign In",
+  "authToggleToRegister": "Don't have an account? Register",
+  "authToggleToLogin": "Already have an account? Sign In",
+  "authSelectClass": "Select Your Class",
+  "authSelectClassSubtitle": "Choose your current class so we can tailor content to your curriculum.",
+  "authSubjectsAvailable": "{count} subjects available",
+  "@authSubjectsAvailable": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "authCompleteRegistration": "Complete Registration",
+
+  "homeGreeting": "Hello, Student 👋",
+  "homeSubtitle": "Ready to learn something new today?",
+  "homeQuickActions": "Quick actions",
+  "homeActionStudySubtitle": "AI explanations",
+  "homeActionExamSubtitle": "Adaptive quiz",
+  "homeActionAnalyticsSubtitle": "Track weaknesses",
+  "homeActionPlanSubtitle": "Plan your week",
+  "homeContinueWithAi": "Continue with AI",
+  "homeHeroSubtitle": "Ask anything · get instant clarity",
+  "homeTodaysFocus": "Today's Focus",
+  "homePracticeNow": "Practice Now",
+  "homeAccuracyPercent": "{percent}% accuracy",
+  "@homeAccuracyPercent": {
+    "placeholders": {
+      "percent": { "type": "String" }
+    }
+  },
+  "homeAllCaughtUp": "All Caught Up!",
+  "homeAllCaughtUpSubtitle": "No weak topics right now. Keep up the great work!",
+
+  "dashboardTitle": "Analytics",
+  "dashboardLoadFailed": "Failed to load dashboard",
+
+  "dashReadinessScore": "Readiness Score",
+  "dashOutOf100": "OUT OF 100",
+  "dashDayStreak": "{count} Day Streak",
+  "@dashDayStreak": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "dashLongestStreak": "Longest: {count} days",
+  "@dashLongestStreak": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "dashWeekdayInitials": "M,T,W,T,F,S,S",
+  "dashAiRecommendations": "AI Recommendations",
+  "priorityHigh": "HIGH",
+  "priorityMedium": "MED",
+  "priorityLow": "LOW",
+  "dashImprovementOverTime": "Improvement Over Time",
+  "dashTopicAccuracy": "Topic Accuracy",
+  "dashRecentQuizzes": "Recent Quizzes",
+  "dashViewAll": "View All",
+  "dashWeakSubjects": "Weak Subjects",
+  "dashQuestionsCount": "({count} Qs)",
+  "@dashQuestionsCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+
+  "analyticsTitle": "Weakness Analytics",
+  "analyticsAvgAccuracy": "Avg Accuracy",
+  "analyticsWeakChapters": "Weak Chapters",
+  "analyticsDayStreakLabel": "Day Streak",
+  "analyticsLoading": "Loading analytics...",
+  "analyticsLoadFailed": "Failed to load analytics",
+  "analyticsReadyToImprove": "Ready to improve?",
+  "analyticsWeakTopicsWaiting": "{count, plural, =1{1 weak topic waiting in the Exam tab.} other{{count} weak topics waiting in the Exam tab.}}",
+  "@analyticsWeakTopicsWaiting": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "analyticsLast7Days": "Last 7 Days",
+  "analyticsLast30Days": "Last 30 Days",
+  "analyticsLast90Days": "Last 90 Days",
+
+  "heatmapTitle": "Performance Heatmap",
+  "heatmapNoActivity": "No Activity Yet",
+  "heatmapNoActivityDesc": "Complete your first quiz to start tracking daily performance.",
+  "heatmapNoActivityDay": "No activity",
+  "legendHigh": "High",
+  "legendMid": "Mid",
+  "legendLow": "Low",
+  "legendNone": "None",
+  "analyticsWeekdayInitialsSun": "S,M,T,W,T,F,S",
+  "streakDailyStreak": "Daily Streak",
+  "streakDaysShort": "{count} days",
+  "@streakDaysShort": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "streakCurrent": "Current",
+  "streakBest": "Best",
+  "streakActive": "Active",
+  "radarTitle": "Topic Accuracy Radar",
+  "radarYourScore": "Your Score",
+  "radarBenchmark": "Benchmark",
+  "radarNotEnough": "Not Enough Data",
+  "radarNotEnoughDesc": "Attempt questions in at least 3 different topics to see your accuracy radar.",
+  "practiceTitle": "Personalized Practice",
+  "practiceNoteUnavailable": "Study note not available yet",
+  "practiceSavedToLibrary": "Saved to Library",
+  "practiceSaveAsNote": "Save as note",
+  "minutesShort": "{count} min",
+  "@minutesShort": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "impactPercent": "{percent}% impact",
+  "@impactPercent": {
+    "placeholders": { "percent": { "type": "String" } }
+  },
+  "weakChaptersDetected": "Weak Chapters Detected",
+  "minutesSpent": "{count} min spent",
+  "@minutesSpent": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+
+  "diffEasy": "Easy",
+  "diffMedium": "Medium",
+  "diffHard": "Hard",
+  "examTypePractice": "Practice",
+  "examTypeSsc": "SSC",
+  "examTypeHsc": "HSC",
+  "examTypePracticeSubtitle": "Customizable quick exam",
+  "examTypeSscSubtitle": "SSC Board Exam Style",
+  "examTypeHscSubtitle": "HSC Board Exam Style",
+  "qTypeMcq": "MCQ",
+  "qTypeShortAnswer": "Short Answer",
+  "qTypeCq": "CQ",
+
+  "examConfigTitle": "Configure Exam",
+  "examSubject": "Subject",
+  "examTopic": "Topic",
+  "examTopicHint": "e.g., Photosynthesis, Newton's Laws",
+  "examClassLevel": "Class Level",
+  "examClassN": "Class {level}",
+  "@examClassN": {
+    "placeholders": { "level": { "type": "String" } }
+  },
+  "examDifficulty": "Difficulty",
+  "examExamType": "Exam Type",
+  "examNumQuestions": "Number of Questions",
+  "examTimeLimit": "Time Limit",
+  "examPreview": "Exam Preview",
+  "examRowClass": "Class",
+  "examRowType": "Type",
+  "examRowQuestions": "Questions",
+  "examRowTime": "Time",
+  "examTotalMarks": "Total Marks",
+  "examGenerating": "Generating...",
+  "examStart": "Start Exam",
+  "examStartFailed": "Failed to start exam: {error}",
+  "@examStartFailed": {
+    "placeholders": { "error": { "type": "String" } }
+  },
+
+  "examFocusWeakTopics": "Focus on Weak Topics",
+  "examRecentExams": "Recent Exams",
+  "examNoExamsTitle": "No Exams Yet",
+  "examNoExamsMsg": "Generate your first AI-powered exam and start practicing.",
+  "examNewExam": "New Exam",
+  "examPracticeChip": "Practice",
+  "examStatExams": "Exams",
+  "examStatAvgScore": "Avg Score",
+  "examStatBest": "Best",
+  "examStartNewTitle": "Start a New Exam",
+  "examStartNewSubtitle": "Practice with MCQ, CQ, and Short Answer questions tailored to your level.",
+
+  "examSubmitTitle": "Submit Exam?",
+  "examSubmitBody": "You have answered {answered} out of {total} questions. Are you sure you want to submit?",
+  "@examSubmitBody": {
+    "placeholders": { "answered": { "type": "int" }, "total": { "type": "int" } }
+  },
+  "commonSubmit": "Submit",
+  "examNoQuestions": "No questions available",
+  "examPrevious": "Previous",
+  "examHideAnswer": "Hide Answer",
+  "examCheckAnswer": "Check Answer",
+  "examExplanation": "Explanation",
+  "examCorrectAnswerInline": "Correct Answer: {answer}",
+  "@examCorrectAnswerInline": {
+    "placeholders": { "answer": { "type": "String" } }
+  },
+  "examSubmissionFailedNoResult": "Submission failed: no result received",
+  "examSubmissionFailed": "Submission failed: {error}",
+  "@examSubmissionFailed": {
+    "placeholders": { "error": { "type": "String" } }
+  },
+
+  "examHistoryTitle": "Exam History",
+  "examNoHistoryTitle": "No History",
+  "examNoHistoryMsg": "Your completed exams will appear here.",
+  "examClearHistoryTitle": "Clear All History?",
+  "examClearHistoryBody": "This will permanently delete all exam results. This action cannot be undone.",
+  "examClearAll": "Clear All",
+  "timeMinutesAgo": "{count}m ago",
+  "@timeMinutesAgo": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "timeHoursAgo": "{count}h ago",
+  "@timeHoursAgo": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "timeYesterday": "Yesterday",
+  "timeDaysAgo": "{count} days ago",
+  "@timeDaysAgo": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+
+  "examResultTitle": "Exam Result",
+  "examResultNotFound": "Result not found",
+  "examGoHome": "Go Home",
+  "examHome": "Home",
+  "examStudyNotesGenerated": "Study Notes Generated",
+  "examStudyNotesSubtitle": "Tap a topic below to review your personalised study notes.",
+  "examAnswerReviewUnavailable": "Answer review not available for this attempt.",
+  "examSomeAnswersMissing": "Some answers may not be displayed ({answered}/{total} saved locally).",
+  "@examSomeAnswersMissing": {
+    "placeholders": { "answered": { "type": "int" }, "total": { "type": "int" } }
+  },
+
+  "qCardQuestionXofY": "Question {number} of {total}",
+  "@qCardQuestionXofY": {
+    "placeholders": { "number": { "type": "int" }, "total": { "type": "int" } }
+  },
+  "qCardMarks": "{count, plural, =1{1 Mark} other{{count} Marks}}",
+  "@qCardMarks": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "progressAnswered": "{count} Answered",
+  "@progressAnswered": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "progressMarked": "{count} Marked",
+  "@progressMarked": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "progressLeft": "{count} Left",
+  "@progressLeft": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "badgeAdaptive": "Adaptive",
+  "shortAnswerHint": "Type your answer here...",
+  "cqAnswerHint": "Answer for {part}",
+  "@cqAnswerHint": {
+    "placeholders": { "part": { "type": "String" } }
+  },
+
+  "answerReviewTitle": "Answer Review",
+  "answerYourAnswer": "Your Answer:",
+  "answerNotAnswered": "Not answered",
+  "answerCorrectAnswer": "Correct Answer:",
+  "answerMarks": "Marks:",
+  "qPrefix": "Q{index}: {prompt}",
+  "@qPrefix": {
+    "placeholders": { "index": { "type": "int" }, "prompt": { "type": "String" } }
+  },
+
+  "marksPrediction": "Marks Prediction",
+  "examConfidenceBadge": "{level} Confidence",
+  "@examConfidenceBadge": {
+    "placeholders": { "level": { "type": "String" } }
+  },
+  "examReadinessBadge": "Readiness: {value}%",
+  "@examReadinessBadge": {
+    "placeholders": { "value": { "type": "String" } }
+  },
+  "marksPredictionDesc": "Based on your current performance and consistency across topics.",
+
+  "summaryMarksObtained": "Marks Obtained",
+  "summaryMcq": "MCQ",
+  "summaryTime": "Time",
+  "summaryGrade": "Grade",
+
+  "weakGreatJob": "Great job!",
+  "weakNoWeakTopics": "No weak topics detected. Keep up the good work!",
+  "weakTopicsToReview": "Topics to Review",
+
+  "scModeEasyBengaliLabel": "Easy Bengali",
+  "scModeEasyBengaliSubtitle": "সহজ বাংলায় বুঝুন",
+  "scModeEasyEnglishLabel": "Easy English",
+  "scModeEasyEnglishSubtitle": "Simple English",
+  "scModeExplain10Label": "Explain Like I'm 10",
+  "scModeExplain10Subtitle": "Super simple!",
+  "scModeSummaryLabel": "Summary",
+  "scModeSummarySubtitle": "Quick overview",
+  "scModeImportantQLabel": "Important Questions",
+  "scModeImportantQSubtitle": "Key exam questions",
+  "scModeCommonMistakesLabel": "Common Mistakes",
+  "scModeCommonMistakesSubtitle": "Avoid errors",
+  "scModeExamTipsLabel": "Exam Tips",
+  "scModeExamTipsSubtitle": "Score higher",
+
+  "scTitle": "AI Study Companion",
+  "scNewChat": "New Chat",
+  "scStudyMode": "Study Mode",
+  "scWelcomeTagline": "Your personal tutor, always ready",
+  "scWelcomeQuestion": "What would you like to learn?",
+  "scWelcomeSubtitle": "Upload a chapter or ask a question. Choose an explanation mode below.",
+  "scQuickStart": "Quick Start",
+  "scSuggestion1": "Explain Photosynthesis",
+  "scSuggestion2": "Important questions from Chapter 3",
+  "scSuggestion3": "Common mistakes in algebra",
+  "scSuggestion4": "Exam tips for Biology",
+  "scSuggestion5": "Summary of Newton's Laws",
+  "scChatHistory": "Chat History",
+  "scConversationsCount": "{count, plural, =1{1 conversation} other{{count} conversations}}",
+  "@scConversationsCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "scClearHistoryTitle": "Clear all history?",
+  "scClearHistoryBody": "This will permanently delete all your chat sessions.",
+  "commonClear": "Clear",
+  "scNoConversations": "No conversations yet",
+  "scStartNewChat": "Start a new chat to begin learning!",
+  "scMessagesCount": "{count, plural, =1{1 message} other{{count} messages}}",
+  "@scMessagesCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "scInputHint": "Ask anything about your studies...",
+  "scFilePickError": "Could not pick file: {error}",
+  "@scFilePickError": {
+    "placeholders": { "error": { "type": "String" } }
+  },
+  "scAiExplanation": "AI Explanation",
+  "scAiNote": "AI Note",
+  "scCrossReferenced": "Cross-referenced with Class 8 Science",
+  "scSourceDefault": "Source",
+  "scSourcePage": "{source} — Page {page}",
+  "@scSourcePage": {
+    "placeholders": { "source": { "type": "String" }, "page": { "type": "String" } }
+  },
+
+  "taskReading": "Reading",
+  "taskPractice": "Practice",
+  "taskRevision": "Revision",
+  "taskMockTest": "Mock Test",
+  "taskRest": "Rest",
+
+  "planDefaultTitle": "Study Plan",
+  "planOtherPlans": "Other Plans",
+  "planCreateNew": "Create New Plan",
+  "planNoPlansTitle": "No Study Plan Yet",
+  "planNoPlansMsg": "Create a personalized study plan to track your progress and stay on schedule.",
+  "planCreatePlan": "Create Study Plan",
+  "planTodaysSchedule": "Today's Schedule",
+  "planTasksMinutes": "{tasks} tasks · {minutes} minutes",
+  "@planTasksMinutes": {
+    "placeholders": { "tasks": { "type": "int" }, "minutes": { "type": "int" } }
+  },
+  "planToday": "Today",
+  "planCreateTitle": "Create Study Plan",
+  "planGenerate": "Generate Plan",
+  "planWhenExam": "When is your exam?",
+  "planWhenExamDesc": "We'll create a schedule that leads up to your exam date.",
+  "planDaysLeftStacked": "days\nleft",
+  "planChangeDate": "Change Date",
+  "planDailyTimeQuestion": "How much time can you\nstudy daily?",
+  "planDailyTimeDesc": "We'll distribute your subjects across available time.",
+  "planMinutesPerDay": "{minutes} minutes per day",
+  "@planMinutesPerDay": {
+    "placeholders": { "minutes": { "type": "int" } }
+  },
+  "planStudyDuration": "Study Duration",
+  "planDaysValue": "{days} days",
+  "@planDaysValue": {
+    "placeholders": { "days": { "type": "int" } }
+  },
+  "planDailyStudyTime": "Daily Study Time",
+  "planTotalStudyHours": "Total Study Hours",
+  "planHoursValue": "{hours} hours",
+  "@planHoursValue": {
+    "placeholders": { "hours": { "type": "String" } }
+  },
+  "planSubjectsLabel": "Subjects",
+  "planGeneralStudy": "General Study",
+  "planDetailTitle": "Plan Detail",
+  "planNoScheduleDay": "No schedule for this day.",
+  "planDeleteTitle": "Delete Plan?",
+  "planDeleteBody": "This will permanently delete your study plan and all progress.",
+  "planDaysUntilExam": "{days} days until exam",
+  "@planDaysUntilExam": {
+    "placeholders": { "days": { "type": "int" } }
+  },
+  "planExamDay": "Exam day!",
+  "planTasksCount": "{completed}/{total} tasks",
+  "@planTasksCount": {
+    "placeholders": { "completed": { "type": "int" }, "total": { "type": "int" } }
+  },
+  "planHoursTotal": "{hours} hours total",
+  "@planHoursTotal": {
+    "placeholders": { "hours": { "type": "String" } }
+  },
+  "planMinPerDay": "{minutes} min/day",
+  "@planMinPerDay": {
+    "placeholders": { "minutes": { "type": "int" } }
+  },
+  "planMoreCount": "+{count} more",
+  "@planMoreCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "planExamDate": "Exam: {date}",
+  "@planExamDate": {
+    "placeholders": { "date": { "type": "String" } }
+  },
+  "taskResume": "Resume",
+  "taskStart": "Start",
+  "taskMinShort": "{minutes}m",
+  "@taskMinShort": {
+    "placeholders": { "minutes": { "type": "int" } }
+  },
+  "planRestDay": "Rest Day",
+  "planRestDayMsg": "Take a break and recharge for tomorrow!",
+  "planNoTasksDay": "No tasks scheduled for this day.",
+  "planTasksMinShort": "{tasks} Tasks · {minutes} min",
+  "@planTasksMinShort": {
+    "placeholders": { "tasks": { "type": "int" }, "minutes": { "type": "int" } }
+  },
+  "planTasksDone": "{completed}/{total} done",
+  "@planTasksDone": {
+    "placeholders": { "completed": { "type": "int" }, "total": { "type": "int" } }
+  },
+  "timerPause": "Pause",
+  "timerResume": "Resume",
+  "timerFinishEarly": "Finish Early",
+  "timerElapsed": "Elapsed: {time}",
+  "@timerElapsed": {
+    "placeholders": { "time": { "type": "String" } }
+  },
+  "completionTitle": "Session Complete!",
+  "completionBody": "You studied {subject} — {topic} for {minutes} minutes.",
+  "@completionBody": {
+    "placeholders": { "subject": { "type": "String" }, "topic": { "type": "String" }, "minutes": { "type": "int" } }
+  },
+  "completionPlanned": "Planned: {minutes} min",
+  "@completionPlanned": {
+    "placeholders": { "minutes": { "type": "int" } }
+  },
+  "completionActual": "Actual: {minutes} min",
+  "@completionActual": {
+    "placeholders": { "minutes": { "type": "int" } }
+  },
+  "completionAddTen": "+10 Minutes",
+  "completionMarkDone": "Mark as Done",
+  "practiceExamTitle": "Practice Exam?",
+  "practiceExamBody": "Would you like to take a practice exam on {topic}?",
+  "@practiceExamBody": {
+    "placeholders": { "topic": { "type": "String" } }
+  },
+  "practiceMaybeLater": "Maybe Later",
+  "practiceYesGo": "Yes, Let's Go!",
+  "pickerSelectWeak": "Select Weak Subjects",
+  "pickerSelectWeakDesc": "Choose subjects you want to focus on. You can also add your own.",
+  "pickerAddCustom": "Add custom subject..."
+}

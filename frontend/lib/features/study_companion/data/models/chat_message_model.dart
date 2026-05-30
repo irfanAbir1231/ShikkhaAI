@@ -13,6 +13,9 @@ class ChatMessage {
     this.fileName,
     this.filePath,
     this.isLoading = false,
+    this.sources,
+    this.pdfContext,
+    this.isSaved = false,
   });
 
   final String id;
@@ -23,6 +26,9 @@ class ChatMessage {
   final String? fileName;
   final String? filePath;
   final bool isLoading;
+  final List<Map<String, dynamic>>? sources;
+  final String? pdfContext;
+  final bool isSaved;
 
   bool get isUser => role == MessageRole.user;
   bool get isAi => role == MessageRole.ai;
@@ -37,6 +43,9 @@ class ChatMessage {
     String? fileName,
     String? filePath,
     bool? isLoading,
+    List<Map<String, dynamic>>? sources,
+    String? pdfContext,
+    bool? isSaved,
   }) {
     return ChatMessage(
       id: id ?? this.id,
@@ -47,6 +56,9 @@ class ChatMessage {
       fileName: fileName ?? this.fileName,
       filePath: filePath ?? this.filePath,
       isLoading: isLoading ?? this.isLoading,
+      sources: sources ?? this.sources,
+      pdfContext: pdfContext ?? this.pdfContext,
+      isSaved: isSaved ?? this.isSaved,
     );
   }
 
@@ -59,6 +71,9 @@ class ChatMessage {
         'fileName': fileName,
         'filePath': filePath,
         'isLoading': isLoading,
+        'sources': sources,
+        'pdfContext': pdfContext,
+        'isSaved': isSaved,
       };
 
   factory ChatMessage.fromJson(Map<String, dynamic> json) {
@@ -73,6 +88,11 @@ class ChatMessage {
       fileName: json['fileName'] as String?,
       filePath: json['filePath'] as String?,
       isLoading: json['isLoading'] as bool? ?? false,
+      sources: (json['sources'] as List?)
+          ?.map((e) => Map<String, dynamic>.from(e as Map))
+          .toList(),
+      pdfContext: json['pdfContext'] as String?,
+      isSaved: json['isSaved'] as bool? ?? false,
     );
   }
 

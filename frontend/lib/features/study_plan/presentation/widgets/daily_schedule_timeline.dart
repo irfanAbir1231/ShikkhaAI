@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../theme/color_tokens.dart';
 import '../../data/models/study_plan_models.dart';
 import '../providers/study_plan_provider.dart';
+import 'study_timer_widget.dart';
 
 /// Timeline view of tasks for a selected day.
 class DailyScheduleTimeline extends ConsumerWidget {
@@ -222,37 +223,49 @@ class _TimelineItem extends StatelessWidget {
                         ),
                   ),
                   const SizedBox(height: 8),
-                  Row(
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 4,
+                    crossAxisAlignment: WrapCrossAlignment.center,
                     children: [
-                      Icon(
-                        task.type.icon,
-                        size: 14,
-                        color: task.type.color,
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            task.type.icon,
+                            size: 14,
+                            color: task.type.color,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            task.type.label,
+                            style: textTheme.bodySmall?.copyWith(
+                                  color: task.type.color,
+                                  fontWeight: FontWeight.w500,
+                                  fontSize: 11,
+                                ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 4),
-                      Text(
-                        task.type.label,
-                        style: textTheme.bodySmall?.copyWith(
-                              color: task.type.color,
-                              fontWeight: FontWeight.w500,
-                              fontSize: 11,
-                            ),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.schedule,
+                            size: 14,
+                            color: AppColors.textSecondary,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${task.durationMinutes} min',
+                            style: textTheme.bodySmall?.copyWith(
+                                  color: AppColors.textSecondary,
+                                  fontSize: 11,
+                                ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 12),
-                      const Icon(
-                        Icons.schedule,
-                        size: 14,
-                        color: AppColors.textSecondary,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        '${task.durationMinutes} min',
-                        style: textTheme.bodySmall?.copyWith(
-                              color: AppColors.textSecondary,
-                              fontSize: 11,
-                            ),
-                      ),
-                      const Spacer(),
+                      const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 8,
@@ -270,6 +283,7 @@ class _TimelineItem extends StatelessWidget {
                               ),
                         ),
                       ),
+                      _TaskTimerAction(task: task),
                     ],
                   ),
                 ],
@@ -277,6 +291,49 @@ class _TimelineItem extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _TaskTimerAction extends StatelessWidget {
+  const _TaskTimerAction({required this.task});
+
+  final StudyTask task;
+
+  @override
+  Widget build(BuildContext context) {
+    if (task.isCompleted) {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.check_circle, size: 14, color: AppColors.success),
+          const SizedBox(width: 2),
+          Text(
+            '${task.actualMinutesSpent}m',
+            style: const TextStyle(
+              fontSize: 11,
+              color: AppColors.success,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      );
+    }
+    final label = task.startedAt != null ? 'Resume' : 'Start';
+    return SizedBox(
+      height: 30,
+      child: ElevatedButton.icon(
+        icon: const Icon(Icons.play_arrow, size: 14),
+        label: Text(label),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.primary,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+          textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+          minimumSize: const Size(0, 30),
+        ),
+        onPressed: () => showStudyTimer(context, task),
       ),
     );
   }

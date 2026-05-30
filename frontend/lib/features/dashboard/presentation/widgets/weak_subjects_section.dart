@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../common_widgets/animations/animated_scale_tap.dart';
 import '../../../../common_widgets/molecules/app_card.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../data/models/dashboard_models.dart';
 import 'section_header.dart';
 
@@ -16,7 +17,7 @@ class WeakSubjectsSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SectionHeader(title: 'Weak Subjects'),
+        SectionHeader(title: AppLocalizations.of(context).dashWeakSubjects),
         SizedBox(
           height: 160,
           child: ListView.separated(
@@ -70,7 +71,8 @@ class WeakSubjectsSection extends StatelessWidget {
                         ),
                         const SizedBox(height: 6),
                         Text(
-                          '${subject.accuracy.toInt()}% accuracy',
+                          AppLocalizations.of(context).homeAccuracyPercent(
+                              subject.accuracy.toInt().toString()),
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
                       ],

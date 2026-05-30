@@ -3,9 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../common_widgets/atoms/app_button.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../../routing/route_names.dart';
 import '../../../../theme/color_tokens.dart';
-import '../../../../theme/gradients.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../widgets/onboarding_page.dart';
 
@@ -21,44 +21,35 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
   final _controller = PageController();
   int _currentPage = 0;
 
-  final _pages = const [
-    _PageData(
-      icon: Icons.auto_stories_rounded,
-      title: 'Smart Study Companion',
-      description:
-          'Upload your textbooks and notes. ShikkhaAI reads, understands, and creates personalized study materials just for you.',
-      gradient: AppGradients.hero,
-    ),
-    _PageData(
-      icon: Icons.psychology_alt_rounded,
-      title: 'AI-Powered Exams',
-      description:
-          'Generate custom exam questions from any chapter. Practice with instant feedback and detailed explanations.',
-      gradient: LinearGradient(
-        colors: [Color(0xFF34D399), Color(0xFF059669)],
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-      ),
-    ),
-    _PageData(
-      icon: Icons.trending_up_rounded,
-      title: 'Track Your Progress',
-      description:
-          'Visual dashboards, study plans, and performance analytics to help you improve consistently.',
-      gradient: LinearGradient(
-        colors: [Color(0xFFFBBF24), Color(0xFFD97706)],
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-      ),
-    ),
-  ];
+  static const _pageCount = 3;
+
+  List<_PageData> _pages(AppLocalizations l10n) => [
+        _PageData(
+          icon: Icons.auto_stories_rounded,
+          title: l10n.onboard1Title,
+          description: l10n.onboard1Desc,
+          color: AppColors.primary,
+        ),
+        _PageData(
+          icon: Icons.psychology_alt_rounded,
+          title: l10n.onboard2Title,
+          description: l10n.onboard2Desc,
+          color: AppColors.success,
+        ),
+        _PageData(
+          icon: Icons.trending_up_rounded,
+          title: l10n.onboard3Title,
+          description: l10n.onboard3Desc,
+          color: AppColors.warning,
+        ),
+      ];
 
   void _onPageChanged(int page) {
     setState(() => _currentPage = page);
   }
 
   void _next() {
-    if (_currentPage < _pages.length - 1) {
+    if (_currentPage < _pageCount - 1) {
       _controller.nextPage(
         duration: const Duration(milliseconds: 500),
         curve: Curves.easeInOutCubic,
@@ -83,7 +74,9 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isLast = _currentPage == _pages.length - 1;
+    final l10n = AppLocalizations.of(context);
+    final pages = _pages(l10n);
+    final isLast = _currentPage == _pageCount - 1;
 
     return Scaffold(
       body: SafeArea(
@@ -99,7 +92,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   padding: const EdgeInsets.only(top: 8, right: 16),
                   child: TextButton(
                     onPressed: isLast ? null : _skip,
-                    child: const Text('Skip'),
+                    child: Text(l10n.onboardSkip),
                   ),
                 ),
               ),
@@ -110,14 +103,14 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
               child: PageView.builder(
                 controller: _controller,
                 onPageChanged: _onPageChanged,
-                itemCount: _pages.length,
+                itemCount: _pageCount,
                 itemBuilder: (context, index) {
-                  final page = _pages[index];
+                  final page = pages[index];
                   return OnboardingPage(
                     icon: page.icon,
                     title: page.title,
                     description: page.description,
-                    gradient: page.gradient,
+                    color: page.color,
                     delay: const Duration(milliseconds: 100),
                   );
                 },
@@ -133,7 +126,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   // Page indicators
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(_pages.length, (index) {
+                    children: List.generate(_pageCount, (index) {
                       final isActive = index == _currentPage;
                       return AnimatedContainer(
                         duration: const Duration(milliseconds: 300),
@@ -152,7 +145,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
                   ),
                   const SizedBox(height: 24),
                   AppButton(
-                    label: isLast ? 'Get Started' : 'Next',
+                    label: isLast ? l10n.onboardGetStarted : l10n.commonNext,
                     onPressed: _next,
                   ),
                 ],
@@ -170,11 +163,11 @@ class _PageData {
     required this.icon,
     required this.title,
     required this.description,
-    required this.gradient,
+    required this.color,
   });
 
   final IconData icon;
   final String title;
   final String description;
-  final Gradient gradient;
+  final Color color;
 }

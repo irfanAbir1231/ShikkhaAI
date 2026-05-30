@@ -1,6 +1,7 @@
 import '../../../../core/errors/exceptions.dart';
 import '../../../../core/network/exception_mapper.dart';
 import '../../../../core/utils/result.dart';
+import '../../../library/data/datasources/note_local_datasource.dart';
 import '../../domain/repositories/exam_repository_interface.dart';
 import '../datasources/exam_local_datasource.dart';
 import '../datasources/exam_remote_datasource.dart';
@@ -13,11 +14,14 @@ class ExamRepository implements ExamRepositoryInterface {
   ExamRepository({
     required ExamLocalDataSource localDataSource,
     ExamRemoteDataSource? remoteDataSource,
+    NoteLocalDataSource? noteLocalDataSource,
   })  : _local = localDataSource,
-        _remote = remoteDataSource ?? ExamRemoteDataSource();
+        _remote = remoteDataSource ?? ExamRemoteDataSource(),
+        _noteLocal = noteLocalDataSource;
 
   final ExamLocalDataSource _local;
   final ExamRemoteDataSource _remote;
+  final NoteLocalDataSource? _noteLocal;
 
   @override
   Future<Result<ExamSession>> generateExam(
@@ -40,6 +44,12 @@ class ExamRepository implements ExamRepositoryInterface {
   }) async {
     try {
       final result = await _remote.submitExam(session, studentId);
+      // Cache generated notes immediately so NoteDetailScreen shows fresh content
+      if (_noteLocal != null) {
+        for (final note in result.generatedNotes) {
+          await _noteLocal.saveNote(note);
+        }
+      }
       await _local.saveResult(result);
       await _local.saveSession(session.submit());
       return Result.success(result);
@@ -67,7 +77,7 @@ class ExamRepository implements ExamRepositoryInterface {
   Future<void> saveResult(ExamResult result) => _local.saveResult(result);
 
   @override
-  List<ExamResult> getResults() => _local.getResults();
+  List<ExamResult> getResults({required int studentId}) => _local.getResults(studentId: studentId);
 
   @override
   ExamResult? getResultByAttemptId(String attemptId) =>
@@ -85,5 +95,5 @@ class ExamRepository implements ExamRepositoryInterface {
   Future<void> clearAllResults() => _local.clearAllResults();
 
   @override
-  Map<String, dynamic> getStats() => _local.getStats();
+  Map<String, dynamic> getStats({required int studentId}) => _local.getStats(studentId: studentId);
 }

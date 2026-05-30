@@ -3,7 +3,8 @@ import 'dart:math' show pi;
 import 'package:flutter/material.dart';
 
 import '../../../../common_widgets/molecules/app_card.dart';
-import '../../../../theme/gradients.dart';
+import '../../../../l10n/app_localizations.dart';
+import '../../../../theme/color_tokens.dart';
 import '../../data/models/dashboard_models.dart';
 
 /// Animated circular readiness score with breakdown chips.
@@ -14,8 +15,8 @@ class ReadinessScoreCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final trendUp = data.trend >= 0;
     return AppCard(
-      gradient: AppGradients.hero,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -23,31 +24,34 @@ class ReadinessScoreCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Readiness Score',
+                AppLocalizations.of(context).dashReadinessScore,
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w600,
                     ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.white24,
-                  borderRadius: BorderRadius.circular(20),
+                  color: trendUp
+                      ? AppColors.successSoft
+                      : AppColors.dangerSoft,
+                  borderRadius: BorderRadius.circular(999),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
-                      data.trend >= 0 ? Icons.trending_up : Icons.trending_down,
-                      color: Colors.white,
+                      trendUp ? Icons.trending_up : Icons.trending_down,
+                      color: trendUp ? AppColors.success : AppColors.danger,
                       size: 16,
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      '${data.trend >= 0 ? '+' : ''}${data.trend.toStringAsFixed(1)}%',
-                      style: const TextStyle(
-                        color: Colors.white,
+                      '${trendUp ? '+' : ''}${data.trend.toStringAsFixed(1)}%',
+                      style: TextStyle(
+                        color: trendUp ? AppColors.success : AppColors.danger,
                         fontWeight: FontWeight.w600,
                         fontSize: 12,
                       ),
@@ -131,18 +135,18 @@ class _CircularScoreState extends State<_CircularScore>
                   Text(
                     '${(_animation.value * 100).toInt()}',
                     style: const TextStyle(
-                      fontSize: 48,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+                      fontSize: 44,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
                     ),
                   ),
-                  const Text(
-                    'OUT OF 100',
-                    style: TextStyle(
-                      fontSize: 11,
-                      fontWeight: FontWeight.w500,
-                      color: Colors.white70,
-                      letterSpacing: 1,
+                  Text(
+                    AppLocalizations.of(context).dashOutOf100,
+                    style: const TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textTertiary,
+                      letterSpacing: 1.2,
                     ),
                   ),
                 ],
@@ -166,21 +170,17 @@ class _RingPainter extends CustomPainter {
     final radius = (size.width - 16) / 2;
 
     final bgPaint = Paint()
-      ..color = Colors.white24
+      ..color = AppColors.divider
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 12
+      ..strokeWidth = 10
       ..strokeCap = StrokeCap.round;
 
     canvas.drawCircle(center, radius, bgPaint);
 
     final fgPaint = Paint()
-      ..shader = const SweepGradient(
-        colors: [Colors.white, Color(0xFF22D3EE)],
-        startAngle: 0,
-        endAngle: pi * 2,
-      ).createShader(Rect.fromCircle(center: center, radius: radius))
+      ..color = AppColors.primary
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 12
+      ..strokeWidth = 10
       ..strokeCap = StrokeCap.round;
 
     canvas.drawArc(
@@ -207,13 +207,13 @@ class _BreakdownChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.15),
-        borderRadius: BorderRadius.circular(8),
+        color: AppColors.primarySoft,
+        borderRadius: BorderRadius.circular(999),
       ),
       child: Text(
         '$label  ${value.toInt()}%',
         style: const TextStyle(
-          color: Colors.white,
+          color: AppColors.primaryDark,
           fontSize: 12,
           fontWeight: FontWeight.w600,
         ),

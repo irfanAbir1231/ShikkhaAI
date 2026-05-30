@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../theme/color_tokens.dart';
 import '../models/dashboard_models.dart';
 
 /// Mock service that simulates network delay and returns rich dashboard data.
@@ -24,25 +25,25 @@ class MockDashboardService {
         WeakSubject(
           name: 'Physics',
           accuracy: 52,
-          color: Color(0xFF6366F1),
+          color: AppColors.primary,
           icon: Icons.science,
         ),
         WeakSubject(
           name: 'Chemistry',
           accuracy: 61,
-          color: Color(0xFF22D3EE),
+          color: AppColors.primaryLight,
           icon: Icons.biotech,
         ),
         WeakSubject(
           name: 'Higher Math',
           accuracy: 45,
-          color: Color(0xFFF87171),
+          color: AppColors.danger,
           icon: Icons.calculate,
         ),
         WeakSubject(
           name: 'Biology',
           accuracy: 68,
-          color: Color(0xFF34D399),
+          color: AppColors.success,
           icon: Icons.eco,
         ),
       ],

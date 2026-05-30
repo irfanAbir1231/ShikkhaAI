@@ -35,8 +35,8 @@ abstract class ExamRepositoryInterface {
   /// Persists a graded result to local storage.
   Future<void> saveResult(ExamResult result);
 
-  /// Retrieves all graded results.
-  List<ExamResult> getResults();
+  /// Retrieves all graded results for a specific student.
+  List<ExamResult> getResults({required int studentId});
 
   /// Retrieves a specific result by attempt ID.
   ExamResult? getResultByAttemptId(String attemptId);
@@ -50,6 +50,6 @@ abstract class ExamRepositoryInterface {
   /// Clears all results.
   Future<void> clearAllResults();
 
-  /// Gets aggregate statistics for the exam shell screen.
-  Map<String, dynamic> getStats();
+  /// Gets aggregate statistics for the exam shell screen for a specific student.
+  Map<String, dynamic> getStats({required int studentId});
 }

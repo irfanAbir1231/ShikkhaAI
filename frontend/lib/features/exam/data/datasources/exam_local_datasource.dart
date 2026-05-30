@@ -50,9 +50,10 @@ class ExamLocalDataSource {
     await _resultsBox.put(result.attemptId, result.toJsonString());
   }
 
-  List<ExamResult> getResults() {
+  List<ExamResult> getResults({required int studentId}) {
     return _resultsBox.values
         .map((json) => ExamResult.fromJsonString(json))
+        .where((r) => r.studentId == studentId)
         .toList()
       ..sort((a, b) => b.submittedAt.compareTo(a.submittedAt));
   }
@@ -82,8 +83,8 @@ class ExamLocalDataSource {
   }
 
   /// Stats for the exam shell screen.
-  Map<String, dynamic> getStats() {
-    final results = getResults();
+  Map<String, dynamic> getStats({required int studentId}) {
+    final results = getResults(studentId: studentId);
     if (results.isEmpty) {
       return {
         'totalExams': 0,

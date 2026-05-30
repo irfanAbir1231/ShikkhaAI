@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../l10n/app_localizations.dart';
 import '../../../../theme/color_tokens.dart';
 
 /// Small chip showing "Adaptive" with spark icon.
@@ -17,18 +18,18 @@ class AdaptiveDifficultyBadge extends StatelessWidget {
           color: AppColors.primary.withValues(alpha: 0.2),
         ),
       ),
-      child: const Row(
+      child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
+          const Icon(
             Icons.auto_fix_high,
             color: AppColors.primary,
             size: 14,
           ),
-          SizedBox(width: 4),
+          const SizedBox(width: 4),
           Text(
-            'Adaptive',
-            style: TextStyle(
+            AppLocalizations.of(context).badgeAdaptive,
+            style: const TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
               color: AppColors.primary,

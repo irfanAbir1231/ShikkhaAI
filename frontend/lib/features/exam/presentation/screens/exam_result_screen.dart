@@ -4,8 +4,11 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../common_widgets/animations/animated_fade_slide.dart';
 import '../../../../common_widgets/organisms/app_bar.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../../routing/route_names.dart';
 import '../../../../theme/color_tokens.dart';
+import '../../../library/data/models/note_model.dart';
+import '../../../library/presentation/providers/note_provider.dart';
 import '../../data/models/exam_result_model.dart';
 import '../providers/exam_provider.dart';
 import '../widgets/answer_review_card.dart';
@@ -46,13 +49,21 @@ class _ExamResultScreenState extends ConsumerState<ExamResultScreen> {
         _result = current;
         _loaded = true;
       });
+      _refreshNotesProvider(current.generatedNotes);
     } else if (fromRepo != null) {
       setState(() {
         _result = fromRepo;
         _loaded = true;
       });
+      _refreshNotesProvider(fromRepo.generatedNotes);
     } else {
       setState(() => _loaded = true);
+    }
+  }
+
+  void _refreshNotesProvider(List<NoteModel> notes) {
+    if (notes.isNotEmpty) {
+      ref.read(notesRefreshProvider.notifier).state++;
     }
   }
 
@@ -73,11 +84,12 @@ class _ExamResultScreenState extends ConsumerState<ExamResultScreen> {
   @override
   Widget build(BuildContext context) {
     final result = _result;
+    final l10n = AppLocalizations.of(context);
 
     if (result == null && !_loaded) {
-      return const Scaffold(
-        appBar: CustomAppBar(title: 'Exam Result'),
-        body: Center(
+      return Scaffold(
+        appBar: CustomAppBar(title: l10n.examResultTitle),
+        body: const Center(
           child: CircularProgressIndicator(color: AppColors.primary),
         ),
       );
@@ -85,21 +97,21 @@ class _ExamResultScreenState extends ConsumerState<ExamResultScreen> {
 
     if (result == null) {
       return Scaffold(
-        appBar: const CustomAppBar(title: 'Exam Result'),
+        appBar: CustomAppBar(title: l10n.examResultTitle),
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Icon(Icons.error_outline, size: 48, color: AppColors.danger),
               const SizedBox(height: 16),
-              const Text(
-                'Result not found',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+              Text(
+                l10n.examResultNotFound,
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
               ),
               const SizedBox(height: 8),
               ElevatedButton(
                 onPressed: () => context.go(RouteNames.home),
-                child: const Text('Go Home'),
+                child: Text(l10n.examGoHome),
               ),
             ],
           ),
@@ -109,7 +121,7 @@ class _ExamResultScreenState extends ConsumerState<ExamResultScreen> {
 
     return Scaffold(
       appBar: CustomAppBar(
-        title: 'Exam Result',
+        title: l10n.examResultTitle,
         leading: IconButton(
           icon: const Icon(Icons.close),
           onPressed: () => context.pop(),
@@ -137,6 +149,11 @@ class _ExamResultScreenState extends ConsumerState<ExamResultScreen> {
                     child: WeakTopicsList(weakTopics: result.weakTopics),
                   ),
                   const SizedBox(height: 24),
+                  AnimatedFadeSlide(
+                    delay: const Duration(milliseconds: 250),
+                    child: _buildGeneratedNotes(result.generatedNotes),
+                  ),
+                  const SizedBox(height: 24),
                   // Answer review would need the questions - fetch from session
                   _buildAnswerReview(result),
                   const SizedBox(height: 100),
@@ -161,7 +178,7 @@ class _ExamResultScreenState extends ConsumerState<ExamResultScreen> {
                 child: OutlinedButton.icon(
                   onPressed: () => context.pop(),
                   icon: const Icon(Icons.home_outlined),
-                  label: const Text('Home'),
+                  label: Text(l10n.examHome),
                 ),
               ),
               const SizedBox(width: 12),
@@ -169,7 +186,7 @@ class _ExamResultScreenState extends ConsumerState<ExamResultScreen> {
                 child: ElevatedButton.icon(
                   onPressed: _retryExam,
                   icon: const Icon(Icons.replay),
-                  label: const Text('Retry'),
+                  label: Text(l10n.commonRetry),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
@@ -183,14 +200,98 @@ class _ExamResultScreenState extends ConsumerState<ExamResultScreen> {
     );
   }
 
+  Widget _buildGeneratedNotes(List<NoteModel> notes) {
+    if (notes.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(
+              Icons.auto_stories,
+              color: AppColors.primary,
+              size: 20,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              AppLocalizations.of(context).examStudyNotesGenerated,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Text(
+          AppLocalizations.of(context).examStudyNotesSubtitle,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: AppColors.textSecondary,
+              ),
+        ),
+        const SizedBox(height: 12),
+        ...notes.map((note) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Material(
+              color: AppColors.cardBg,
+              borderRadius: BorderRadius.circular(12),
+              clipBehavior: Clip.antiAlias,
+              child: InkWell(
+                onTap: () => context.push(
+                  '${RouteNames.library}/${RouteNames.libraryNoteDetail.replaceFirst(':id', note.id)}',
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              note.title,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              note.topic,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: AppColors.textSecondary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const Icon(
+                        Icons.chevron_right,
+                        color: AppColors.textSecondary,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          );
+        }),
+      ],
+    );
+  }
+
   Widget _buildAnswerReview(ExamResult result) {
     final session = ref.read(examRepositoryProvider).getSessionById(result.examId);
     if (session == null) {
-      return const Padding(
-        padding: EdgeInsets.only(top: 24),
+      return Padding(
+        padding: const EdgeInsets.only(top: 24),
         child: Text(
-          'Answer review not available for this attempt.',
-          style: TextStyle(
+          AppLocalizations.of(context).examAnswerReviewUnavailable,
+          style: const TextStyle(
             fontSize: 14,
             color: AppColors.textSecondary,
           ),
@@ -221,7 +322,7 @@ class _ExamResultScreenState extends ConsumerState<ExamResultScreen> {
                 ),
                 child: Row(
                   children: [
-                    Icon(
+                    const Icon(
                       Icons.info_outline,
                       color: AppColors.warning,
                       size: 18,
@@ -229,8 +330,9 @@ class _ExamResultScreenState extends ConsumerState<ExamResultScreen> {
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
-                        'Some answers may not be displayed ($answeredCount/${session.totalQuestions} saved locally).',
-                        style: TextStyle(
+                        AppLocalizations.of(context).examSomeAnswersMissing(
+                            answeredCount, session.totalQuestions),
+                        style: const TextStyle(
                           fontSize: 13,
                           color: AppColors.warning,
                           height: 1.4,

@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import '../../../library/data/models/note_model.dart';
+
 /// Feedback for a single short-answer question.
 class ShortAnswerFeedback {
   const ShortAnswerFeedback({
@@ -109,6 +111,7 @@ class ExamResult {
     this.subject = '',
     this.topic = '',
     this.difficulty = '',
+    this.generatedNotes = const [],
   });
 
   final String attemptId;
@@ -128,6 +131,7 @@ class ExamResult {
   final String subject;
   final String topic;
   final String difficulty;
+  final List<NoteModel> generatedNotes;
 
   /// Grade letter based on score percentage.
   String get grade {
@@ -174,6 +178,7 @@ class ExamResult {
             shortAnswerFeedback.map((f) => f.toJson()).toList(),
         'weakTopics': weakTopics.map((t) => t.toJson()).toList(),
         'mcqFeedback': mcqFeedback.map((f) => f.toJson()).toList(),
+        'generatedNotes': generatedNotes.map((n) => n.toJson()).toList(),
         'readinessScore': readinessScore,
         'timeTakenSeconds': timeTakenSeconds,
         'submittedAt': submittedAt.toIso8601String(),
@@ -202,6 +207,10 @@ class ExamResult {
           const [],
       mcqFeedback: (json['mcqFeedback'] as List<dynamic>?)
               ?.map((e) => McqFeedback.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          const [],
+      generatedNotes: (json['generatedNotes'] as List<dynamic>?)
+              ?.map((e) => NoteModel.fromJson(e as Map<String, dynamic>))
               .toList() ??
           const [],
       readinessScore: (json['readinessScore'] as num).toDouble(),

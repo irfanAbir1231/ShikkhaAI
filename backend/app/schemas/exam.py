@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -105,6 +106,20 @@ class McqFeedback(BaseModel):
     submitted_answer: str = ""
 
 
+class GeneratedNote(BaseModel):
+    model_config = ConfigDict(from_attributes=True, extra="forbid")
+
+    id: int
+    title: str
+    content: str
+    topic: str | None
+    subject: str | None
+    class_level: str | None
+    source: str
+    created_at: datetime
+    updated_at: datetime | None
+
+
 class ExamSubmitResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -118,6 +133,7 @@ class ExamSubmitResponse(BaseModel):
     readiness_score: float
     short_answer_feedback: list[ShortAnswerFeedback]
     mcq_feedback: list[McqFeedback] = Field(default_factory=list)
+    generated_notes: list[GeneratedNote] = Field(default_factory=list)
 
 
 # ─── History Response Schemas ────────────────────────────────────────────────

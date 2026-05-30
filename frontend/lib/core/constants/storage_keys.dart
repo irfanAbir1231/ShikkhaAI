@@ -17,6 +17,7 @@ class StorageKeys {
   static const String chatSessionsBox = 'chat_sessions';
   static const String chatSettingsBox = 'chat_settings';
   static const String topicsBox = 'topics';
+  static const String appPrefsBox = 'app_prefs';
 
   // Settings keys
   static const String isDarkMode = 'is_dark_mode';

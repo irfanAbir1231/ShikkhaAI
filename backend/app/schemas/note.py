@@ -15,6 +15,13 @@ class NoteCreate(BaseModel):
     source: Literal["study_companion", "practice", "topic_notes"] = "study_companion"
 
 
+class NoteGenerateRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    topic: str = Field(min_length=1, max_length=150)
+    subject: str = Field(min_length=1, max_length=100)
+
+
 class NoteResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True, extra="forbid")
 

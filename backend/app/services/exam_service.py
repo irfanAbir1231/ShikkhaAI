@@ -217,6 +217,7 @@ class ExamService:
             db=db,
             student_id=payload.student_id,
             question_results=grade_result.question_results,
+            subject=exam.subject,
         )
         weak_topics = self.profile_service.detect_weak_topics(
             db=db,
@@ -258,18 +259,20 @@ class ExamService:
 
         # ── Auto-generate notes for weak topics ────────────────────────────────
         # Runs after attempt is saved — failure here never breaks the response
+        generated_notes: list[Any] = []
         if weak_topics:
-            generated_notes = self.note_generation_service.generate_notes_for_weak_topics(
+            notes = self.note_generation_service.generate_notes_for_weak_topics(
                 db=db,
                 student_id=payload.student_id,
                 weak_topics=weak_topics,
                 subject=exam.subject,
                 class_level=exam.class_level,
             )
-            if generated_notes:
+            if notes:
+                generated_notes = notes
                 logger.info(
                     "Auto-generated %d note(s) for student_id=%s weak topics",
-                    len(generated_notes),
+                    len(notes),
                     payload.student_id,
                 )
 
@@ -284,4 +287,5 @@ class ExamService:
             readiness_score=attempt.readiness_score,
             short_answer_feedback=attempt.short_answer_feedback,
             mcq_feedback=grade_result.mcq_feedback,
+            generated_notes=generated_notes,
         )

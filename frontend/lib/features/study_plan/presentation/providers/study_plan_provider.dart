@@ -57,6 +57,15 @@ class StudyPlansNotifier extends StateNotifier<List<StudyPlan>> {
     state = state.map((p) => p.id == planId ? updated : p).toList();
   }
 
+  Future<void> updateTask(
+    String planId,
+    String dayDate,
+    StudyTask updatedTask,
+  ) async {
+    final updated = await _repo.updateTask(planId, dayDate, updatedTask);
+    state = state.map((p) => p.id == planId ? updated : p).toList();
+  }
+
   Future<void> deletePlan(String id) async {
     await _repo.deletePlan(id);
     state = state.where((p) => p.id != id).toList();

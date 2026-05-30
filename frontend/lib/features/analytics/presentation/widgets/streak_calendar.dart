@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../../../common_widgets/molecules/app_card.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../../theme/color_tokens.dart';
-import '../../../../theme/gradients.dart';
+
 import '../../data/models/analytics_models.dart';
 
 /// Calendar-style streak visualization with flame icons and day badges.
@@ -14,7 +15,8 @@ class StreakCalendar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final days = data.last30Days;
-    final weekDayLabels = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+    final l10n = AppLocalizations.of(context);
+    final weekDayLabels = l10n.analyticsWeekdayInitialsSun.split(',');
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -24,7 +26,7 @@ class StreakCalendar extends StatelessWidget {
           child: Row(
             children: [
               Text(
-                'Daily Streak',
+                l10n.streakDailyStreak,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
@@ -33,8 +35,8 @@ class StreakCalendar extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
-                  gradient: AppGradients.warning,
                   borderRadius: BorderRadius.circular(20),
+                  color: const Color(0xFF8B5A2B),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -46,7 +48,7 @@ class StreakCalendar extends StatelessWidget {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      '${data.currentStreak} days',
+                      l10n.streakDaysShort(data.currentStreak),
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: Colors.white,
                             fontWeight: FontWeight.w600,
@@ -70,19 +72,19 @@ class StreakCalendar extends StatelessWidget {
                 children: [
                   _StreakStat(
                     value: data.currentStreak.toString(),
-                    label: 'Current',
+                    label: l10n.streakCurrent,
                     icon: Icons.local_fire_department,
-                    iconColor: AppColors.warning,
+                    iconColor: AppColors.primary,
                   ),
                   _StreakStat(
                     value: data.longestStreak.toString(),
-                    label: 'Best',
+                    label: l10n.streakBest,
                     icon: Icons.emoji_events,
                     iconColor: AppColors.success,
                   ),
                   _StreakStat(
                     value: '${days.where((d) => d.isActive).length}',
-                    label: 'Active',
+                    label: l10n.streakActive,
                     icon: Icons.check_circle,
                     iconColor: AppColors.primary,
                   ),
@@ -174,7 +176,7 @@ class _DayCell extends StatelessWidget {
           child: day.isActive
               ? const Icon(
                   Icons.local_fire_department,
-                  color: AppColors.warning,
+                  color: AppColors.primary,
                   size: 18,
                 )
               : Text(

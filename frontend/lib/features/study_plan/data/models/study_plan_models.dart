@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../../../../l10n/app_localizations.dart';
+import '../../../../theme/color_tokens.dart';
+
 /// Type of study task.
 enum TaskType {
   reading,
@@ -20,6 +23,16 @@ extension TaskTypeExt on TaskType {
     };
   }
 
+  String localizedLabel(AppLocalizations l10n) {
+    return switch (this) {
+      TaskType.reading => l10n.taskReading,
+      TaskType.practice => l10n.taskPractice,
+      TaskType.revision => l10n.taskRevision,
+      TaskType.mockTest => l10n.taskMockTest,
+      TaskType.rest => l10n.taskRest,
+    };
+  }
+
   IconData get icon {
     return switch (this) {
       TaskType.reading => Icons.menu_book,
@@ -32,11 +45,11 @@ extension TaskTypeExt on TaskType {
 
   Color get color {
     return switch (this) {
-      TaskType.reading => const Color(0xFF6366F1),
-      TaskType.practice => const Color(0xFF22D3EE),
-      TaskType.revision => const Color(0xFFFBBF24),
-      TaskType.mockTest => const Color(0xFF34D399),
-      TaskType.rest => const Color(0xFF94A3B8),
+      TaskType.reading => AppColors.primary,
+      TaskType.practice => AppColors.primaryLight,
+      TaskType.revision => AppColors.warning,
+      TaskType.mockTest => AppColors.success,
+      TaskType.rest => AppColors.textTertiary,
     };
   }
 }
@@ -116,6 +129,9 @@ class StudyTask {
     required this.type,
     this.isCompleted = false,
     required this.scheduledDate,
+    this.actualMinutesSpent = 0,
+    this.startedAt,
+    this.completedAt,
   });
 
   final String id;
@@ -127,6 +143,9 @@ class StudyTask {
   final TaskType type;
   final bool isCompleted;
   final DateTime scheduledDate;
+  final int actualMinutesSpent;
+  final DateTime? startedAt;
+  final DateTime? completedAt;
 
   StudyTask copyWith({
     String? id,
@@ -138,6 +157,9 @@ class StudyTask {
     TaskType? type,
     bool? isCompleted,
     DateTime? scheduledDate,
+    int? actualMinutesSpent,
+    DateTime? startedAt,
+    DateTime? completedAt,
   }) {
     return StudyTask(
       id: id ?? this.id,
@@ -149,6 +171,9 @@ class StudyTask {
       type: type ?? this.type,
       isCompleted: isCompleted ?? this.isCompleted,
       scheduledDate: scheduledDate ?? this.scheduledDate,
+      actualMinutesSpent: actualMinutesSpent ?? this.actualMinutesSpent,
+      startedAt: startedAt ?? this.startedAt,
+      completedAt: completedAt ?? this.completedAt,
     );
   }
 
@@ -162,6 +187,9 @@ class StudyTask {
         'type': type.name,
         'isCompleted': isCompleted,
         'scheduledDate': scheduledDate.toIso8601String(),
+        'actualMinutesSpent': actualMinutesSpent,
+        'startedAt': startedAt?.toIso8601String(),
+        'completedAt': completedAt?.toIso8601String(),
       };
 
   factory StudyTask.fromJson(Map<String, dynamic> json) => StudyTask(
@@ -174,6 +202,13 @@ class StudyTask {
         type: TaskType.values.byName(json['type'] as String),
         isCompleted: json['isCompleted'] as bool,
         scheduledDate: DateTime.parse(json['scheduledDate'] as String),
+        actualMinutesSpent: json['actualMinutesSpent'] as int? ?? 0,
+        startedAt: json['startedAt'] != null
+            ? DateTime.parse(json['startedAt'] as String)
+            : null,
+        completedAt: json['completedAt'] != null
+            ? DateTime.parse(json['completedAt'] as String)
+            : null,
       );
 }
 

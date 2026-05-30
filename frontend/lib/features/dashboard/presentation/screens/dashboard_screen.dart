@@ -4,6 +4,7 @@ import 'package:shimmer/shimmer.dart';
 
 import '../../../../common_widgets/animations/animated_fade_slide.dart';
 import '../../../../common_widgets/organisms/app_bar.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../../theme/color_tokens.dart';
 import '../providers/dashboard_provider.dart';
 import '../widgets/ai_recommendations_section.dart';
@@ -23,10 +24,10 @@ class DashboardScreen extends ConsumerWidget {
     final asyncData = ref.watch(dashboardDataProvider);
 
     return Scaffold(
-      appBar: const CustomAppBar(
-        title: 'Analytics',
+      appBar: CustomAppBar(
+        title: AppLocalizations.of(context).dashboardTitle,
         showGradient: true,
-        actions: [
+        actions: const [
           Padding(
             padding: EdgeInsets.only(right: 16),
             child: Icon(
@@ -45,17 +46,18 @@ class DashboardScreen extends ConsumerWidget {
   }
 }
 
-class _DashboardContent extends StatelessWidget {
+class _DashboardContent extends ConsumerWidget {
   const _DashboardContent({required this.data});
 
   final dynamic data;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return RefreshIndicator(
       color: AppColors.primary,
       onRefresh: () async {
-        // Riverpod will auto-refresh when the provider is invalidated.
+        ref.invalidate(dashboardDataProvider);
+        await ref.read(dashboardDataProvider.future);
       },
       child: CustomScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
@@ -137,7 +139,7 @@ class _DashboardSkeleton extends StatelessWidget {
               itemBuilder: (_, __) => Container(
                 width: 160,
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: const Color(0xFFD0D5DD),
                   borderRadius: BorderRadius.circular(16),
                 ),
               ),
@@ -163,7 +165,7 @@ class _DashboardSkeleton extends StatelessWidget {
       height: height,
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color(0xFFD0D5DD),
         borderRadius: BorderRadius.circular(16),
       ),
     );
@@ -175,20 +177,20 @@ class _DashboardSkeleton extends StatelessWidget {
       width: 140,
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color(0xFFD0D5DD),
         borderRadius: BorderRadius.circular(6),
       ),
     );
   }
 }
 
-class _DashboardError extends StatelessWidget {
+class _DashboardError extends ConsumerWidget {
   const _DashboardError({required this.message});
 
   final String message;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -202,7 +204,7 @@ class _DashboardError extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'Failed to load dashboard',
+              AppLocalizations.of(context).dashboardLoadFailed,
               style: Theme.of(context).textTheme.headlineSmall,
               textAlign: TextAlign.center,
             ),
@@ -216,9 +218,9 @@ class _DashboardError extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             ElevatedButton.icon(
-              onPressed: () {},
+              onPressed: () => ref.invalidate(dashboardDataProvider),
               icon: const Icon(Icons.refresh),
-              label: const Text('Retry'),
+              label: Text(AppLocalizations.of(context).commonRetry),
             ),
           ],
         ),

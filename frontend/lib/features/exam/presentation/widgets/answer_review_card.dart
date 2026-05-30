@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../common_widgets/molecules/app_card.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../../theme/color_tokens.dart';
 import '../../data/models/exam_answer_model.dart';
 import '../../data/models/exam_question_model.dart';
@@ -24,9 +25,9 @@ class AnswerReviewCard extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Answer Review',
-          style: TextStyle(
+        Text(
+          AppLocalizations.of(context).answerReviewTitle,
+          style: const TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w700,
             color: AppColors.textPrimary,
@@ -159,7 +160,10 @@ class _ReviewItem extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Q$index: ${question.prompt.substring(0, question.prompt.length > 80 ? 80 : question.prompt.length)}${question.prompt.length > 80 ? '...' : ''}',
+                      AppLocalizations.of(context).qPrefix(
+                        index,
+                        '${question.prompt.substring(0, question.prompt.length > 80 ? 80 : question.prompt.length)}${question.prompt.length > 80 ? '...' : ''}',
+                      ),
                       style: const TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
@@ -169,26 +173,28 @@ class _ReviewItem extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     _AnswerRow(
-                      label: 'Your Answer:',
-                      value: userAnswer.isEmpty ? 'Not answered' : userAnswer,
+                      label: AppLocalizations.of(context).answerYourAnswer,
+                      value: userAnswer.isEmpty
+                          ? AppLocalizations.of(context).answerNotAnswered
+                          : userAnswer,
                       color: AppColors.textSecondary,
                     ),
                     if (correctAnswer.isNotEmpty)
                       _AnswerRow(
-                        label: 'Correct Answer:',
+                        label: AppLocalizations.of(context).answerCorrectAnswer,
                         value: correctAnswer,
                         color: AppColors.success,
                       ),
                     if (question.isMcq)
                       _AnswerRow(
-                        label: 'Marks:',
+                        label: AppLocalizations.of(context).answerMarks,
                         value: '${isCorrect ? question.marks : 0} / ${question.marks}',
                         color: statusColor,
                       )
                     else if (shortFeedback.awardedMarks > 0 ||
                         shortFeedback.status != 'unknown')
                       _AnswerRow(
-                        label: 'Marks:',
+                        label: AppLocalizations.of(context).answerMarks,
                         value: '${shortFeedback.awardedMarks.toStringAsFixed(1)} / ${question.marks}',
                         color: statusColor,
                       ),

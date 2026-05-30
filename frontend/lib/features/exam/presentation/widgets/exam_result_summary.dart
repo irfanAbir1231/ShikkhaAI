@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../../theme/gradients.dart';
+import '../../../../l10n/app_localizations.dart';
+
 import '../../data/models/exam_result_model.dart';
 
 /// Circular score indicator with grade and breakdown.
@@ -11,11 +12,27 @@ class ExamResultSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        gradient: AppGradients.hero,
         borderRadius: BorderRadius.circular(20),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFFB87A4B), Color(0xFF8B5A2B), Color(0xFF6B3E1F)],
+        ),
+        border: Border.all(
+          color: const Color(0xFFC19A6B).withValues(alpha: 0.5),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF6B3E1F).withValues(alpha: 0.3),
+            offset: const Offset(0, 4),
+            blurRadius: 10,
+            spreadRadius: -2,
+          ),
+        ],
       ),
       child: Column(
         children: [
@@ -39,7 +56,7 @@ class ExamResultSummary extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            'Marks Obtained',
+            l10n.summaryMarksObtained,
             style: TextStyle(
               fontSize: 14,
               color: Colors.white.withValues(alpha: 0.8),
@@ -50,15 +67,15 @@ class ExamResultSummary extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               _StatItem(
-                label: 'MCQ',
+                label: l10n.summaryMcq,
                 value: '${result.mcqCorrect}/${result.mcqTotal}',
               ),
               _StatItem(
-                label: 'Time',
+                label: l10n.summaryTime,
                 value: result.formattedTimeTaken,
               ),
               _StatItem(
-                label: 'Grade',
+                label: l10n.summaryGrade,
                 value: result.grade,
               ),
             ],

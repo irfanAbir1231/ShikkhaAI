@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../../common_widgets/molecules/app_card.dart';
-import '../../../../theme/gradients.dart';
+import '../../../../l10n/app_localizations.dart';
+import '../../../../theme/color_tokens.dart';
 import '../../data/models/dashboard_models.dart';
 
 /// Daily streak card with flame icon and weekly activity dots.
@@ -10,12 +11,11 @@ class DailyStreakCard extends StatelessWidget {
 
   final StreakData data;
 
-  static const List<String> _days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final days = l10n.dashWeekdayInitials.split(',');
     return AppCard(
-      gradient: AppGradients.warning,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -24,12 +24,12 @@ class DailyStreakCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: Colors.white24,
+                  color: AppColors.warningSoft,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
                   Icons.local_fire_department,
-                  color: Colors.white,
+                  color: AppColors.warning,
                   size: 28,
                 ),
               ),
@@ -39,17 +39,17 @@ class DailyStreakCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '${data.currentStreak} Day Streak',
+                      l10n.dashDayStreak(data.currentStreak),
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            color: Colors.white,
+                            color: AppColors.textPrimary,
                             fontWeight: FontWeight.w700,
                           ),
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Longest: ${data.longestStreak} days',
+                      l10n.dashLongestStreak(data.longestStreak),
                       style: const TextStyle(
-                        color: Colors.white70,
+                        color: AppColors.textSecondary,
                         fontSize: 13,
                       ),
                     ),
@@ -69,24 +69,24 @@ class DailyStreakCard extends StatelessWidget {
                     width: 36,
                     height: 36,
                     decoration: BoxDecoration(
-                      color: active
-                          ? Colors.white
-                          : Colors.white.withValues(alpha: 0.15),
+                      color: active ? AppColors.warning : AppColors.divider,
                       shape: BoxShape.circle,
                     ),
                     child: active
                         ? const Icon(
                             Icons.check,
-                            color: Color(0xFFD97706),
+                            color: Colors.white,
                             size: 18,
                           )
                         : null,
                   ),
                   const SizedBox(height: 6),
                   Text(
-                    _days[index],
+                    days[index],
                     style: TextStyle(
-                      color: active ? Colors.white : Colors.white60,
+                      color: active
+                          ? AppColors.textPrimary
+                          : AppColors.textTertiary,
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                     ),

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../common_widgets/atoms/app_button.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../../theme/color_tokens.dart';
 import '../../data/models/exam_question_model.dart';
 import '../../data/models/exam_answer_model.dart';
@@ -46,26 +47,27 @@ class _ExamSessionScreenState extends ConsumerState<ExamSessionScreen> {
     final session = ref.read(examSessionProvider);
     if (session == null) return;
 
+    final l10n = AppLocalizations.of(context);
     showDialog<void>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Submit Exam?'),
+        title: Text(l10n.examSubmitTitle),
         content: Text(
-          'You have answered ${session.answeredCount} out of ${session.totalQuestions} questions. Are you sure you want to submit?',
+          l10n.examSubmitBody(session.answeredCount, session.totalQuestions),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(l10n.commonCancel),
           ),
           TextButton(
             onPressed: () {
               Navigator.pop(context);
               _submitExam();
             },
-            child: const Text(
-              'Submit',
-              style: TextStyle(color: AppColors.primary),
+            child: Text(
+              l10n.commonSubmit,
+              style: const TextStyle(color: AppColors.primary),
             ),
           ),
         ],
@@ -82,13 +84,13 @@ class _ExamSessionScreenState extends ConsumerState<ExamSessionScreen> {
         context.go('/exam/result/${result.attemptId}');
       } else if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Submission failed: no result received')),
+          SnackBar(content: Text(AppLocalizations.of(context).examSubmissionFailedNoResult)),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Submission failed: $e')),
+          SnackBar(content: Text(AppLocalizations.of(context).examSubmissionFailed('$e'))),
         );
       }
     } finally {
@@ -109,10 +111,11 @@ class _ExamSessionScreenState extends ConsumerState<ExamSessionScreen> {
       );
     }
 
+    final l10n = AppLocalizations.of(context);
     final question = session.currentQuestion;
     if (question == null) {
-      return const Scaffold(
-        body: Center(child: Text('No questions available')),
+      return Scaffold(
+        body: Center(child: Text(l10n.examNoQuestions)),
       );
     }
 
@@ -143,9 +146,9 @@ class _ExamSessionScreenState extends ConsumerState<ExamSessionScreen> {
         actions: [
           TextButton(
             onPressed: _showSubmitDialog,
-            child: const Text(
-              'Submit',
-              style: TextStyle(
+            child: Text(
+              l10n.commonSubmit,
+              style: const TextStyle(
                 color: AppColors.danger,
                 fontWeight: FontWeight.w700,
               ),
@@ -188,7 +191,7 @@ class _ExamSessionScreenState extends ConsumerState<ExamSessionScreen> {
                           _showFeedback ? Icons.visibility_off : Icons.visibility,
                           size: 18,
                         ),
-                        label: Text(_showFeedback ? 'Hide Answer' : 'Check Answer'),
+                        label: Text(_showFeedback ? l10n.examHideAnswer : l10n.examCheckAnswer),
                       ),
                     ),
                     if (_showFeedback && question.explanation != null) ...[
@@ -207,9 +210,9 @@ class _ExamSessionScreenState extends ConsumerState<ExamSessionScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text(
-                                'Explanation',
-                                style: TextStyle(
+                              Text(
+                                l10n.examExplanation,
+                                style: const TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w700,
                                   color: AppColors.success,
@@ -227,7 +230,7 @@ class _ExamSessionScreenState extends ConsumerState<ExamSessionScreen> {
                               if (question.correctAnswer != null) ...[
                                 const SizedBox(height: 8),
                                 Text(
-                                  'Correct Answer: ${question.correctAnswer}',
+                                  l10n.examCorrectAnswerInline('${question.correctAnswer}'),
                                   style: const TextStyle(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w700,
@@ -259,7 +262,7 @@ class _ExamSessionScreenState extends ConsumerState<ExamSessionScreen> {
                 children: [
                   Expanded(
                     child: AppButton(
-                      label: 'Previous',
+                      label: l10n.examPrevious,
                       variant: AppButtonVariant.secondary,
                       onPressed: isFirst
                           ? null
@@ -273,7 +276,7 @@ class _ExamSessionScreenState extends ConsumerState<ExamSessionScreen> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: AppButton(
-                      label: isLast ? 'Submit' : 'Next',
+                      label: isLast ? l10n.commonSubmit : l10n.commonNext,
                       onPressed: () {
                         if (isLast) {
                           _showSubmitDialog();

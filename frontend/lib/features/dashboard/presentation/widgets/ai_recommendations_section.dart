@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../../../../common_widgets/animations/animated_scale_tap.dart';
 import '../../../../common_widgets/molecules/app_card.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../../theme/color_tokens.dart';
-import '../../../../theme/gradients.dart';
+import '../../../../theme/neu_decoration.dart';
 import '../../data/models/dashboard_models.dart';
 import 'section_header.dart';
 
@@ -18,7 +19,7 @@ class AIRecommendationsSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SectionHeader(title: 'AI Recommendations'),
+        SectionHeader(title: AppLocalizations.of(context).dashAiRecommendations),
         ListView.separated(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
@@ -39,13 +40,15 @@ class AIRecommendationsSection extends StatelessWidget {
                   children: [
                     Container(
                       padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        gradient: _typeGradient(rec.type),
-                        borderRadius: BorderRadius.circular(12),
+                      decoration: NeuDecoration.colored(
+                        color: _typeColor(rec.type),
+                        radius: 12,
                       ),
                       child: Icon(
                         _typeIcon(rec.type),
-                        color: Colors.white,
+                        color: _typeColor(rec.type) == AppColors.warning
+                            ? AppColors.textPrimary
+                            : Colors.white,
                         size: 20,
                       ),
                     ),
@@ -96,12 +99,12 @@ class AIRecommendationsSection extends StatelessWidget {
     };
   }
 
-  Gradient _typeGradient(RecommendationType type) {
+  Color _typeColor(RecommendationType type) {
     return switch (type) {
-      RecommendationType.study => AppGradients.hero,
-      RecommendationType.practice => AppGradients.success,
-      RecommendationType.review => AppGradients.warning,
-      RecommendationType.challenge => AppGradients.danger,
+      RecommendationType.study => AppColors.primary,
+      RecommendationType.practice => AppColors.success,
+      RecommendationType.review => AppColors.warning,
+      RecommendationType.challenge => AppColors.danger,
     };
   }
 
@@ -127,10 +130,11 @@ class _PriorityBadge extends StatelessWidget {
       RecommendationPriority.low => AppColors.success,
     };
 
+    final l10n = AppLocalizations.of(context);
     final label = switch (priority) {
-      RecommendationPriority.high => 'HIGH',
-      RecommendationPriority.medium => 'MED',
-      RecommendationPriority.low => 'LOW',
+      RecommendationPriority.high => l10n.priorityHigh,
+      RecommendationPriority.medium => l10n.priorityMedium,
+      RecommendationPriority.low => l10n.priorityLow,
     };
 
     return Container(

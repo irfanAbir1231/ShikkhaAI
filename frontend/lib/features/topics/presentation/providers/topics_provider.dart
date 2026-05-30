@@ -4,6 +4,7 @@ import 'package:hive/hive.dart';
 import '../../../../core/constants/storage_keys.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
 import '../../data/datasources/topics_local_datasource.dart';
+import '../../data/datasources/topics_remote_datasource.dart';
 import '../../data/models/topic_models.dart';
 import '../../domain/repositories/topics_repository.dart';
 
@@ -14,6 +15,7 @@ final topicsRepositoryProvider = Provider<TopicsRepository>((ref) {
   final topicsBox = Hive.box<String>(StorageKeys.topicsBox);
   return TopicsRepository(
     localDataSource: TopicsLocalDataSource(topicsBox: topicsBox),
+    remoteDataSource: TopicsRemoteDataSource(),
   );
 });
 

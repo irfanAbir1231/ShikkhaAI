@@ -19,6 +19,15 @@ abstract class StudyPlanRepositoryInterface {
     bool isCompleted,
   );
 
+  /// Replace a single task with an updated copy (preserves all fields, not
+  /// just `isCompleted`). Used by the study timer to persist
+  /// `actualMinutesSpent`, `startedAt`, `completedAt`.
+  Future<StudyPlan> updateTask(
+    String planId,
+    String dayDate,
+    StudyTask updatedTask,
+  );
+
   /// Update an entire plan.
   Future<void> updatePlan(StudyPlan plan);
 

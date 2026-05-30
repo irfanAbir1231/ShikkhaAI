@@ -14,6 +14,7 @@ import '../features/exam/presentation/screens/exam_session_screen.dart';
 import '../features/exam/presentation/screens/exam_shell_screen.dart';
 import '../features/home/presentation/screens/home_screen.dart';
 import '../features/library/presentation/screens/library_screen.dart';
+import '../features/library/presentation/screens/note_detail_screen.dart';
 import '../features/onboarding/presentation/screens/onboarding_screen.dart';
 import '../features/settings/presentation/screens/settings_screen.dart';
 import '../features/splash/presentation/screens/splash_screen.dart';
@@ -22,6 +23,7 @@ import '../features/study_plan/presentation/screens/plan_create_screen.dart';
 import '../features/study_plan/presentation/screens/plan_detail_screen.dart';
 import '../features/study_plan/presentation/screens/plan_shell_screen.dart';
 import '../features/topics/presentation/screens/topics_shell_screen.dart';
+import '../features/auth/presentation/providers/auth_providers.dart';
 import 'route_guards.dart';
 import 'route_names.dart';
 
@@ -57,10 +59,16 @@ Widget _authTransition(
 
 /// Global [GoRouter] provider.
 final appRouterProvider = Provider<GoRouter>((ref) {
+  final notifier = ValueNotifier<int>(ref.read(authRefreshProvider));
+  ref.listen<int>(authRefreshProvider, (prev, next) {
+    if (prev != next) notifier.value = next;
+  });
+
   return GoRouter(
     navigatorKey: _rootNavigatorKey,
     initialLocation: RouteNames.splash,
     redirect: authGuard,
+    refreshListenable: notifier,
     routes: [
       // Splash
       GoRoute(
@@ -183,6 +191,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: RouteNames.library,
                 builder: (context, state) => const LibraryScreen(),
+                routes: [
+                  GoRoute(
+                    path: RouteNames.libraryNoteDetail,
+                    builder: (context, state) {
+                      final id = state.pathParameters['id']!;
+                      return NoteDetailScreen(noteId: id);
+                    },
+                  ),
+                ],
               ),
             ],
           ),

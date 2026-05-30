@@ -2,6 +2,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../common_widgets/molecules/app_card.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../../theme/color_tokens.dart';
 import '../../data/models/dashboard_models.dart';
 import 'section_header.dart';
@@ -17,7 +18,7 @@ class ImprovementGraph extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SectionHeader(title: 'Improvement Over Time'),
+        SectionHeader(title: AppLocalizations.of(context).dashImprovementOverTime),
         AppCard(
           child: SizedBox(
             height: 220,
@@ -94,14 +95,7 @@ class ImprovementGraph extends StatelessWidget {
                       color: AppColors.primary,
                       belowBarData: BarAreaData(
                         show: true,
-                        gradient: LinearGradient(
-                          colors: [
-                            AppColors.primary.withValues(alpha: 0.3),
-                            AppColors.primary.withValues(alpha: 0.02),
-                          ],
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                        ),
+                        color: AppColors.primary.withValues(alpha: 0.15),
                       ),
                       dotData: FlDotData(
                         show: true,

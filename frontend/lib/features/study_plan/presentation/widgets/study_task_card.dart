@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../../../../l10n/app_localizations.dart';
 import '../../../../theme/color_tokens.dart';
 import '../../data/models/study_plan_models.dart';
+import 'study_timer_widget.dart';
 
 /// Beautiful task card with checkbox, type badge, and animated completion.
 class StudyTaskCard extends StatelessWidget {
@@ -17,6 +19,7 @@ class StudyTaskCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 300),
@@ -66,15 +69,12 @@ class StudyTaskCard extends StatelessWidget {
                           vertical: 3,
                         ),
                         decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              task.type.color.withValues(alpha: 0.15),
-                              task.type.color.withValues(alpha: 0.05),
-                            ],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
+                          color: task.type.color.withValues(alpha: 0.15),
                           borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: task.type.color.withValues(alpha: 0.3),
+                            width: 1.2,
+                          ),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -86,7 +86,7 @@ class StudyTaskCard extends StatelessWidget {
                             ),
                             const SizedBox(width: 4),
                             Text(
-                              task.type.label,
+                              task.type.localizedLabel(l10n),
                               style: textTheme.bodySmall?.copyWith(
                                     color: task.type.color,
                                     fontWeight: FontWeight.w600,
@@ -137,23 +137,29 @@ class StudyTaskCard extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 3,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.primary.withValues(alpha: 0.06),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      task.subject,
-                      style: textTheme.bodySmall?.copyWith(
-                            color: AppColors.primary,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w500,
-                          ),
-                    ),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.06),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          task.subject,
+                          style: textTheme.bodySmall?.copyWith(
+                                color: AppColors.primary,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w500,
+                              ),
+                        ),
+                      ),
+                      const Spacer(),
+                      _buildTaskAction(context),
+                    ],
                   ),
                 ],
               ),
@@ -161,6 +167,39 @@ class StudyTaskCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildTaskAction(BuildContext context) {
+    if (task.isCompleted) {
+      return Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.check_circle, size: 16, color: AppColors.success),
+          const SizedBox(width: 4),
+          Text(
+            '${task.actualMinutesSpent} min',
+            style: const TextStyle(
+              fontSize: 11,
+              color: AppColors.success,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      );
+    }
+    final label = task.startedAt != null ? 'Resume' : 'Start';
+    return ElevatedButton.icon(
+      icon: const Icon(Icons.play_arrow, size: 16),
+      label: Text(label),
+      style: ElevatedButton.styleFrom(
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+        minimumSize: const Size(0, 32),
+      ),
+      onPressed: () => showStudyTimer(context, task),
     );
   }
 }

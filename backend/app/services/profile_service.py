@@ -13,6 +13,7 @@ class ProfileService:
         db: Session,
         student_id: int,
         question_results: list[dict[str, Any]],
+        subject: str,
     ) -> list[str]:
         topic_scores: dict[str, list[float]] = {}
         for result in question_results:
@@ -25,6 +26,7 @@ class ProfileService:
             performance = db.scalar(
                 select(TopicPerformance).where(
                     TopicPerformance.student_id == student_id,
+                    TopicPerformance.subject == subject,
                     TopicPerformance.topic == topic,
                 )
             )
@@ -32,6 +34,7 @@ class ProfileService:
             if performance is None:
                 performance = TopicPerformance(
                     student_id=student_id,
+                    subject=subject,
                     topic=topic,
                     attempts_count=1,
                     average_score=topic_score,

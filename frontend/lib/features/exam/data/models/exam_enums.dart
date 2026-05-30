@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../l10n/app_localizations.dart';
 import '../../../../theme/color_tokens.dart';
 
 /// Types of questions supported in an exam.
@@ -13,6 +14,14 @@ enum QuestionType {
       QuestionType.mcq => 'MCQ',
       QuestionType.shortAnswer => 'Short Answer',
       QuestionType.cq => 'CQ',
+    };
+  }
+
+  String localizedLabel(AppLocalizations l10n) {
+    return switch (this) {
+      QuestionType.mcq => l10n.qTypeMcq,
+      QuestionType.shortAnswer => l10n.qTypeShortAnswer,
+      QuestionType.cq => l10n.qTypeCq,
     };
   }
 
@@ -48,6 +57,14 @@ enum ExamDifficulty {
     };
   }
 
+  String localizedLabel(AppLocalizations l10n) {
+    return switch (this) {
+      ExamDifficulty.easy => l10n.diffEasy,
+      ExamDifficulty.medium => l10n.diffMedium,
+      ExamDifficulty.hard => l10n.diffHard,
+    };
+  }
+
   Color get color {
     return switch (this) {
       ExamDifficulty.easy => AppColors.success,
@@ -80,11 +97,27 @@ enum ExamType {
     };
   }
 
+  String localizedLabel(AppLocalizations l10n) {
+    return switch (this) {
+      ExamType.practice => l10n.examTypePractice,
+      ExamType.ssc => l10n.examTypeSsc,
+      ExamType.hsc => l10n.examTypeHsc,
+    };
+  }
+
   String get subtitle {
     return switch (this) {
       ExamType.practice => 'Customizable quick exam',
       ExamType.ssc => 'SSC Board Exam Style',
       ExamType.hsc => 'HSC Board Exam Style',
+    };
+  }
+
+  String localizedSubtitle(AppLocalizations l10n) {
+    return switch (this) {
+      ExamType.practice => l10n.examTypePracticeSubtitle,
+      ExamType.ssc => l10n.examTypeSscSubtitle,
+      ExamType.hsc => l10n.examTypeHscSubtitle,
     };
   }
 

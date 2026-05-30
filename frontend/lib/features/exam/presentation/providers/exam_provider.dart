@@ -4,8 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive/hive.dart';
 
 import '../../../../core/constants/storage_keys.dart';
+import '../../../../theme/color_tokens.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../auth/presentation/providers/auth_providers.dart';
+import '../../../library/data/datasources/note_local_datasource.dart';
 import '../../data/datasources/exam_local_datasource.dart';
 import '../../data/models/exam_config_model.dart';
 
@@ -20,11 +22,13 @@ final examRepositoryProvider = Provider<ExamRepository>(
   (ref) {
     final sessionsBox = Hive.box<String>(StorageKeys.examSessionsBox);
     final resultsBox = Hive.box<String>(StorageKeys.examResultsBox);
+    final notesBox = Hive.box<String>(StorageKeys.savedNotesBox);
     return ExamRepository(
       localDataSource: ExamLocalDataSource(
         sessionsBox: sessionsBox,
         resultsBox: resultsBox,
       ),
+      noteLocalDataSource: NoteLocalDataSource(notesBox),
     );
   },
 );
@@ -41,18 +45,32 @@ final examConfigProvider = StateProvider<ExamConfig>(
 // ------------------------------------------------------------------
 final examHistoryProvider =
     StateNotifierProvider<ExamHistoryNotifier, List<ExamResult>>(
-  (ref) => ExamHistoryNotifier(ref.watch(examRepositoryProvider)),
+  (ref) => ExamHistoryNotifier(
+    ref.watch(examRepositoryProvider),
+    ref,
+  ),
 );
 
 class ExamHistoryNotifier extends StateNotifier<List<ExamResult>> {
-  ExamHistoryNotifier(this._repo) : super([]) {
+  ExamHistoryNotifier(this._repo, this._ref) : super([]) {
     loadResults();
   }
 
   final ExamRepository _repo;
+  final Ref _ref;
+
+  int? get _currentStudentId {
+    final student = _ref.read(authRepositoryProvider).currentStudent;
+    return student?.id;
+  }
 
   void loadResults() {
-    state = _repo.getResults();
+    final studentId = _currentStudentId;
+    if (studentId == null) {
+      state = [];
+      return;
+    }
+    state = _repo.getResults(studentId: studentId);
   }
 
   Future<void> deleteResult(String attemptId) async {
@@ -65,7 +83,18 @@ class ExamHistoryNotifier extends StateNotifier<List<ExamResult>> {
     loadResults();
   }
 
-  Map<String, dynamic> getStats() => _repo.getStats();
+  Map<String, dynamic> getStats() {
+    final studentId = _currentStudentId;
+    if (studentId == null) {
+      return {
+        'totalExams': 0,
+        'averageScore': 0.0,
+        'bestScore': 0.0,
+        'totalTimeSeconds': 0,
+      };
+    }
+    return _repo.getStats(studentId: studentId);
+  }
 }
 
 // ------------------------------------------------------------------
@@ -267,17 +296,17 @@ final examTimerProvider = Provider.family<String, int?>((ref, totalSeconds) {
 // ------------------------------------------------------------------
 final examTimerColorProvider = Provider<Color>((ref) {
   final session = ref.watch(examSessionProvider);
-  if (session == null) return Colors.green;
+  if (session == null) return AppColors.success;
 
   final remaining = session.timeRemainingSeconds;
   final total = session.config.timeLimitMinutes * 60;
-  if (total == 0) return Colors.green;
+  if (total == 0) return AppColors.success;
 
   final ratio = remaining / total;
-  if (remaining <= 300) return Colors.red; // last 5 min
-  if (ratio < 0.25) return Colors.orange;
-  if (ratio < 0.5) return Colors.amber;
-  return Colors.green;
+  if (remaining <= 300) return AppColors.danger; // last 5 min
+  if (ratio < 0.25) return AppColors.primary;
+  if (ratio < 0.5) return AppColors.warning;
+  return AppColors.success;
 });
 
 // ------------------------------------------------------------------

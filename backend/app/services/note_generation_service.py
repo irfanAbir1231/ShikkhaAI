@@ -65,6 +65,65 @@ class NoteGenerationService:
 
         return generated
 
+    # ── public on-demand generation ───────────────────────────────────────────
+
+    def generate_note_for_topic(
+        self,
+        db: Session,
+        student_id: int,
+        topic: str,
+        subject: str,
+        class_level: str,
+    ) -> Note:
+        if not settings.gemini_api_key:
+            raise RuntimeError("GEMINI_API_KEY not configured")
+
+        content = self._call_gemini_for_topic(
+            topic=topic,
+            subject=subject,
+            class_level=class_level,
+        )
+
+        from sqlalchemy import select
+
+        existing = db.scalar(
+            select(Note).where(
+                Note.student_id == student_id,
+                Note.topic == topic,
+                Note.subject == subject,
+                Note.source == "topic_notes",
+            )
+        )
+
+        if existing:
+            existing.content = content
+            existing.updated_at = utc_now()
+            note = existing
+            logger.info(
+                "Updated topic note id=%s student_id=%s topic=%s",
+                note.id,
+                student_id,
+                topic,
+            )
+        else:
+            note = Note(
+                student_id=student_id,
+                title=f"Study Notes: {topic}",
+                content=content,
+                topic=topic,
+                subject=subject,
+                class_level=class_level,
+                source="topic_notes",
+            )
+            db.add(note)
+            logger.info(
+                "Created topic note student_id=%s topic=%s", student_id, topic
+            )
+
+        safe_commit(db)
+        db.refresh(note)
+        return note
+
     # ── internals ─────────────────────────────────────────────────────────────
 
     def _generate_and_save(
@@ -89,6 +148,7 @@ class NoteGenerationService:
             select(Note).where(
                 Note.student_id == student_id,
                 Note.topic == topic,
+                Note.subject == subject,
                 Note.source == "practice",
             )
         )
@@ -156,6 +216,43 @@ Generate clear, concise study notes to help them improve. Structure the response
 
 Keep the language simple and suitable for a Class {class_level} student.
 Write in English. Be concise — aim for under 300 words total.
+Output markdown ONLY. No preamble."""
+
+        client = genai.Client(api_key=settings.gemini_api_key)
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt,
+        )
+        return response.text.strip()
+
+    def _call_gemini_for_topic(
+        self,
+        topic: str,
+        subject: str,
+        class_level: str,
+    ) -> str:
+        from google import genai
+
+        prompt = f"""You are ShikkhaAI, a helpful tutor for Bangladeshi Class {class_level} students.
+
+Generate clear, comprehensive study notes on the topic: **{topic}** ({subject}).
+
+Structure the response as markdown with these sections:
+
+## Key Concepts
+(4-5 bullet points of the most important ideas)
+
+## Important Details
+(Formulas, definitions, or key facts to memorise — skip if not applicable)
+
+## Common Mistakes
+(2-3 mistakes students typically make and how to avoid them)
+
+## Quick Practice Tips
+(2-3 actionable tips the student can do right now)
+
+Keep the language simple and suitable for a Class {class_level} student.
+Write in English. Be concise but thorough — aim for 300-500 words.
 Output markdown ONLY. No preamble."""
 
         client = genai.Client(api_key=settings.gemini_api_key)

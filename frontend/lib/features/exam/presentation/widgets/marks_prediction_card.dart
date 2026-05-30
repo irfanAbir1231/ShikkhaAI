@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../../../../common_widgets/molecules/app_card.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../../theme/color_tokens.dart';
-import '../../../../theme/gradients.dart';
 import '../../data/models/exam_result_model.dart';
 
 /// Gradient card showing predicted marks based on readiness score.
@@ -16,24 +16,25 @@ class MarksPredictionCard extends StatelessWidget {
     final predicted = result.predictedMarks;
     final confidence = result.predictionConfidence;
     final readiness = result.readinessScore;
+    final l10n = AppLocalizations.of(context);
 
     return AppCard(
       padding: const EdgeInsets.all(20),
-      gradient: AppGradients.cardShine,
+      backgroundColor: AppColors.cardBg,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(
+              const Icon(
                 Icons.trending_up,
                 color: AppColors.primary,
                 size: 22,
               ),
-              SizedBox(width: 8),
+              const SizedBox(width: 8),
               Text(
-                'Marks Prediction',
-                style: TextStyle(
+                l10n.marksPrediction,
+                style: const TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w700,
                   color: AppColors.textPrimary,
@@ -68,7 +69,7 @@ class MarksPredictionCard extends StatelessWidget {
           Row(
             children: [
               _Badge(
-                label: '$confidence Confidence',
+                label: l10n.examConfidenceBadge(confidence),
                 color: confidence == 'High'
                     ? AppColors.success
                     : confidence == 'Medium'
@@ -77,15 +78,15 @@ class MarksPredictionCard extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               _Badge(
-                label: 'Readiness: ${readiness.toStringAsFixed(1)}%',
+                label: l10n.examReadinessBadge(readiness.toStringAsFixed(1)),
                 color: AppColors.primary,
               ),
             ],
           ),
           const SizedBox(height: 12),
-          const Text(
-            'Based on your current performance and consistency across topics.',
-            style: TextStyle(
+          Text(
+            l10n.marksPredictionDesc,
+            style: const TextStyle(
               fontSize: 13,
               color: AppColors.textSecondary,
               height: 1.4,

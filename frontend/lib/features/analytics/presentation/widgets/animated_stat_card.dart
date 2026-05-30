@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../../../theme/color_tokens.dart';
-import '../../../../theme/gradients.dart';
 
 /// Animated counter card with icon, label, and optional subtitle.
 class AnimatedStatCard extends StatefulWidget {
@@ -67,7 +66,7 @@ class _AnimatedStatCardState extends State<AnimatedStatCard>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: AppGradients.cardShine,
+        color: AppColors.cardBg,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(

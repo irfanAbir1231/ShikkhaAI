@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../common_widgets/atoms/app_button.dart';
 import '../../../../common_widgets/organisms/app_bar.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../../theme/color_tokens.dart';
 import '../../data/models/exam_config_model.dart';
 import '../../data/models/exam_enums.dart';
@@ -42,6 +43,29 @@ class _ExamConfigScreenState extends ConsumerState<ExamConfigScreen> {
     super.initState();
     _config = ref.read(examConfigProvider);
     _topicController.text = _config.topic;
+    WidgetsBinding.instance.addPostFrameCallback((_) => _applyExtraPrefill());
+  }
+
+  void _applyExtraPrefill() {
+    final extra = GoRouterState.of(context).extra;
+    if (extra is! Map<String, dynamic>) return;
+    final subject = extra['subject'] as String?;
+    final topic = extra['topic'] as String?;
+    final difficultyRaw = extra['difficulty'] as String?;
+    ExamDifficulty? difficulty;
+    if (difficultyRaw != null) {
+      difficulty = ExamDifficulty.values.firstWhere(
+        (d) => d.jsonValue == difficultyRaw || d.name == difficultyRaw,
+        orElse: () => _config.difficulty,
+      );
+    }
+    final next = _config.copyWith(
+      subject: subject ?? _config.subject,
+      topic: topic ?? _config.topic,
+      difficulty: difficulty ?? _config.difficulty,
+    );
+    _topicController.text = next.topic;
+    _updateConfig(next);
   }
 
   @override
@@ -69,7 +93,7 @@ class _ExamConfigScreenState extends ConsumerState<ExamConfigScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to start exam: \$e')),
+          SnackBar(content: Text(AppLocalizations.of(context).examStartFailed('$e'))),
         );
       }
     } finally {
@@ -79,14 +103,15 @@ class _ExamConfigScreenState extends ConsumerState<ExamConfigScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
-      appBar: const CustomAppBar(title: 'Configure Exam'),
+      appBar: CustomAppBar(title: l10n.examConfigTitle),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const _SectionTitle(title: 'Subject'),
+            _SectionTitle(title: l10n.examSubject),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
@@ -115,12 +140,12 @@ class _ExamConfigScreenState extends ConsumerState<ExamConfigScreen> {
               }).toList(),
             ),
             const SizedBox(height: 24),
-            const _SectionTitle(title: 'Topic'),
+            _SectionTitle(title: l10n.examTopic),
             const SizedBox(height: 8),
             TextField(
               controller: _topicController,
               decoration: InputDecoration(
-                hintText: 'e.g., Photosynthesis, Newton\'s Laws',
+                hintText: l10n.examTopicHint,
                 filled: true,
                 fillColor: AppColors.surface,
                 border: OutlineInputBorder(
@@ -134,14 +159,14 @@ class _ExamConfigScreenState extends ConsumerState<ExamConfigScreen> {
               ),
             ),
             const SizedBox(height: 24),
-            const _SectionTitle(title: 'Class Level'),
+            _SectionTitle(title: l10n.examClassLevel),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8,
               children: _classLevels.map((level) {
                 final isSelected = _config.classLevel == level;
                 return ChoiceChip(
-                  label: Text('Class $level'),
+                  label: Text(l10n.examClassN(level)),
                   selected: isSelected,
                   onSelected: (_) => _updateConfig(
                     _config.copyWith(classLevel: level),
@@ -162,14 +187,14 @@ class _ExamConfigScreenState extends ConsumerState<ExamConfigScreen> {
               }).toList(),
             ),
             const SizedBox(height: 24),
-            const _SectionTitle(title: 'Difficulty'),
+            _SectionTitle(title: l10n.examDifficulty),
             const SizedBox(height: 8),
             _DifficultySelector(
               difficulty: _config.difficulty,
               onChanged: (d) => _updateConfig(_config.copyWith(difficulty: d)),
             ),
             const SizedBox(height: 24),
-            const _SectionTitle(title: 'Exam Type'),
+            _SectionTitle(title: l10n.examExamType),
             const SizedBox(height: 8),
             _ExamTypeSelector(
               examType: _config.examType,
@@ -182,7 +207,7 @@ class _ExamConfigScreenState extends ConsumerState<ExamConfigScreen> {
               ),
             ),
             const SizedBox(height: 24),
-            const _SectionTitle(title: 'Number of Questions'),
+            _SectionTitle(title: l10n.examNumQuestions),
             const SizedBox(height: 8),
             Row(
               children: [
@@ -215,7 +240,7 @@ class _ExamConfigScreenState extends ConsumerState<ExamConfigScreen> {
               ],
             ),
             const SizedBox(height: 24),
-            const _SectionTitle(title: 'Time Limit'),
+            _SectionTitle(title: l10n.examTimeLimit),
             const SizedBox(height: 8),
             Row(
               children: [
@@ -251,7 +276,7 @@ class _ExamConfigScreenState extends ConsumerState<ExamConfigScreen> {
             _PreviewCard(config: _config),
             const SizedBox(height: 32),
             AppButton(
-              label: _isLoading ? 'Generating...' : 'Start Exam',
+              label: _isLoading ? l10n.examGenerating : l10n.examStart,
               onPressed: _isLoading ? null : _startExam,
               isFullWidth: true,
             ),
@@ -313,7 +338,7 @@ class _DifficultySelector extends StatelessWidget {
               child: Column(
                 children: [
                   Text(
-                    d.label,
+                    d.localizedLabel(AppLocalizations.of(context)),
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
@@ -372,7 +397,7 @@ class _ExamTypeSelector extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        t.label,
+                        t.localizedLabel(AppLocalizations.of(context)),
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: isSelected ? FontWeight.w700 : FontWeight.w600,
@@ -381,7 +406,7 @@ class _ExamTypeSelector extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        t.subtitle,
+                        t.localizedSubtitle(AppLocalizations.of(context)),
                         style: const TextStyle(
                           fontSize: 12,
                           color: AppColors.textSecondary,
@@ -412,6 +437,7 @@ class _PreviewCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -422,25 +448,25 @@ class _PreviewCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Exam Preview',
-            style: TextStyle(
+          Text(
+            l10n.examPreview,
+            style: const TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w700,
               color: AppColors.textPrimary,
             ),
           ),
           const SizedBox(height: 12),
-          _PreviewRow(label: 'Subject', value: config.subject),
-          _PreviewRow(label: 'Topic', value: config.topic),
-          _PreviewRow(label: 'Class', value: 'Class ${config.classLevel}'),
-          _PreviewRow(label: 'Difficulty', value: config.difficulty.label),
-          _PreviewRow(label: 'Type', value: config.examType.label),
-          _PreviewRow(label: 'Questions', value: '${config.numQuestions}'),
-          _PreviewRow(label: 'Time', value: '${config.timeLimitMinutes} min'),
+          _PreviewRow(label: l10n.examSubject, value: config.subject),
+          _PreviewRow(label: l10n.examTopic, value: config.topic),
+          _PreviewRow(label: l10n.examRowClass, value: l10n.examClassN(config.classLevel)),
+          _PreviewRow(label: l10n.examDifficulty, value: config.difficulty.localizedLabel(l10n)),
+          _PreviewRow(label: l10n.examRowType, value: config.examType.localizedLabel(l10n)),
+          _PreviewRow(label: l10n.examRowQuestions, value: '${config.numQuestions}'),
+          _PreviewRow(label: l10n.examRowTime, value: l10n.minutesShort(config.timeLimitMinutes)),
           const Divider(height: 24),
           _PreviewRow(
-            label: 'Total Marks',
+            label: l10n.examTotalMarks,
             value: '${config.totalMarks}',
             isBold: true,
           ),

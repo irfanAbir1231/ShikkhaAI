@@ -99,3 +99,59 @@ def _sqlite_migrate(engine) -> None:
             if "password" not in cols:
                 conn.execute(text("ALTER TABLE students ADD COLUMN password VARCHAR(255)"))
                 conn.commit()
+
+        # exams.class_level (added after initial schema creation)
+        if "exams" in existing_tables:
+            cols = {c["name"] for c in inspector.get_columns("exams")}
+            if "class_level" not in cols:
+                conn.execute(text("ALTER TABLE exams ADD COLUMN class_level VARCHAR(50)"))
+                conn.commit()
+
+        # topic_performance.subject (added for per-subject tracking)
+        if "topic_performance" in existing_tables:
+            cols = {c["name"] for c in inspector.get_columns("topic_performance")}
+            if "subject" not in cols:
+                conn.execute(text("ALTER TABLE topic_performance ADD COLUMN subject VARCHAR(100) DEFAULT 'General'"))
+                conn.commit()
+                # Populate subject from most recent Attempt + Exam for each (student_id, topic)
+                conn.execute(text("""
+                    UPDATE topic_performance
+                    SET subject = COALESCE((
+                        SELECT e.subject
+                        FROM attempts a
+                        JOIN exams e ON e.id = a.exam_id
+                        WHERE a.student_id = topic_performance.student_id
+                        ORDER BY a.created_at DESC
+                        LIMIT 1
+                    ), 'General')
+                """))
+                conn.commit()
+                # Recreate table with new unique constraint (SQLite cannot drop constraints)
+                conn.execute(text("""
+                    CREATE TABLE topic_performance_new (
+                        id INTEGER NOT NULL PRIMARY KEY,
+                        student_id INTEGER NOT NULL,
+                        subject VARCHAR(100) NOT NULL DEFAULT 'General',
+                        topic VARCHAR(150) NOT NULL,
+                        attempts_count INTEGER NOT NULL DEFAULT 0,
+                        average_score FLOAT NOT NULL DEFAULT 0.0,
+                        consistency_score FLOAT NOT NULL DEFAULT 0.0,
+                        last_score FLOAT NOT NULL DEFAULT 0.0,
+                        updated_at DATETIME,
+                        CONSTRAINT uq_topic_performance_student_subject_topic UNIQUE (student_id, subject, topic)
+                    )
+                """))
+                conn.commit()
+                conn.execute(text("""
+                    INSERT INTO topic_performance_new
+                    (id, student_id, subject, topic, attempts_count, average_score, consistency_score, last_score, updated_at)
+                    SELECT id, student_id, subject, topic, attempts_count, average_score, consistency_score, last_score, updated_at
+                    FROM topic_performance
+                """))
+                conn.commit()
+                conn.execute(text("DROP TABLE topic_performance"))
+                conn.commit()
+                conn.execute(text("ALTER TABLE topic_performance_new RENAME TO topic_performance"))
+                conn.commit()
+                conn.execute(text("CREATE INDEX ix_topic_performance_student_id ON topic_performance (student_id)"))
+                conn.commit()

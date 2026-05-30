@@ -106,7 +106,7 @@ class DailyActivity(BaseModel):
     model_config = ConfigDict(extra="forbid")
     date: str
     is_active: bool
-    performance_score: float
+    performance_score: float | None
     questions_answered: int
     study_minutes: int
 

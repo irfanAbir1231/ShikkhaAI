@@ -77,6 +77,7 @@ from app.api.routes_analytics import router as analytics_router
 from app.api.routes_exams import router as exams_router
 from app.api.routes_notes import router as notes_router
 from app.api.routes_students import router as students_router
+from app.api.routes_study_companion import router as study_companion_router
 from app.core.config import settings
 from app.core.responses import (
     AppError,
@@ -121,6 +122,7 @@ app.include_router(students_router)
 app.include_router(exams_router)
 app.include_router(analytics_router)   # GET /student/{id}/dashboard|analytics|topics
 app.include_router(notes_router)       # GET|POST|DELETE /notes
+app.include_router(study_companion_router)  # POST /study-companion/ask
 
 
 @app.get("/health")

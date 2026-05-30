@@ -4,6 +4,7 @@ import '../models/exam_config_model.dart';
 import '../models/exam_enums.dart';
 import '../models/exam_question_model.dart';
 import '../models/exam_result_model.dart';
+import '../../../library/data/models/note_model.dart';
 import '../models/exam_session_model.dart';
 
 /// Remote data source for exam API calls.
@@ -90,6 +91,7 @@ class ExamRemoteDataSource {
       shortAnswerFeedback: _mapShortAnswerFeedback(json['short_answer_feedback']),
       weakTopics: _mapWeakTopics(json['weak_topics']),
       mcqFeedback: _mapMcqFeedback(json['mcq_feedback']),
+      generatedNotes: _mapGeneratedNotes(json['generated_notes']),
       readinessScore: (json['readiness_score'] as num).toDouble(),
       timeTakenSeconds: timeTakenSeconds.clamp(0, 99999),
       submittedAt: session.endTime ?? DateTime.now(),
@@ -154,6 +156,13 @@ class ExamRemoteDataSource {
     if (raw is! List<dynamic>) return const [];
     return raw
         .map((e) => McqFeedback.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  List<NoteModel> _mapGeneratedNotes(dynamic raw) {
+    if (raw is! List<dynamic>) return const [];
+    return raw
+        .map((e) => NoteModel.fromJson(e as Map<String, dynamic>))
         .toList();
   }
 }

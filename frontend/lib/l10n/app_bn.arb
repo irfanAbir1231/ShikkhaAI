@@ -1,0 +1,539 @@
+{
+  "@@locale": "bn",
+  "appName": "শিক্ষাAI",
+
+  "navHome": "হোম",
+  "navStudy": "পড়াশোনা",
+  "navExam": "পরীক্ষা",
+  "navTopics": "বিষয়",
+  "navLibrary": "লাইব্রেরি",
+  "navPlan": "পরিকল্পনা",
+
+  "commonCancel": "বাতিল",
+  "commonConfirm": "নিশ্চিত করুন",
+  "commonSave": "সংরক্ষণ",
+  "commonDelete": "মুছুন",
+  "commonRetry": "আবার চেষ্টা করুন",
+  "commonClose": "বন্ধ করুন",
+  "commonNext": "পরবর্তী",
+  "commonBack": "পূর্ববর্তী",
+  "commonDone": "সম্পন্ন",
+  "commonContinue": "চালিয়ে যান",
+  "commonLoading": "লোড হচ্ছে...",
+  "commonError": "কিছু একটা সমস্যা হয়েছে",
+  "commonSearch": "অনুসন্ধান",
+  "commonSeeAll": "সব দেখুন",
+  "commonYes": "হ্যাঁ",
+  "commonNo": "না",
+
+  "settingsTitle": "সেটিংস",
+  "settingsAppearance": "অ্যাপিয়ারেন্স",
+  "settingsSystemDefault": "সিস্টেম ডিফল্ট",
+  "settingsLight": "লাইট",
+  "settingsDark": "ডার্ক",
+  "settingsLanguage": "ভাষা",
+  "settingsLanguageEnglish": "English",
+  "settingsLanguageBangla": "বাংলা",
+  "settingsAccount": "অ্যাকাউন্ট",
+  "settingsLogOut": "লগ আউট",
+  "settingsLogOutSubtitle": "সাইন আউট করে লগইনে ফিরে যান",
+  "settingsLogOutConfirmTitle": "লগ আউট করবেন?",
+  "settingsLogOutConfirmBody": "আপনি কি নিশ্চিত যে লগ আউট করতে চান?",
+  "settingsResetOnboarding": "অনবোর্ডিং রিসেট করুন",
+  "settingsResetOnboardingSubtitle": "সব লোকাল ডেটা মুছে সেটআপ আবার শুরু করুন",
+  "settingsAbout": "সম্পর্কে",
+  "settingsVersion": "সংস্করণ ১.০.০",
+
+  "drawerDashboard": "ড্যাশবোর্ড",
+  "drawerStudyCompanion": "স্টাডি কম্প্যানিয়ন",
+  "drawerSmartExam": "স্মার্ট পরীক্ষা",
+  "drawerStudyPlan": "পড়াশোনার পরিকল্পনা",
+  "drawerAnalytics": "অ্যানালিটিক্স",
+  "drawerHelpFeedback": "সাহায্য ও মতামত",
+  "drawerGreeting": "হাই, শিক্ষার্থী",
+  "drawerStreakTagline": "ধারাবাহিকতা ধরে রাখুন!",
+  "drawerFooter": "শিক্ষাAI · v১.০.০",
+
+  "splashTagline": "এআই-চালিত স্টাডি কম্প্যানিয়ন",
+  "appVersionShort": "v১.০.০",
+
+  "onboardSkip": "এড়িয়ে যান",
+  "onboardGetStarted": "শুরু করুন",
+  "onboard1Title": "স্মার্ট স্টাডি কম্প্যানিয়ন",
+  "onboard1Desc": "আপনার পাঠ্যবই ও নোট আপলোড করুন। শিক্ষাAI সেগুলো পড়ে, বুঝে এবং শুধু আপনার জন্য ব্যক্তিগত পড়াশোনার উপকরণ তৈরি করে।",
+  "onboard2Title": "এআই-চালিত পরীক্ষা",
+  "onboard2Desc": "যেকোনো অধ্যায় থেকে কাস্টম পরীক্ষার প্রশ্ন তৈরি করুন। তাৎক্ষণিক ফিডব্যাক ও বিস্তারিত ব্যাখ্যাসহ অনুশীলন করুন।",
+  "onboard3Title": "আপনার অগ্রগতি ট্র্যাক করুন",
+  "onboard3Desc": "ধারাবাহিকভাবে উন্নতি করতে ভিজ্যুয়াল ড্যাশবোর্ড, পড়াশোনার পরিকল্পনা ও পারফরম্যান্স অ্যানালিটিক্স।",
+
+  "authValidateName": "আপনার নাম লিখুন",
+  "authValidateNameShort": "নাম কমপক্ষে ২ অক্ষরের হতে হবে",
+  "authValidateNameLong": "নাম ১২০ অক্ষরের কম হতে হবে",
+  "authValidateEmail": "আপনার ইমেইল লিখুন",
+  "authValidateEmailInvalid": "একটি বৈধ ইমেইল ঠিকানা লিখুন",
+  "authValidatePassword": "একটি পাসওয়ার্ড লিখুন",
+  "authValidatePasswordShort": "পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে",
+  "authWelcomeBack": "আবার স্বাগতম",
+  "authCreateProfile": "আপনার প্রোফাইল তৈরি করুন",
+  "authLoginSubtitle": "আপনার শেখার যাত্রা চালিয়ে যেতে সাইন ইন করুন।",
+  "authRegisterSubtitle": "নিজের সম্পর্কে একটু জানান, যাতে আমরা আপনার পড়াশোনার অভিজ্ঞতা ব্যক্তিগত করতে পারি।",
+  "authFullName": "পুরো নাম",
+  "authFullNameHint": "আপনার পুরো নাম লিখুন",
+  "authEmailLabel": "ইমেইল ঠিকানা",
+  "authEmailHint": "your.email@example.com",
+  "authPassword": "পাসওয়ার্ড",
+  "authPasswordHint": "আপনার পাসওয়ার্ড লিখুন",
+  "authSignIn": "সাইন ইন",
+  "authToggleToRegister": "অ্যাকাউন্ট নেই? রেজিস্টার করুন",
+  "authToggleToLogin": "ইতিমধ্যে অ্যাকাউন্ট আছে? সাইন ইন",
+  "authSelectClass": "আপনার শ্রেণি নির্বাচন করুন",
+  "authSelectClassSubtitle": "আপনার বর্তমান শ্রেণি বেছে নিন, যাতে আমরা আপনার পাঠ্যক্রম অনুযায়ী কনটেন্ট সাজাতে পারি।",
+  "authSubjectsAvailable": "{count}টি বিষয় উপলব্ধ",
+  "@authSubjectsAvailable": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "authCompleteRegistration": "রেজিস্ট্রেশন সম্পন্ন করুন",
+
+  "homeGreeting": "হ্যালো, শিক্ষার্থী 👋",
+  "homeSubtitle": "আজ নতুন কিছু শিখতে প্রস্তুত?",
+  "homeQuickActions": "দ্রুত কার্যক্রম",
+  "homeActionStudySubtitle": "এআই ব্যাখ্যা",
+  "homeActionExamSubtitle": "অ্যাডাপটিভ কুইজ",
+  "homeActionAnalyticsSubtitle": "দুর্বলতা ট্র্যাক করুন",
+  "homeActionPlanSubtitle": "সপ্তাহের পরিকল্পনা",
+  "homeContinueWithAi": "এআই দিয়ে চালিয়ে যান",
+  "homeHeroSubtitle": "যা খুশি জিজ্ঞাসা করুন · তাৎক্ষণিক স্পষ্টতা পান",
+  "homeTodaysFocus": "আজকের ফোকাস",
+  "homePracticeNow": "এখন অনুশীলন করুন",
+  "homeAccuracyPercent": "{percent}% সঠিকতা",
+  "@homeAccuracyPercent": {
+    "placeholders": {
+      "percent": { "type": "String" }
+    }
+  },
+  "homeAllCaughtUp": "সব শেষ!",
+  "homeAllCaughtUpSubtitle": "এই মুহূর্তে কোনো দুর্বল বিষয় নেই। দারুণ কাজ চালিয়ে যান!",
+
+  "dashboardTitle": "অ্যানালিটিক্স",
+  "dashboardLoadFailed": "ড্যাশবোর্ড লোড করা যায়নি",
+
+  "dashReadinessScore": "প্রস্তুতির স্কোর",
+  "dashOutOf100": "১০০-এর মধ্যে",
+  "dashDayStreak": "{count} দিনের ধারা",
+  "@dashDayStreak": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "dashLongestStreak": "সর্বোচ্চ: {count} দিন",
+  "@dashLongestStreak": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "dashWeekdayInitials": "সো,ম,বু,বৃ,শু,শ,র",
+  "dashAiRecommendations": "এআই সুপারিশ",
+  "priorityHigh": "উচ্চ",
+  "priorityMedium": "মাঝারি",
+  "priorityLow": "নিম্ন",
+  "dashImprovementOverTime": "সময়ের সাথে উন্নতি",
+  "dashTopicAccuracy": "বিষয়ভিত্তিক সঠিকতা",
+  "dashRecentQuizzes": "সাম্প্রতিক কুইজ",
+  "dashViewAll": "সব দেখুন",
+  "dashWeakSubjects": "দুর্বল বিষয়",
+  "dashQuestionsCount": "({count}টি প্রশ্ন)",
+  "@dashQuestionsCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+
+  "analyticsTitle": "দুর্বলতা বিশ্লেষণ",
+  "analyticsAvgAccuracy": "গড় সঠিকতা",
+  "analyticsWeakChapters": "দুর্বল অধ্যায়",
+  "analyticsDayStreakLabel": "দিনের ধারা",
+  "analyticsLoading": "অ্যানালিটিক্স লোড হচ্ছে...",
+  "analyticsLoadFailed": "অ্যানালিটিক্স লোড করা যায়নি",
+  "analyticsReadyToImprove": "উন্নতি করতে প্রস্তুত?",
+  "analyticsWeakTopicsWaiting": "{count, plural, =1{পরীক্ষা ট্যাবে ১টি দুর্বল বিষয় অপেক্ষমাণ।} other{পরীক্ষা ট্যাবে {count}টি দুর্বল বিষয় অপেক্ষমাণ।}}",
+  "@analyticsWeakTopicsWaiting": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "analyticsLast7Days": "শেষ ৭ দিন",
+  "analyticsLast30Days": "শেষ ৩০ দিন",
+  "analyticsLast90Days": "শেষ ৯০ দিন",
+
+  "heatmapTitle": "পারফরম্যান্স হিটম্যাপ",
+  "heatmapNoActivity": "এখনো কোনো কার্যক্রম নেই",
+  "heatmapNoActivityDesc": "দৈনিক পারফরম্যান্স ট্র্যাক শুরু করতে আপনার প্রথম কুইজ সম্পন্ন করুন।",
+  "heatmapNoActivityDay": "কোনো কার্যক্রম নেই",
+  "legendHigh": "উচ্চ",
+  "legendMid": "মাঝারি",
+  "legendLow": "নিম্ন",
+  "legendNone": "কিছুই না",
+  "analyticsWeekdayInitialsSun": "র,সো,ম,বু,বৃ,শু,শ",
+  "streakDailyStreak": "দৈনিক ধারা",
+  "streakDaysShort": "{count} দিন",
+  "@streakDaysShort": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "streakCurrent": "বর্তমান",
+  "streakBest": "সর্বোচ্চ",
+  "streakActive": "সক্রিয়",
+  "radarTitle": "বিষয় সঠিকতা রাডার",
+  "radarYourScore": "আপনার স্কোর",
+  "radarBenchmark": "মানদণ্ড",
+  "radarNotEnough": "যথেষ্ট ডেটা নেই",
+  "radarNotEnoughDesc": "আপনার সঠিকতা রাডার দেখতে কমপক্ষে ৩টি ভিন্ন বিষয়ে প্রশ্ন চেষ্টা করুন।",
+  "practiceTitle": "ব্যক্তিগত অনুশীলন",
+  "practiceNoteUnavailable": "স্টাডি নোট এখনো উপলব্ধ নয়",
+  "practiceSavedToLibrary": "লাইব্রেরিতে সংরক্ষিত",
+  "practiceSaveAsNote": "নোট হিসেবে সংরক্ষণ",
+  "minutesShort": "{count} মিনিট",
+  "@minutesShort": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "impactPercent": "{percent}% প্রভাব",
+  "@impactPercent": {
+    "placeholders": { "percent": { "type": "String" } }
+  },
+  "weakChaptersDetected": "শনাক্তকৃত দুর্বল অধ্যায়",
+  "minutesSpent": "{count} মিনিট ব্যয়িত",
+  "@minutesSpent": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+
+  "diffEasy": "সহজ",
+  "diffMedium": "মাঝারি",
+  "diffHard": "কঠিন",
+  "examTypePractice": "অনুশীলন",
+  "examTypeSsc": "এসএসসি",
+  "examTypeHsc": "এইচএসসি",
+  "examTypePracticeSubtitle": "কাস্টমাইজযোগ্য দ্রুত পরীক্ষা",
+  "examTypeSscSubtitle": "এসএসসি বোর্ড পরীক্ষার ধরন",
+  "examTypeHscSubtitle": "এইচএসসি বোর্ড পরীক্ষার ধরন",
+  "qTypeMcq": "এমসিকিউ",
+  "qTypeShortAnswer": "সংক্ষিপ্ত উত্তর",
+  "qTypeCq": "সৃজনশীল",
+
+  "examConfigTitle": "পরীক্ষা কনফিগার করুন",
+  "examSubject": "বিষয়",
+  "examTopic": "টপিক",
+  "examTopicHint": "যেমন, সালোকসংশ্লেষণ, নিউটনের সূত্র",
+  "examClassLevel": "শ্রেণি স্তর",
+  "examClassN": "শ্রেণি {level}",
+  "@examClassN": {
+    "placeholders": { "level": { "type": "String" } }
+  },
+  "examDifficulty": "কঠিনতা",
+  "examExamType": "পরীক্ষার ধরন",
+  "examNumQuestions": "প্রশ্নের সংখ্যা",
+  "examTimeLimit": "সময়সীমা",
+  "examPreview": "পরীক্ষার প্রিভিউ",
+  "examRowClass": "শ্রেণি",
+  "examRowType": "ধরন",
+  "examRowQuestions": "প্রশ্ন",
+  "examRowTime": "সময়",
+  "examTotalMarks": "মোট নম্বর",
+  "examGenerating": "তৈরি হচ্ছে...",
+  "examStart": "পরীক্ষা শুরু করুন",
+  "examStartFailed": "পরীক্ষা শুরু করা যায়নি: {error}",
+  "@examStartFailed": {
+    "placeholders": { "error": { "type": "String" } }
+  },
+
+  "examFocusWeakTopics": "দুর্বল বিষয়ে মনোযোগ দিন",
+  "examRecentExams": "সাম্প্রতিক পরীক্ষা",
+  "examNoExamsTitle": "এখনো কোনো পরীক্ষা নেই",
+  "examNoExamsMsg": "আপনার প্রথম এআই-চালিত পরীক্ষা তৈরি করুন এবং অনুশীলন শুরু করুন।",
+  "examNewExam": "নতুন পরীক্ষা",
+  "examPracticeChip": "অনুশীলন",
+  "examStatExams": "পরীক্ষা",
+  "examStatAvgScore": "গড় স্কোর",
+  "examStatBest": "সর্বোচ্চ",
+  "examStartNewTitle": "নতুন পরীক্ষা শুরু করুন",
+  "examStartNewSubtitle": "আপনার স্তর অনুযায়ী এমসিকিউ, সৃজনশীল ও সংক্ষিপ্ত উত্তর প্রশ্ন দিয়ে অনুশীলন করুন।",
+
+  "examSubmitTitle": "পরীক্ষা জমা দেবেন?",
+  "examSubmitBody": "আপনি {total}টি প্রশ্নের মধ্যে {answered}টির উত্তর দিয়েছেন। আপনি কি নিশ্চিত যে জমা দিতে চান?",
+  "@examSubmitBody": {
+    "placeholders": { "answered": { "type": "int" }, "total": { "type": "int" } }
+  },
+  "commonSubmit": "জমা দিন",
+  "examNoQuestions": "কোনো প্রশ্ন উপলব্ধ নেই",
+  "examPrevious": "পূর্ববর্তী",
+  "examHideAnswer": "উত্তর লুকান",
+  "examCheckAnswer": "উত্তর দেখুন",
+  "examExplanation": "ব্যাখ্যা",
+  "examCorrectAnswerInline": "সঠিক উত্তর: {answer}",
+  "@examCorrectAnswerInline": {
+    "placeholders": { "answer": { "type": "String" } }
+  },
+  "examSubmissionFailedNoResult": "জমা ব্যর্থ: কোনো ফলাফল পাওয়া যায়নি",
+  "examSubmissionFailed": "জমা ব্যর্থ: {error}",
+  "@examSubmissionFailed": {
+    "placeholders": { "error": { "type": "String" } }
+  },
+
+  "examHistoryTitle": "পরীক্ষার ইতিহাস",
+  "examNoHistoryTitle": "কোনো ইতিহাস নেই",
+  "examNoHistoryMsg": "আপনার সম্পন্ন পরীক্ষাগুলো এখানে দেখা যাবে।",
+  "examClearHistoryTitle": "সব ইতিহাস মুছবেন?",
+  "examClearHistoryBody": "এটি স্থায়ীভাবে সব পরীক্ষার ফলাফল মুছে ফেলবে। এই কাজটি ফিরিয়ে আনা যাবে না।",
+  "examClearAll": "সব মুছুন",
+  "timeMinutesAgo": "{count} মিনিট আগে",
+  "@timeMinutesAgo": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "timeHoursAgo": "{count} ঘণ্টা আগে",
+  "@timeHoursAgo": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "timeYesterday": "গতকাল",
+  "timeDaysAgo": "{count} দিন আগে",
+  "@timeDaysAgo": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+
+  "examResultTitle": "পরীক্ষার ফলাফল",
+  "examResultNotFound": "ফলাফল পাওয়া যায়নি",
+  "examGoHome": "হোমে যান",
+  "examHome": "হোম",
+  "examStudyNotesGenerated": "স্টাডি নোট তৈরি হয়েছে",
+  "examStudyNotesSubtitle": "আপনার ব্যক্তিগত স্টাডি নোট দেখতে নিচের একটি বিষয়ে ট্যাপ করুন।",
+  "examAnswerReviewUnavailable": "এই প্রচেষ্টার জন্য উত্তর পর্যালোচনা উপলব্ধ নয়।",
+  "examSomeAnswersMissing": "কিছু উত্তর দেখানো নাও হতে পারে ({answered}/{total} লোকালি সংরক্ষিত)।",
+  "@examSomeAnswersMissing": {
+    "placeholders": { "answered": { "type": "int" }, "total": { "type": "int" } }
+  },
+
+  "qCardQuestionXofY": "{total}টির মধ্যে প্রশ্ন {number}",
+  "@qCardQuestionXofY": {
+    "placeholders": { "number": { "type": "int" }, "total": { "type": "int" } }
+  },
+  "qCardMarks": "{count, plural, =1{১ নম্বর} other{{count} নম্বর}}",
+  "@qCardMarks": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "progressAnswered": "{count}টি উত্তরিত",
+  "@progressAnswered": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "progressMarked": "{count}টি চিহ্নিত",
+  "@progressMarked": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "progressLeft": "{count}টি বাকি",
+  "@progressLeft": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "badgeAdaptive": "অ্যাডাপটিভ",
+  "shortAnswerHint": "এখানে আপনার উত্তর লিখুন...",
+  "cqAnswerHint": "{part} এর উত্তর",
+  "@cqAnswerHint": {
+    "placeholders": { "part": { "type": "String" } }
+  },
+
+  "answerReviewTitle": "উত্তর পর্যালোচনা",
+  "answerYourAnswer": "আপনার উত্তর:",
+  "answerNotAnswered": "উত্তর দেওয়া হয়নি",
+  "answerCorrectAnswer": "সঠিক উত্তর:",
+  "answerMarks": "নম্বর:",
+  "qPrefix": "প্রশ্ন {index}: {prompt}",
+  "@qPrefix": {
+    "placeholders": { "index": { "type": "int" }, "prompt": { "type": "String" } }
+  },
+
+  "marksPrediction": "নম্বর পূর্বাভাস",
+  "examConfidenceBadge": "{level} আত্মবিশ্বাস",
+  "@examConfidenceBadge": {
+    "placeholders": { "level": { "type": "String" } }
+  },
+  "examReadinessBadge": "প্রস্তুতি: {value}%",
+  "@examReadinessBadge": {
+    "placeholders": { "value": { "type": "String" } }
+  },
+  "marksPredictionDesc": "আপনার বর্তমান পারফরম্যান্স ও বিষয়ভিত্তিক ধারাবাহিকতার ভিত্তিতে।",
+
+  "summaryMarksObtained": "প্রাপ্ত নম্বর",
+  "summaryMcq": "এমসিকিউ",
+  "summaryTime": "সময়",
+  "summaryGrade": "গ্রেড",
+
+  "weakGreatJob": "চমৎকার!",
+  "weakNoWeakTopics": "কোনো দুর্বল বিষয় শনাক্ত হয়নি। ভালো কাজ চালিয়ে যান!",
+  "weakTopicsToReview": "পর্যালোচনার বিষয়সমূহ",
+
+  "scModeEasyBengaliLabel": "সহজ বাংলা",
+  "scModeEasyBengaliSubtitle": "সহজ বাংলায় বুঝুন",
+  "scModeEasyEnglishLabel": "সহজ ইংরেজি",
+  "scModeEasyEnglishSubtitle": "সরল ইংরেজি",
+  "scModeExplain10Label": "১০ বছরের মতো বোঝান",
+  "scModeExplain10Subtitle": "একদম সহজ!",
+  "scModeSummaryLabel": "সারসংক্ষেপ",
+  "scModeSummarySubtitle": "দ্রুত পর্যালোচনা",
+  "scModeImportantQLabel": "গুরুত্বপূর্ণ প্রশ্ন",
+  "scModeImportantQSubtitle": "মূল পরীক্ষার প্রশ্ন",
+  "scModeCommonMistakesLabel": "সাধারণ ভুল",
+  "scModeCommonMistakesSubtitle": "ভুল এড়িয়ে চলুন",
+  "scModeExamTipsLabel": "পরীক্ষার টিপস",
+  "scModeExamTipsSubtitle": "বেশি নম্বর পান",
+
+  "scTitle": "এআই স্টাডি কম্প্যানিয়ন",
+  "scNewChat": "নতুন চ্যাট",
+  "scStudyMode": "স্টাডি মোড",
+  "scWelcomeTagline": "আপনার ব্যক্তিগত শিক্ষক, সবসময় প্রস্তুত",
+  "scWelcomeQuestion": "আপনি কী শিখতে চান?",
+  "scWelcomeSubtitle": "একটি অধ্যায় আপলোড করুন বা প্রশ্ন করুন। নিচে একটি ব্যাখ্যা মোড বেছে নিন।",
+  "scQuickStart": "দ্রুত শুরু",
+  "scSuggestion1": "সালোকসংশ্লেষণ ব্যাখ্যা করুন",
+  "scSuggestion2": "অধ্যায় ৩ থেকে গুরুত্বপূর্ণ প্রশ্ন",
+  "scSuggestion3": "বীজগণিতে সাধারণ ভুল",
+  "scSuggestion4": "জীববিজ্ঞানের পরীক্ষার টিপস",
+  "scSuggestion5": "নিউটনের সূত্রের সারসংক্ষেপ",
+  "scChatHistory": "চ্যাট ইতিহাস",
+  "scConversationsCount": "{count, plural, =1{১টি কথোপকথন} other{{count}টি কথোপকথন}}",
+  "@scConversationsCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "scClearHistoryTitle": "সব ইতিহাস মুছবেন?",
+  "scClearHistoryBody": "এটি স্থায়ীভাবে আপনার সব চ্যাট সেশন মুছে ফেলবে।",
+  "commonClear": "মুছুন",
+  "scNoConversations": "এখনো কোনো কথোপকথন নেই",
+  "scStartNewChat": "শেখা শুরু করতে একটি নতুন চ্যাট শুরু করুন!",
+  "scMessagesCount": "{count, plural, =1{১টি বার্তা} other{{count}টি বার্তা}}",
+  "@scMessagesCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "scInputHint": "আপনার পড়াশোনা সম্পর্কে যা খুশি জিজ্ঞাসা করুন...",
+  "scFilePickError": "ফাইল নির্বাচন করা যায়নি: {error}",
+  "@scFilePickError": {
+    "placeholders": { "error": { "type": "String" } }
+  },
+  "scAiExplanation": "এআই ব্যাখ্যা",
+  "scAiNote": "এআই নোট",
+  "scCrossReferenced": "অষ্টম শ্রেণির বিজ্ঞানের সাথে ক্রস-রেফারেন্সকৃত",
+  "scSourceDefault": "উৎস",
+  "scSourcePage": "{source} — পৃষ্ঠা {page}",
+  "@scSourcePage": {
+    "placeholders": { "source": { "type": "String" }, "page": { "type": "String" } }
+  },
+
+  "taskReading": "পঠন",
+  "taskPractice": "অনুশীলন",
+  "taskRevision": "পুনরালোচনা",
+  "taskMockTest": "মক টেস্ট",
+  "taskRest": "বিশ্রাম",
+
+  "planDefaultTitle": "পড়াশোনার পরিকল্পনা",
+  "planOtherPlans": "অন্যান্য পরিকল্পনা",
+  "planCreateNew": "নতুন পরিকল্পনা তৈরি করুন",
+  "planNoPlansTitle": "এখনো কোনো পরিকল্পনা নেই",
+  "planNoPlansMsg": "আপনার অগ্রগতি ট্র্যাক করতে ও সময়সূচিতে থাকতে একটি ব্যক্তিগত পড়াশোনার পরিকল্পনা তৈরি করুন।",
+  "planCreatePlan": "পরিকল্পনা তৈরি করুন",
+  "planTodaysSchedule": "আজকের সময়সূচি",
+  "planTasksMinutes": "{tasks}টি কাজ · {minutes} মিনিট",
+  "@planTasksMinutes": {
+    "placeholders": { "tasks": { "type": "int" }, "minutes": { "type": "int" } }
+  },
+  "planToday": "আজ",
+  "planCreateTitle": "পরিকল্পনা তৈরি করুন",
+  "planGenerate": "পরিকল্পনা তৈরি করুন",
+  "planWhenExam": "আপনার পরীক্ষা কবে?",
+  "planWhenExamDesc": "আমরা আপনার পরীক্ষার তারিখ পর্যন্ত একটি সময়সূচি তৈরি করব।",
+  "planDaysLeftStacked": "দিন\nবাকি",
+  "planChangeDate": "তারিখ পরিবর্তন করুন",
+  "planDailyTimeQuestion": "আপনি প্রতিদিন কতক্ষণ\nপড়তে পারেন?",
+  "planDailyTimeDesc": "আমরা উপলব্ধ সময়ে আপনার বিষয়গুলো ভাগ করব।",
+  "planMinutesPerDay": "প্রতিদিন {minutes} মিনিট",
+  "@planMinutesPerDay": {
+    "placeholders": { "minutes": { "type": "int" } }
+  },
+  "planStudyDuration": "পড়াশোনার মেয়াদ",
+  "planDaysValue": "{days} দিন",
+  "@planDaysValue": {
+    "placeholders": { "days": { "type": "int" } }
+  },
+  "planDailyStudyTime": "দৈনিক পড়ার সময়",
+  "planTotalStudyHours": "মোট পড়ার ঘণ্টা",
+  "planHoursValue": "{hours} ঘণ্টা",
+  "@planHoursValue": {
+    "placeholders": { "hours": { "type": "String" } }
+  },
+  "planSubjectsLabel": "বিষয়সমূহ",
+  "planGeneralStudy": "সাধারণ পড়াশোনা",
+  "planDetailTitle": "পরিকল্পনার বিবরণ",
+  "planNoScheduleDay": "এই দিনের জন্য কোনো সময়সূচি নেই।",
+  "planDeleteTitle": "পরিকল্পনা মুছবেন?",
+  "planDeleteBody": "এটি স্থায়ীভাবে আপনার পড়াশোনার পরিকল্পনা ও সব অগ্রগতি মুছে ফেলবে।",
+  "planDaysUntilExam": "পরীক্ষার {days} দিন বাকি",
+  "@planDaysUntilExam": {
+    "placeholders": { "days": { "type": "int" } }
+  },
+  "planExamDay": "পরীক্ষার দিন!",
+  "planTasksCount": "{completed}/{total} কাজ",
+  "@planTasksCount": {
+    "placeholders": { "completed": { "type": "int" }, "total": { "type": "int" } }
+  },
+  "planHoursTotal": "মোট {hours} ঘণ্টা",
+  "@planHoursTotal": {
+    "placeholders": { "hours": { "type": "String" } }
+  },
+  "planMinPerDay": "{minutes} মিনিট/দিন",
+  "@planMinPerDay": {
+    "placeholders": { "minutes": { "type": "int" } }
+  },
+  "planMoreCount": "+আরও {count}টি",
+  "@planMoreCount": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "planExamDate": "পরীক্ষা: {date}",
+  "@planExamDate": {
+    "placeholders": { "date": { "type": "String" } }
+  },
+  "taskResume": "চালিয়ে যান",
+  "taskStart": "শুরু",
+  "taskMinShort": "{minutes} মি",
+  "@taskMinShort": {
+    "placeholders": { "minutes": { "type": "int" } }
+  },
+  "planRestDay": "বিশ্রামের দিন",
+  "planRestDayMsg": "একটু বিশ্রাম নিন এবং আগামীকালের জন্য নিজেকে চাঙ্গা করুন!",
+  "planNoTasksDay": "এই দিনের জন্য কোনো কাজ নির্ধারিত নেই।",
+  "planTasksMinShort": "{tasks}টি কাজ · {minutes} মিনিট",
+  "@planTasksMinShort": {
+    "placeholders": { "tasks": { "type": "int" }, "minutes": { "type": "int" } }
+  },
+  "planTasksDone": "{completed}/{total} সম্পন্ন",
+  "@planTasksDone": {
+    "placeholders": { "completed": { "type": "int" }, "total": { "type": "int" } }
+  },
+  "timerPause": "বিরতি",
+  "timerResume": "চালিয়ে যান",
+  "timerFinishEarly": "আগে শেষ করুন",
+  "timerElapsed": "অতিবাহিত: {time}",
+  "@timerElapsed": {
+    "placeholders": { "time": { "type": "String" } }
+  },
+  "completionTitle": "সেশন সম্পন্ন!",
+  "completionBody": "আপনি {subject} — {topic} {minutes} মিনিট পড়েছেন।",
+  "@completionBody": {
+    "placeholders": { "subject": { "type": "String" }, "topic": { "type": "String" }, "minutes": { "type": "int" } }
+  },
+  "completionPlanned": "পরিকল্পিত: {minutes} মিনিট",
+  "@completionPlanned": {
+    "placeholders": { "minutes": { "type": "int" } }
+  },
+  "completionActual": "প্রকৃত: {minutes} মিনিট",
+  "@completionActual": {
+    "placeholders": { "minutes": { "type": "int" } }
+  },
+  "completionAddTen": "+১০ মিনিট",
+  "completionMarkDone": "সম্পন্ন হিসেবে চিহ্নিত করুন",
+  "practiceExamTitle": "অনুশীলন পরীক্ষা?",
+  "practiceExamBody": "আপনি কি {topic} বিষয়ে একটি অনুশীলন পরীক্ষা দিতে চান?",
+  "@practiceExamBody": {
+    "placeholders": { "topic": { "type": "String" } }
+  },
+  "practiceMaybeLater": "পরে হয়তো",
+  "practiceYesGo": "হ্যাঁ, চলুন!",
+  "pickerSelectWeak": "দুর্বল বিষয় নির্বাচন করুন",
+  "pickerSelectWeakDesc": "যে বিষয়গুলোতে মনোযোগ দিতে চান বেছে নিন। নিজের বিষয়ও যোগ করতে পারেন।",
+  "pickerAddCustom": "কাস্টম বিষয় যোগ করুন..."
+}

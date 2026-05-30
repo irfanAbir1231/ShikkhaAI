@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../common_widgets/animations/animated_scale_tap.dart';
 import '../../../../common_widgets/molecules/app_card.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../../theme/color_tokens.dart';
 import '../../data/models/dashboard_models.dart';
 import 'section_header.dart';
@@ -17,9 +18,9 @@ class RecentQuizzesList extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SectionHeader(
-          title: 'Recent Quizzes',
-          actionLabel: 'View All',
+        SectionHeader(
+          title: AppLocalizations.of(context).dashRecentQuizzes,
+          actionLabel: AppLocalizations.of(context).dashViewAll,
         ),
         ListView.separated(
           shrinkWrap: true,

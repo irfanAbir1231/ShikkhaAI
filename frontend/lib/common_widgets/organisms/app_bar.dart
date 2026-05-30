@@ -35,19 +35,21 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
       actions: actions,
       elevation: elevation,
       centerTitle: centerTitle,
-      automaticallyImplyLeading: automaticallyImplyLeading,
-      flexibleSpace: showGradient
-          ? Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [AppColors.primary, AppColors.accent],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
+      automaticallyImplyLeading:
+          leading == null && automaticallyImplyLeading,
+      backgroundColor: showGradient ? const Color(0xFF8B5A2B) : null,
+      foregroundColor: showGradient ? Colors.white : null,
+      iconTheme:
+          showGradient ? const IconThemeData(color: Colors.white) : null,
+      titleTextStyle: showGradient
+          ? const TextStyle(
+              color: Colors.white,
+              fontSize: 19,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.4,
             )
           : null,
-      bottom: bottom,
+      bottom: bottom ?? (showGradient ? const _AppBarHairline() : null),
     );
   }
 
@@ -55,4 +57,20 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   Size get preferredSize => Size.fromHeight(
         kToolbarHeight + (bottom?.preferredSize.height ?? 0),
       );
+}
+
+class _AppBarHairline extends StatelessWidget
+    implements PreferredSizeWidget {
+  const _AppBarHairline();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 1,
+      color: AppColors.primaryLight.withValues(alpha: 0.4),
+    );
+  }
+
+  @override
+  Size get preferredSize => const Size.fromHeight(1);
 }

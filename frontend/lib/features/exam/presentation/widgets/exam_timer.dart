@@ -14,7 +14,7 @@ class ExamTimer extends ConsumerWidget {
     final color = ref.watch(examTimerColorProvider);
     final progress = ref.watch(examTimerProgressProvider);
 
-    final isUrgent = color == Colors.red;
+    final isUrgent = color == AppColors.danger;
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 500),

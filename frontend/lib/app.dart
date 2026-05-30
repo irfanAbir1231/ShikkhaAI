@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'features/settings/presentation/providers/locale_provider.dart';
 import 'features/settings/presentation/screens/settings_screen.dart';
+import 'l10n/app_localizations.dart';
 import 'routing/app_router.dart';
 import 'theme/app_theme.dart';
 
@@ -14,6 +16,7 @@ class ShikkhaAIApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(appRouterProvider);
     final themeMode = ref.watch(themeModeProvider);
+    final locale = ref.watch(localeProvider);
 
     return MaterialApp.router(
       title: 'ShikkhaAI',
@@ -21,6 +24,9 @@ class ShikkhaAIApp extends ConsumerWidget {
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
       themeMode: themeMode,
+      locale: locale,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       routerConfig: router,
       builder: (context, child) {
         // Ensure text scaling respects system settings while capping extremes

@@ -5,9 +5,10 @@ import 'package:go_router/go_router.dart';
 import '../../../../common_widgets/animations/animated_fade_slide.dart';
 import '../../../../common_widgets/atoms/app_button.dart';
 import '../../../../common_widgets/molecules/app_text_field.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../../routing/route_names.dart';
 import '../../../../theme/color_tokens.dart';
-import '../../../../theme/gradients.dart';
+import '../../../../theme/neu_decoration.dart';
 import '../providers/auth_providers.dart';
 
 /// Student registration / login screen with form validation.
@@ -35,37 +36,39 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
     super.dispose();
   }
 
+  AppLocalizations get _l10n => AppLocalizations.of(context);
+
   String? _validateName(String? value) {
     if (value == null || value.trim().isEmpty) {
-      return 'Please enter your name';
+      return _l10n.authValidateName;
     }
     if (value.trim().length < 2) {
-      return 'Name must be at least 2 characters';
+      return _l10n.authValidateNameShort;
     }
     if (value.trim().length > 120) {
-      return 'Name must be less than 120 characters';
+      return _l10n.authValidateNameLong;
     }
     return null;
   }
 
   String? _validateEmail(String? value) {
     if (value == null || value.trim().isEmpty) {
-      return 'Please enter your email';
+      return _l10n.authValidateEmail;
     }
     final email = value.trim().toLowerCase();
     final regex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
     if (!regex.hasMatch(email)) {
-      return 'Please enter a valid email address';
+      return _l10n.authValidateEmailInvalid;
     }
     return null;
   }
 
   String? _validatePassword(String? value) {
     if (value == null || value.isEmpty) {
-      return 'Please enter a password';
+      return _l10n.authValidatePassword;
     }
     if (value.length < 6) {
-      return 'Password must be at least 6 characters';
+      return _l10n.authValidatePasswordShort;
     }
     return null;
   }
@@ -84,7 +87,19 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
     if (_isLoginMode) {
       _performLogin();
     } else {
-      context.push(RouteNames.classSelection);
+      try {
+        context.push(RouteNames.classSelection);
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Navigation error: $e'),
+              behavior: SnackBarBehavior.floating,
+              backgroundColor: AppColors.danger,
+            ),
+          );
+        }
+      }
     }
   }
 
@@ -122,6 +137,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
     final isLoading = _isLoginMode
         ? ref.watch(loginProvider).isLoading
         : ref.watch(registerStudentProvider).isLoading;
@@ -142,9 +158,9 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                 AnimatedFadeSlide(
                   child: Container(
                     padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      gradient: AppGradients.hero,
-                      borderRadius: BorderRadius.circular(20),
+                    decoration: NeuDecoration.colored(
+                      color: AppColors.primary,
+                      radius: 20,
                     ),
                     child: Icon(
                       _isLoginMode
@@ -159,7 +175,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                 AnimatedFadeSlide(
                   delay: const Duration(milliseconds: 100),
                   child: Text(
-                    _isLoginMode ? 'Welcome Back' : 'Create Your Profile',
+                    _isLoginMode ? l10n.authWelcomeBack : l10n.authCreateProfile,
                     style: textTheme.displayMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -170,8 +186,8 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                   delay: const Duration(milliseconds: 200),
                   child: Text(
                     _isLoginMode
-                        ? 'Sign in to continue your learning journey.'
-                        : 'Tell us a little about yourself so we can personalize your study experience.',
+                        ? l10n.authLoginSubtitle
+                        : l10n.authRegisterSubtitle,
                     style: textTheme.bodyLarge?.copyWith(
                       color: AppColors.textSecondary,
                       height: 1.5,
@@ -184,8 +200,8 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                     delay: const Duration(milliseconds: 300),
                     child: AppTextField(
                       controller: _nameController,
-                      label: 'Full Name',
-                      hint: 'Enter your full name',
+                      label: l10n.authFullName,
+                      hint: l10n.authFullNameHint,
                       prefixIcon: const Icon(Icons.person_outline),
                       textInputAction: TextInputAction.next,
                       validator: _validateName,
@@ -196,8 +212,8 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                   delay: Duration(milliseconds: _isLoginMode ? 300 : 400),
                   child: AppTextField(
                     controller: _emailController,
-                    label: 'Email Address',
-                    hint: 'your.email@example.com',
+                    label: l10n.authEmailLabel,
+                    hint: l10n.authEmailHint,
                     prefixIcon: const Icon(Icons.email_outlined),
                     keyboardType: TextInputType.emailAddress,
                     textInputAction: TextInputAction.next,
@@ -209,8 +225,8 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                   delay: Duration(milliseconds: _isLoginMode ? 400 : 500),
                   child: AppTextField(
                     controller: _passwordController,
-                    label: 'Password',
-                    hint: 'Enter your password',
+                    label: l10n.authPassword,
+                    hint: l10n.authPasswordHint,
                     prefixIcon: const Icon(Icons.lock_outline),
                     obscureText: _obscurePassword,
                     textInputAction: TextInputAction.done,
@@ -232,7 +248,7 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                 AnimatedFadeSlide(
                   delay: Duration(milliseconds: _isLoginMode ? 500 : 600),
                   child: AppButton(
-                    label: _isLoginMode ? 'Sign In' : 'Continue',
+                    label: _isLoginMode ? l10n.authSignIn : l10n.commonContinue,
                     isLoading: isLoading,
                     onPressed: _continue,
                   ),
@@ -246,8 +262,8 @@ class _RegistrationScreenState extends ConsumerState<RegistrationScreen> {
                           () => _isLoginMode = !_isLoginMode),
                       child: Text(
                         _isLoginMode
-                            ? "Don't have an account? Register"
-                            : 'Already have an account? Sign In',
+                            ? l10n.authToggleToRegister
+                            : l10n.authToggleToLogin,
                         style: const TextStyle(
                           color: AppColors.primary,
                           fontWeight: FontWeight.w600,

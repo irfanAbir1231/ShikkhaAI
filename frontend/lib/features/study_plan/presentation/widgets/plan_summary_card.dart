@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../l10n/app_localizations.dart';
 import '../../../../theme/color_tokens.dart';
-import '../../../../theme/gradients.dart';
+import '../../../../theme/neu_decoration.dart';
 import '../../data/models/study_plan_models.dart';
 
 /// Compact plan overview card.
@@ -15,10 +16,11 @@ class PlanSummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
 
     return Container(
       decoration: BoxDecoration(
-        gradient: AppGradients.cardShine,
+        color: AppColors.cardBg,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
@@ -43,9 +45,9 @@ class PlanSummaryCard extends StatelessWidget {
                   children: [
                     Container(
                       padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        gradient: AppGradients.hero,
-                        borderRadius: BorderRadius.circular(10),
+                      decoration: NeuDecoration.colored(
+                        color: AppColors.primary,
+                        radius: 10,
                       ),
                       child: const Icon(
                         Icons.calendar_month,
@@ -59,13 +61,13 @@ class PlanSummaryCard extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            config.planTitle ?? 'Study Plan',
+                            config.planTitle ?? l10n.planDefaultTitle,
                             style: textTheme.titleSmall?.copyWith(
                                   fontWeight: FontWeight.w700,
                                 ),
                           ),
                           Text(
-                            '${config.daysUntilExam} days until exam',
+                            l10n.planDaysUntilExam(config.daysUntilExam),
                             style: textTheme.bodySmall?.copyWith(
                                   color: AppColors.textSecondary,
                                 ),
@@ -83,7 +85,7 @@ class PlanSummaryCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(20),
                       ),
                       child: Text(
-                        '${config.dailyStudyMinutes} min/day',
+                        l10n.planMinPerDay(config.dailyStudyMinutes),
                         style: textTheme.bodySmall?.copyWith(
                               color: AppColors.primary,
                               fontWeight: FontWeight.w600,
@@ -95,7 +97,8 @@ class PlanSummaryCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'Exam: ${DateFormat('EEEE, MMM d, yyyy').format(config.examDate)}',
+                  l10n.planExamDate(
+                      DateFormat('EEEE, MMM d, yyyy').format(config.examDate)),
                   style: textTheme.bodySmall?.copyWith(
                         color: AppColors.textSecondary,
                       ),
@@ -135,7 +138,7 @@ class PlanSummaryCard extends StatelessWidget {
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
-                          '+${config.weakSubjects.length - 4} more',
+                          l10n.planMoreCount(config.weakSubjects.length - 4),
                           style: textTheme.bodySmall?.copyWith(
                                 fontSize: 11,
                                 color: AppColors.textSecondary,

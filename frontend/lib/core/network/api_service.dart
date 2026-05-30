@@ -47,6 +47,32 @@ class ApiService {
     }
   }
 
+  /// Performs a PUT request and returns the parsed `data` payload.
+  Future<dynamic> put(
+    String path, {
+    dynamic data,
+  }) async {
+    try {
+      final response = await _dio.put<dynamic>(path, data: data);
+      return _handleResponse(response);
+    } on DioException catch (e) {
+      throw _mapDioException(e);
+    }
+  }
+
+  /// Performs a DELETE request and returns the parsed `data` payload.
+  Future<dynamic> delete(
+    String path, {
+    dynamic data,
+  }) async {
+    try {
+      final response = await _dio.delete<dynamic>(path, data: data);
+      return _handleResponse(response);
+    } on DioException catch (e) {
+      throw _mapDioException(e);
+    }
+  }
+
   /// Extracts `data` from the envelope or throws a typed exception.
   dynamic _handleResponse(Response<dynamic> response) {
     final body = response.data;

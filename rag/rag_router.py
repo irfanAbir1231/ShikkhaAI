@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from typing import Optional
 
 from .retrieve import retrieve_context, build_rag_context
-from .generate import generate_questions
+from .generate import generate_questions, generate_answer
 
 router = APIRouter()
 
@@ -35,6 +35,14 @@ class RetrieveRequest(BaseModel):
 class WeakTopicsRequest(BaseModel):
     student_id: int
     topics: list[dict]
+
+
+class AskRequest(BaseModel):
+    query: str
+    mode: str
+    subject: str
+    class_level: str
+    pdf_context: Optional[str] = None
 
 
 # ─── Endpoints ────────────────────────────────────────────────────────────────
@@ -83,6 +91,34 @@ def context(req: RetrieveRequest):
         class_level=req.class_level,
     )
     return {"context": ctx}
+
+
+@router.post("/ask")
+def ask(req: AskRequest):
+    """
+    Study-companion Q&A endpoint.
+    Retrieves curriculum context and generates a mode-specific answer.
+    """
+    try:
+        result = generate_answer(
+            query=req.query,
+            mode=req.mode,
+            subject=req.subject,
+            class_level=req.class_level,
+            pdf_context=req.pdf_context,
+        )
+        return result
+    except RuntimeError as exc:
+        # Gemini API errors (quota, key invalid, etc.) — propagate clearly
+        err_msg = str(exc)
+        if "Gemini generation failed" in err_msg or "RESOURCE_EXHAUSTED" in err_msg:
+            raise HTTPException(
+                status_code=503,
+                detail=f"Gemini API unavailable: {err_msg}. Please wait a few minutes and retry.",
+            )
+        raise HTTPException(status_code=500, detail=err_msg)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/weak-topics")

@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../../../l10n/app_localizations.dart';
 import '../../../../theme/color_tokens.dart';
+
 import '../../data/models/chat_session_model.dart';
 import '../providers/study_companion_provider.dart';
 
@@ -14,6 +16,7 @@ class ChatHistoryDrawer extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final sessions = ref.watch(chatSessionsProvider);
     final textTheme = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
 
     return Drawer(
       child: SafeArea(
@@ -24,9 +27,9 @@ class ChatHistoryDrawer extends ConsumerWidget {
               padding: const EdgeInsets.all(20),
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [AppColors.primary, AppColors.accent],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
+                  colors: [Color(0xFFB87A4B), Color(0xFF8B5A2B), Color(0xFF6B3E1F)],
                 ),
               ),
               child: Row(
@@ -42,14 +45,14 @@ class ChatHistoryDrawer extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Chat History',
+                          l10n.scChatHistory,
                           style: textTheme.titleLarge?.copyWith(
                             color: Colors.white,
                             fontWeight: FontWeight.w700,
                           ),
                         ),
                         Text(
-                          '${sessions.length} conversation${sessions.length == 1 ? '' : 's'}',
+                          l10n.scConversationsCount(sessions.length),
                           style: textTheme.bodyMedium?.copyWith(
                             color: Colors.white.withValues(alpha: 0.85),
                           ),
@@ -69,7 +72,7 @@ class ChatHistoryDrawer extends ConsumerWidget {
                   Navigator.of(context).pop();
                 },
                 icon: const Icon(Icons.add_rounded),
-                label: const Text('New Chat'),
+                label: Text(l10n.scNewChat),
                 style: ElevatedButton.styleFrom(
                   minimumSize: const Size(double.infinity, 48),
                   backgroundColor: AppColors.primary,
@@ -84,7 +87,7 @@ class ChatHistoryDrawer extends ConsumerWidget {
             // Session list
             Expanded(
               child: sessions.isEmpty
-                  ? _EmptyHistory(textTheme: textTheme)
+                  ? _EmptyHistory(textTheme: textTheme, l10n: l10n)
                   : ListView.builder(
                       itemCount: sessions.length,
                       itemBuilder: (context, index) {
@@ -114,14 +117,12 @@ class ChatHistoryDrawer extends ConsumerWidget {
                     showDialog(
                       context: context,
                       builder: (ctx) => AlertDialog(
-                        title: const Text('Clear all history?'),
-                        content: const Text(
-                          'This will permanently delete all your chat sessions.',
-                        ),
+                        title: Text(l10n.scClearHistoryTitle),
+                        content: Text(l10n.scClearHistoryBody),
                         actions: [
                           TextButton(
                             onPressed: () => Navigator.of(ctx).pop(),
-                            child: const Text('Cancel'),
+                            child: Text(l10n.commonCancel),
                           ),
                           TextButton(
                             onPressed: () {
@@ -130,9 +131,9 @@ class ChatHistoryDrawer extends ConsumerWidget {
                                   .clearAll();
                               Navigator.of(ctx).pop();
                             },
-                            child: const Text(
-                              'Clear',
-                              style: TextStyle(color: AppColors.danger),
+                            child: Text(
+                              l10n.commonClear,
+                              style: const TextStyle(color: AppColors.danger),
                             ),
                           ),
                         ],
@@ -144,9 +145,9 @@ class ChatHistoryDrawer extends ConsumerWidget {
                     color: AppColors.danger,
                     size: 18,
                   ),
-                  label: const Text(
-                    'Clear All',
-                    style: TextStyle(color: AppColors.danger),
+                  label: Text(
+                    l10n.examClearAll,
+                    style: const TextStyle(color: AppColors.danger),
                   ),
                 ),
               ),
@@ -171,6 +172,7 @@ class _SessionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
     final dateStr = DateFormat('MMM d, h:mm a').format(session.updatedAt);
 
     return Dismissible(
@@ -204,7 +206,7 @@ class _SessionTile extends StatelessWidget {
           overflow: TextOverflow.ellipsis,
         ),
         subtitle: Text(
-          '$dateStr · ${session.messageCount} messages',
+          '$dateStr · ${l10n.scMessagesCount(session.messageCount)}',
           style: textTheme.bodySmall?.copyWith(
             color: AppColors.textSecondary,
           ),
@@ -216,9 +218,10 @@ class _SessionTile extends StatelessWidget {
 }
 
 class _EmptyHistory extends StatelessWidget {
-  const _EmptyHistory({required this.textTheme});
+  const _EmptyHistory({required this.textTheme, required this.l10n});
 
   final TextTheme? textTheme;
+  final AppLocalizations l10n;
 
   @override
   Widget build(BuildContext context) {
@@ -233,14 +236,14 @@ class _EmptyHistory extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            'No conversations yet',
+            l10n.scNoConversations,
             style: textTheme?.bodyLarge?.copyWith(
               color: AppColors.textSecondary,
             ),
           ),
           const SizedBox(height: 4),
           Text(
-            'Start a new chat to begin learning!',
+            l10n.scStartNewChat,
             style: textTheme?.bodySmall?.copyWith(
               color: AppColors.textSecondary.withValues(alpha: 0.7),
             ),

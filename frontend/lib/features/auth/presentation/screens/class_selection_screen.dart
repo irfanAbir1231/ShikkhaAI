@@ -6,9 +6,10 @@ import '../../../../common_widgets/animations/animated_fade_slide.dart';
 import '../../../../common_widgets/animations/animated_scale_tap.dart';
 import '../../../../common_widgets/atoms/app_button.dart';
 import '../../../../core/constants/app_constants.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../../routing/route_names.dart';
 import '../../../../theme/color_tokens.dart';
-import '../../../../theme/gradients.dart';
+import '../../../../theme/neu_decoration.dart';
 import '../providers/auth_providers.dart';
 
 /// Class selection screen with animated grid cards.
@@ -63,6 +64,7 @@ class _ClassSelectionScreenState extends ConsumerState<ClassSelectionScreen> {
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
     final registrationState = ref.watch(registerStudentProvider);
 
     return Scaffold(
@@ -76,9 +78,9 @@ class _ClassSelectionScreenState extends ConsumerState<ClassSelectionScreen> {
               AnimatedFadeSlide(
                 child: Container(
                   padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    gradient: AppGradients.hero,
-                    borderRadius: BorderRadius.circular(20),
+                  decoration: NeuDecoration.colored(
+                    color: AppColors.primary,
+                    radius: 20,
                   ),
                   child: const Icon(
                     Icons.class_rounded,
@@ -91,7 +93,7 @@ class _ClassSelectionScreenState extends ConsumerState<ClassSelectionScreen> {
               AnimatedFadeSlide(
                 delay: const Duration(milliseconds: 100),
                 child: Text(
-                  'Select Your Class',
+                  l10n.authSelectClass,
                   style: textTheme.displayMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -101,7 +103,7 @@ class _ClassSelectionScreenState extends ConsumerState<ClassSelectionScreen> {
               AnimatedFadeSlide(
                 delay: const Duration(milliseconds: 200),
                 child: Text(
-                  'Choose your current class so we can tailor content to your curriculum.',
+                  l10n.authSelectClassSubtitle,
                   style: textTheme.bodyLarge?.copyWith(
                     color: AppColors.textSecondary,
                     height: 1.5,
@@ -126,30 +128,19 @@ class _ClassSelectionScreenState extends ConsumerState<ClassSelectionScreen> {
                             duration: const Duration(milliseconds: 300),
                             curve: Curves.easeOutCubic,
                             height: 100,
-                            decoration: BoxDecoration(
-                              gradient: isSelected ? AppGradients.hero : null,
-                              color: isSelected
-                                  ? null
-                                  : Theme.of(context).colorScheme.surface,
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: isSelected
-                                    ? Colors.transparent
-                                    : AppColors.divider,
-                                width: 1.5,
-                              ),
-                              boxShadow: isSelected
-                                  ? [
-                                      BoxShadow(
-                                        color: AppColors.primary
-                                            .withValues(alpha: 0.25),
-                                        blurRadius: 20,
-                                        spreadRadius: 2,
-                                        offset: const Offset(0, 8),
-                                      ),
-                                    ]
-                                  : null,
-                            ),
+                            decoration: isSelected
+                                ? NeuDecoration.colored(
+                                    color: AppColors.primary,
+                                    radius: 20,
+                                  )
+                                : BoxDecoration(
+                                    color: Theme.of(context).colorScheme.surface,
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(
+                                      color: AppColors.divider,
+                                      width: 1.5,
+                                    ),
+                                  ),
                             child: Row(
                               children: [
                                 const SizedBox(width: 20),
@@ -190,7 +181,8 @@ class _ClassSelectionScreenState extends ConsumerState<ClassSelectionScreen> {
                                       ),
                                       const SizedBox(height: 4),
                                       Text(
-                                        '${AppConstants.subjects.length} subjects available',
+                                        l10n.authSubjectsAvailable(
+                                            AppConstants.subjects.length),
                                         style: textTheme.bodyMedium?.copyWith(
                                           color: isSelected
                                               ? Colors.white
@@ -227,7 +219,7 @@ class _ClassSelectionScreenState extends ConsumerState<ClassSelectionScreen> {
               AnimatedFadeSlide(
                 delay: const Duration(milliseconds: 400),
                 child: AppButton(
-                  label: 'Complete Registration',
+                  label: l10n.authCompleteRegistration,
                   isLoading: registrationState.isLoading,
                   onPressed:
                       _selectedGrade != null ? _completeRegistration : null,

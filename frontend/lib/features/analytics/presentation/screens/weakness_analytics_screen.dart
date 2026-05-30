@@ -6,17 +6,20 @@ import '../../../../common_widgets/animations/animated_fade_slide.dart';
 import '../../../../common_widgets/molecules/app_loading_indicator.dart';
 import '../../../../common_widgets/organisms/app_bar.dart';
 import '../../../../common_widgets/organisms/error_state.dart';
+import '../../../../l10n/app_localizations.dart';
+import '../../../../routing/route_names.dart';
 import '../../../../theme/color_tokens.dart';
+
 import '../providers/analytics_provider.dart';
 import '../widgets/animated_stat_card.dart';
 import '../widgets/improvement_line_chart.dart';
 import '../widgets/performance_heatmap.dart';
-import '../widgets/practice_suggestions_card.dart';
 import '../widgets/streak_calendar.dart';
 import '../widgets/topic_accuracy_radar_chart.dart';
-import '../widgets/weak_chapters_list.dart';
 
 /// Comprehensive weakness analytics dashboard.
+/// Purely observational — charts, stats, and calendars only.
+/// Actionable practice content lives in the Exam tab.
 class WeaknessAnalyticsScreen extends ConsumerWidget {
   const WeaknessAnalyticsScreen({super.key});
 
@@ -24,6 +27,7 @@ class WeaknessAnalyticsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final asyncData = ref.watch(analyticsSummaryProvider);
     final selectedRange = ref.watch(analyticsTimeRangeProvider);
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
       body: asyncData.when(
@@ -34,7 +38,7 @@ class WeaknessAnalyticsScreen extends ConsumerWidget {
               pinned: true,
               flexibleSpace: FlexibleSpaceBar(
                 title: Text(
-                  'Weakness Analytics',
+                  l10n.analyticsTitle,
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         color: Colors.white,
                         fontWeight: FontWeight.w600,
@@ -43,9 +47,9 @@ class WeaknessAnalyticsScreen extends ConsumerWidget {
                 background: Container(
                   decoration: const BoxDecoration(
                     gradient: LinearGradient(
-                      colors: [AppColors.primary, AppColors.accent],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
+                      colors: [Color(0xFFB87A4B), Color(0xFF8B5A2B), Color(0xFF6B3E1F)],
                     ),
                   ),
                   child: const Align(
@@ -95,7 +99,7 @@ class WeaknessAnalyticsScreen extends ConsumerWidget {
                         Expanded(
                           child: AnimatedStatCard(
                             value: summary.averageAccuracy,
-                            label: 'Avg Accuracy',
+                            label: l10n.analyticsAvgAccuracy,
                             icon: Icons.percent,
                             suffix: '%',
                             color: _accuracyColor(summary.averageAccuracy),
@@ -105,19 +109,19 @@ class WeaknessAnalyticsScreen extends ConsumerWidget {
                         Expanded(
                           child: AnimatedStatCard(
                             value: summary.weakChapters.length.toDouble(),
-                            label: 'Weak Chapters',
+                            label: l10n.analyticsWeakChapters,
                             icon: Icons.warning_amber_rounded,
-                            color: AppColors.danger,
+                            color: AppColors.primaryDark,
                           ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
                           child: AnimatedStatCard(
                             value: summary.streakData.currentStreak.toDouble(),
-                            label: 'Day Streak',
+                            label: l10n.analyticsDayStreakLabel,
                             icon: Icons.local_fire_department,
                             suffix: 'd',
-                            color: AppColors.warning,
+                            color: AppColors.primary,
                           ),
                         ),
                       ],
@@ -158,20 +162,20 @@ class WeaknessAnalyticsScreen extends ConsumerWidget {
                   },
                 ),
                 const SizedBox(height: 24),
-                AnimatedFadeSlide(
-                  delay: const Duration(milliseconds: 400),
-                  child: WeakChaptersList(chapters: summary.weakChapters),
-                ),
+                // CTA banner pointing to Exam tab for practice
+                if (summary.weakChapters.isNotEmpty)
+                  AnimatedFadeSlide(
+                    delay: const Duration(milliseconds: 400),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      child: _PracticeCtaBanner(
+                        weakChapterCount: summary.weakChapters.length,
+                      ),
+                    ),
+                  ),
                 const SizedBox(height: 24),
                 AnimatedFadeSlide(
                   delay: const Duration(milliseconds: 500),
-                  child: PracticeSuggestionsCard(
-                    suggestions: summary.practiceSuggestions,
-                  ),
-                ),
-                const SizedBox(height: 24),
-                AnimatedFadeSlide(
-                  delay: const Duration(milliseconds: 600),
                   child: StreakCalendar(data: summary.streakData),
                 ),
                 const SizedBox(height: 32),
@@ -179,20 +183,20 @@ class WeaknessAnalyticsScreen extends ConsumerWidget {
             ),
           ],
         ),
-        loading: () => const Scaffold(
+        loading: () => Scaffold(
           appBar: CustomAppBar(
-            title: 'Weakness Analytics',
+            title: l10n.analyticsTitle,
             showGradient: true,
           ),
-          body: Center(child: AppLoadingIndicator(message: 'Loading analytics...')),
+          body: Center(child: AppLoadingIndicator(message: l10n.analyticsLoading)),
         ),
         error: (err, stack) => Scaffold(
-          appBar: const CustomAppBar(
-            title: 'Weakness Analytics',
+          appBar: CustomAppBar(
+            title: l10n.analyticsTitle,
             showGradient: true,
           ),
           body: ErrorState(
-            message: 'Failed to load analytics',
+            message: l10n.analyticsLoadFailed,
             onRetry: () => ref.invalidate(analyticsSummaryProvider),
           ),
         ),
@@ -202,8 +206,78 @@ class WeaknessAnalyticsScreen extends ConsumerWidget {
 
   Color _accuracyColor(double accuracy) {
     if (accuracy >= 80) return AppColors.success;
-    if (accuracy >= 60) return AppColors.warning;
-    return AppColors.danger;
+    if (accuracy >= 60) return AppColors.primary;
+    return AppColors.primaryDark;
+  }
+}
+
+/// Subtle banner that nudges users toward the Exam tab to practice
+/// their weak topics.
+class _PracticeCtaBanner extends StatelessWidget {
+  const _PracticeCtaBanner({required this.weakChapterCount});
+
+  final int weakChapterCount;
+
+  @override
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context);
+
+    return GestureDetector(
+      onTap: () => context.go(RouteNames.exam),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.primaryWash,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: AppColors.primaryLight.withValues(alpha: 0.4),
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.fitness_center_rounded,
+                color: AppColors.primaryDark,
+                size: 22,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l10n.analyticsReadyToImprove,
+                    style: textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    l10n.analyticsWeakTopicsWaiting(weakChapterCount),
+                    style: textTheme.bodySmall?.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(
+              Icons.arrow_forward_ios_rounded,
+              size: 16,
+              color: AppColors.primaryDark,
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
@@ -219,10 +293,11 @@ class _TimeRangeSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final ranges = [
-      (AnalyticsTimeRange.last7Days, 'Last 7 Days'),
-      (AnalyticsTimeRange.last30Days, 'Last 30 Days'),
-      (AnalyticsTimeRange.last90Days, 'Last 90 Days'),
+      (AnalyticsTimeRange.last7Days, l10n.analyticsLast7Days),
+      (AnalyticsTimeRange.last30Days, l10n.analyticsLast30Days),
+      (AnalyticsTimeRange.last90Days, l10n.analyticsLast90Days),
     ];
 
     return SingleChildScrollView(
@@ -237,7 +312,7 @@ class _TimeRangeSelector extends StatelessWidget {
               label: Text(item.$2),
               selected: isSelected,
               onSelected: (_) => onChanged(item.$1),
-              selectedColor: AppColors.primary,
+              selectedColor: AppColors.primaryDark,
               backgroundColor: AppColors.cardBg,
               labelStyle: TextStyle(
                 color: isSelected ? Colors.white : AppColors.textSecondary,
@@ -248,7 +323,7 @@ class _TimeRangeSelector extends StatelessWidget {
                 borderRadius: BorderRadius.circular(20),
                 side: BorderSide(
                   color: isSelected
-                      ? AppColors.primary
+                      ? AppColors.primaryDark
                       : AppColors.divider,
                 ),
               ),
