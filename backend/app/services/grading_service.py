@@ -17,8 +17,7 @@ class GradingService:
         answers: list[dict[str, str]],
     ) -> GradeResult:
         submitted_answers = {
-            str(answer["question_id"]): str(answer["answer"])
-            for answer in answers
+            str(answer["question_id"]): str(answer["answer"]) for answer in answers
         }
         mcq_items = [item for item in answer_key if item.get("type") == "mcq"]
 
