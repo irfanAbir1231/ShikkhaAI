@@ -67,6 +67,7 @@ import logging
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import Any
+import logging
 
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
@@ -79,6 +80,7 @@ from app.api.routes_notes import router as notes_router
 from app.api.routes_students import router as students_router
 from app.api.routes_study_companion import router as study_companion_router
 from app.core.config import settings
+from app.core.logging_config import setup_logging, get_logger
 from app.core.responses import (
     AppError,
     app_error_handler,
@@ -86,7 +88,9 @@ from app.core.responses import (
     success_response,
     validation_exception_handler,
 )
-from app.db.session import init_db
+from app.db.session import init_db, close_db
+
+logger = get_logger(__name__)
 
 logging.basicConfig(
     level=logging.INFO,
@@ -97,13 +101,40 @@ logger = logging.getLogger("shikkhaai")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
+<<<<<<< Updated upstream
     logger.info("ShikkhaAI backend starting up — mock_mode=%s", settings.mock_mode)
     init_db()
+=======
+    # Startup
+    logger.info(f"Starting {settings.app_name} (Environment: {settings.environment})")
+    try:
+        init_db()
+        logger.info("Database initialized successfully")
+    except Exception as exc:
+        logger.error(f"Failed to initialize database: {exc}", exc_info=True)
+        raise
+
+>>>>>>> Stashed changes
     yield
     logger.info("ShikkhaAI backend shutting down")
 
+    # Shutdown
+    logger.info("Shutting down application...")
+    try:
+        close_db()
+        logger.info("Database connections closed")
+    except Exception as exc:
+        logger.error(f"Error closing database: {exc}", exc_info=True)
+    logger.info("Application shutdown complete")
 
-app = FastAPI(title=settings.app_name, version="0.1.0", lifespan=lifespan)
+
+setup_logging()
+app = FastAPI(
+    title=settings.app_name,
+    version="0.1.0",
+    lifespan=lifespan,
+    debug=settings.debug,
+)
 
 app.add_middleware(
     CORSMiddleware,
@@ -127,4 +158,20 @@ app.include_router(study_companion_router)  # POST /study-companion/ask
 
 @app.get("/health")
 def health_check() -> dict[str, Any]:
+<<<<<<< Updated upstream
     return success_response({"status": "ok", "mock_mode": settings.mock_mode})
+=======
+    return success_response(
+        {
+            "status": "ok",
+            "environment": settings.environment,
+            "mock_mode": settings.mock_mode,
+        }
+    )
+
+
+@app.get("/ready")
+def readiness_check() -> dict[str, Any]:
+    """Readiness check for orchestrators like Kubernetes/Render."""
+    return success_response({"ready": True})
+>>>>>>> Stashed changes
