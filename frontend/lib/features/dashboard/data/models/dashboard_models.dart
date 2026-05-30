@@ -80,9 +80,6 @@ class WeakSubject {
     if (value is String) {
       return _iconMap[value] ?? Icons.menu_book;
     }
-    if (value is int) {
-      return IconData(value, fontFamily: 'MaterialIcons');
-    }
     return Icons.menu_book;
   }
 

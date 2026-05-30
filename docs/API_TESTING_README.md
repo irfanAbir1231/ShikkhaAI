@@ -1,6 +1,10 @@
 # ShikkhaAI API Testing Guide
 
+<<<<<<< Updated upstream
 Use this guide to test the FastAPI backend with **Postman**, **cURL**, or any HTTP client.
+=======
+Use this guide to test the FastAPI backend with Postman.
+>>>>>>> Stashed changes
 
 ## Prerequisites
 
@@ -16,6 +20,7 @@ The API should be running at:
 http://127.0.0.1:8000
 ```
 
+<<<<<<< Updated upstream
 Interactive docs (Swagger UI) are available at:
 
 ```text
@@ -23,11 +28,15 @@ http://127.0.0.1:8000/docs
 ```
 
 For all `POST` / `PUT` / `PATCH` requests, add this header:
+=======
+For all `POST` requests, add this header in Postman:
+>>>>>>> Stashed changes
 
 ```text
 Content-Type: application/json
 ```
 
+<<<<<<< Updated upstream
 For **protected endpoints**, you must also add:
 
 ```text
@@ -67,6 +76,18 @@ The backend resolves which generator to use at request time. Pick the mode that 
 ### Mode A — Real RAG (ChromaDB retrieval + Gemini)
 
 Returns `source: "rag"`. Requires the `rag` package to be importable in the same environment running the backend (needs `chromadb`, `sentence-transformers`, `torch` — **Python 3.11**, no wheels on 3.14).
+=======
+## Generation modes
+
+The backend resolves which generator to use at request time. Pick the
+mode that matches how you've set up your env.
+
+### Mode A — Real RAG (ChromaDB retrieval + Gemini)
+
+Returns `source: "rag"`. Requires the `rag` package to be importable in
+the same environment running the backend (needs `chromadb`,
+`sentence-transformers`, `torch` — **Python 3.11**, no wheels on 3.14).
+>>>>>>> Stashed changes
 
 Two ways to run it:
 
@@ -80,7 +101,12 @@ copy rag\.env.example rag\.env       # put GEMINI_API_KEY here
 uvicorn app.main:app --reload --app-dir backend
 ```
 
+<<<<<<< Updated upstream
 The backend imports `rag.generate.generate_questions` directly. No port 8100 needed.
+=======
+The backend imports `rag.generate.generate_questions` directly. No port
+8100 needed.
+>>>>>>> Stashed changes
 
 **A2. Two-process** (backend on its own env, RAG on a Python 3.11 venv)
 
@@ -99,6 +125,7 @@ copy backend\.env.example backend\.env
 uv --directory backend run uvicorn app.main:app --reload
 ```
 
+<<<<<<< Updated upstream
 In A2 the backend will only hit the HTTP service if in-process import fails AND no `GEMINI_API_KEY` is set in `backend/.env`. To force the HTTP path, leave `GEMINI_API_KEY` unset in `backend/.env`.
 
 ### Mode B — Direct Gemini, no retrieval
@@ -112,12 +139,35 @@ Returns `source: "mock"`. Set `MOCK_MODE=true` in `backend\.env`. No LLM/RAG cal
 Current data coverage: ChromaDB only contains **class 8 science**. For real RAG, use `subject: "science"`, `class_level: "8"`. Other subject/class combos will return empty retrieval context and the RAG pipeline will respond with `{"questions": []}`.
 
 ---
+=======
+In A2 the backend will only hit the HTTP service if in-process import
+fails AND no `GEMINI_API_KEY` is set in `backend/.env`. To force the
+HTTP path, leave `GEMINI_API_KEY` unset in `backend/.env`.
+
+### Mode B — Direct Gemini, no retrieval
+
+Returns `source: "gemini"`. Triggers when `MOCK_MODE=false`, the in-process
+`rag` import fails (e.g., backend running on Python 3.14), and
+`GEMINI_API_KEY` is set in `backend/.env`. No ChromaDB context — Gemini
+generates from the topic/subject/difficulty alone.
+
+### Mode C — Mock (offline)
+
+Returns `source: "mock"`. Set `MOCK_MODE=true` in `backend\.env`. No
+LLM/RAG calls — built-in templates. Useful for offline testing and CI.
+
+Current data coverage: ChromaDB only contains **class 8 science**. For
+real RAG, use `subject: "science"`, `class_level: "8"`. Other
+subject/class combos will return empty retrieval context and the RAG
+pipeline will respond with `{"questions": []}`.
+>>>>>>> Stashed changes
 
 ## Testing Order
 
 Run the requests in this order:
 
 1. Health check
+<<<<<<< Updated upstream
 2. Register student (get token)
 3. Generate exam (use token)
 4. Submit exam (use token)
@@ -135,28 +185,61 @@ Save the returned `student_id`, `exam_id`, and `access_token` because later requ
 **Method:** `GET`
 
 **URL:**
+=======
+2. Register student
+3. Get student
+4. Generate exam
+5. Submit exam
+
+Save the returned `student_id` and `exam_id` values because later requests need them.
+
+## 1. Health Check
+
+Method:
+
+```text
+GET
+```
+
+URL:
+>>>>>>> Stashed changes
 
 ```text
 http://127.0.0.1:8000/health
 ```
 
+<<<<<<< Updated upstream
 **Headers:** None required.
 
 **Body:** None.
 
 **Expected result:**
+=======
+Body:
+
+```text
+No body required.
+```
+
+Expected result (default — real RAG enabled):
+>>>>>>> Stashed changes
 
 ```json
 {
   "success": true,
   "data": {
     "status": "ok",
+<<<<<<< Updated upstream
     "mock_mode": true
+=======
+    "mock_mode": false
+>>>>>>> Stashed changes
   },
   "error": null
 }
 ```
 
+<<<<<<< Updated upstream
 `mock_mode` reflects the `MOCK_MODE` env var. `false` means the backend will call the real RAG pipeline (ChromaDB retrieval + Gemini) or fall back to direct Gemini if the `rag` package is not importable. `true` means built-in mock questions are returned with no LLM/RAG calls.
 
 ---
@@ -166,11 +249,28 @@ http://127.0.0.1:8000/health
 **Method:** `POST`
 
 **URL:**
+=======
+`mock_mode` reflects the `MOCK_MODE` env var. `false` means the backend
+will call the real RAG pipeline (ChromaDB retrieval + Gemini) or fall
+back to direct Gemini if the `rag` package is not importable. `true`
+means built-in mock questions are returned with no LLM/RAG calls.
+
+## 2. Register Student
+
+Method:
+
+```text
+POST
+```
+
+URL:
+>>>>>>> Stashed changes
 
 ```text
 http://127.0.0.1:8000/student/register
 ```
 
+<<<<<<< Updated upstream
 **Headers:**
 
 ```text
@@ -178,11 +278,15 @@ Content-Type: application/json
 ```
 
 **Body:**
+=======
+Body:
+>>>>>>> Stashed changes
 
 ```json
 {
   "name": "Irfan Hakim",
   "email": "irfan.test@example.com",
+<<<<<<< Updated upstream
   "grade_level": "8",
   "password": "securepass123"
 }
@@ -312,6 +416,13 @@ Authorization: Bearer {{auth_token}}
 Replace `1` with the student `id` returned from register/login.
 
 **Expected result:**
+=======
+  "grade_level": "8"
+}
+```
+
+Expected result:
+>>>>>>> Stashed changes
 
 ```json
 {
@@ -326,6 +437,7 @@ Replace `1` with the student `id` returned from register/login.
 }
 ```
 
+<<<<<<< Updated upstream
 **Ownership enforcement:** If you request a different student's ID (e.g., `/student/2` when your token is for student 1):
 
 ```json
@@ -359,11 +471,72 @@ Replace `1` with the student `id` returned from register/login.
 **Method:** `POST`
 
 **URL:**
+=======
+Important:
+
+If you run this request more than once with the same email, the API will return a duplicate email error. Change the email value to test again, for example:
+
+```json
+{
+  "name": "Irfan Hakim",
+  "email": "irfan.test2@example.com",
+  "grade_level": "8"
+}
+```
+
+## 3. Get Student
+
+Method:
+
+```text
+GET
+```
+
+URL:
+
+```text
+http://127.0.0.1:8000/student/1
+```
+
+Body:
+
+```text
+No body required.
+```
+
+Replace `1` with the student `id` returned from the register student API.
+
+Expected result:
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "name": "Irfan Hakim",
+    "email": "irfan.test@example.com",
+    "grade_level": "8"
+  },
+  "error": null
+}
+```
+
+## 4. Generate Exam
+
+Method:
+
+```text
+POST
+```
+
+URL:
+>>>>>>> Stashed changes
 
 ```text
 http://127.0.0.1:8000/exam/generate
 ```
 
+<<<<<<< Updated upstream
 **Headers:**
 
 ```text
@@ -372,6 +545,9 @@ Authorization: Bearer {{auth_token}}
 ```
 
 **Body:**
+=======
+Body:
+>>>>>>> Stashed changes
 
 ```json
 {
@@ -384,6 +560,7 @@ Authorization: Bearer {{auth_token}}
 }
 ```
 
+<<<<<<< Updated upstream
 | Field | Type | Required | Default | Constraints |
 |-------|------|----------|---------|-------------|
 | `student_id` | int | ✅ | — | > 0, must match token's student ID |
@@ -439,6 +616,28 @@ Authorization: Bearer {{auth_token}}
 ```
 
 **Expected result (real RAG — `source: "rag"` or `"gemini"`):**
+=======
+Replace `student_id` with the student `id` returned from the register student API.
+
+`class_level` is optional and defaults to `"8"`. With the real RAG service
+the ChromaDB only contains **class 8 science**, so use `subject: "science"`.
+The backend lowercases `subject` and forwards `topic` to RAG as the
+retrieval hint automatically.
+
+When `source` is `"rag"`, MCQ correct answers are the **letter only**
+(`"A"`, `"B"`, `"C"`, `"D"`) — submit the letter, not the option text, in
+the Submit Exam step.
+
+Allowed difficulty values:
+
+```text
+easy
+medium
+hard
+```
+
+Expected result (real RAG — `source: "rag"`, or `"gemini"` fallback):
+>>>>>>> Stashed changes
 
 ```json
 {
@@ -478,6 +677,7 @@ Authorization: Bearer {{auth_token}}
 | `"gemini"` | `"1"`, `"2"`, `"3"`, ... (numeric strings) | `_generate_via_gemini` fallback |
 | `"mock"` | `"q1"`, `"q2"`, `"q3"`, ... | `_mock_exam` |
 
+<<<<<<< Updated upstream
 Question text/options vary every call — Gemini generates fresh content from retrieved curriculum chunks (or the topic alone in the `"gemini"` fallback). `source` is `"rag"` when ChromaDB retrieval + Gemini ran, `"gemini"` when the `rag` package was not importable and the backend fell back to direct Gemini (no retrieval), and `"mock"` only if `MOCK_MODE=true`.
 
 > **Critical:** Save the returned `exam_id` AND `student_id` — both are needed for the submit step. The response includes exactly `num_questions` items.
@@ -489,11 +689,38 @@ Question text/options vary every call — Gemini generates fresh content from re
 **Method:** `POST`
 
 **URL:**
+=======
+Question text/options vary every call — Gemini generates fresh content
+from retrieved curriculum chunks (or the topic alone in the `"gemini"`
+fallback). `source` is `"rag"` when ChromaDB retrieval + Gemini ran,
+`"gemini"` when the `rag` package was not importable and the backend
+fell back to direct Gemini (no retrieval), and `"mock"` only if
+`MOCK_MODE=true`.
+
+**If you get `"gemini"` and want real RAG:** install
+`rag/requirements.txt` into the backend environment (Python 3.11), or
+run the two-process setup (Mode A2) with `GEMINI_API_KEY` **unset** in
+`backend/.env` so the HTTP path is reached.
+
+Save the returned `exam_id` AND `student_id` — both are needed for the
+submit step. The response includes exactly `num_questions` items.
+
+## 5. Submit Exam
+
+Method:
+
+```text
+POST
+```
+
+URL:
+>>>>>>> Stashed changes
 
 ```text
 http://127.0.0.1:8000/exam/submit
 ```
 
+<<<<<<< Updated upstream
 **Headers:**
 
 ```text
@@ -508,18 +735,48 @@ Authorization: Bearer {{auth_token}}
 ```json
 {
   "student_id": 1,
+=======
+**Critical:** copy `student_id`, `exam_id`, AND every `question_id`
+straight from the Generate Exam response. Reusing stale IDs (e.g.
+`exam_id: 1` when you just generated `exam_id: 13`) scores you against
+the wrong exam — you'll see another exam's `weak_topics` (e.g.
+`"Quadratic Equations"`) in the result, which is the giveaway.
+
+Body — **real RAG / Gemini** (`source: "rag"` or `"gemini"`). Question
+IDs are numeric strings (`"1"`, `"2"`, ...). MCQ answer is the letter
+only (`A`/`B`/`C`/`D`):
+
+```json
+{
+  "student_id": 2,
+>>>>>>> Stashed changes
   "exam_id": 13,
   "answers": [
     { "question_id": "1",  "answer": "B" },
     { "question_id": "2",  "answer": "C" },
     { "question_id": "3",  "answer": "D" },
     { "question_id": "4",  "answer": "C" },
+<<<<<<< Updated upstream
     { "question_id": "5",  "answer": "B" }
+=======
+    { "question_id": "5",  "answer": "B" },
+    { "question_id": "6",  "answer": "B" },
+    { "question_id": "7",  "answer": "C" },
+    { "question_id": "8",  "answer": "C" },
+    { "question_id": "9",  "answer": "Photosynthesis produces oxygen that animals breathe and glucose that forms the base of nearly every food chain." },
+    { "question_id": "10", "answer": "Carbon dioxide is absorbed through stomata on the leaf surface, and water is absorbed by the roots from the soil and transported up through the xylem." }
+>>>>>>> Stashed changes
   ]
 }
 ```
 
+<<<<<<< Updated upstream
 **Body — mock mode only** (`MOCK_MODE=true`, `source: "mock"`). Question IDs are `"q1"`, `"q2"`, ... and MCQ answer is the full option text, not the letter:
+=======
+Body — **mock mode only** (`MOCK_MODE=true`, `source: "mock"`). Question
+IDs are `"q1"`, `"q2"`, ... and MCQ answer is the full option text, not
+the letter:
+>>>>>>> Stashed changes
 
 ```json
 {
@@ -535,6 +792,7 @@ Authorization: Bearer {{auth_token}}
 }
 ```
 
+<<<<<<< Updated upstream
 | Field | Type | Constraints |
 |-------|------|-------------|
 | `student_id` | int | > 0, must match token's student ID |
@@ -542,6 +800,13 @@ Authorization: Bearer {{auth_token}}
 | `answers` | array | 1–50 items. Each item has `question_id` (string) and `answer` (string, max 4000 chars) |
 
 **Expected result:**
+=======
+For real RAG/Gemini runs, choose each correct letter yourself by reading
+the question — questions are fresh per call, so there's no static
+answer key in the API response.
+
+Expected result:
+>>>>>>> Stashed changes
 
 ```json
 {
@@ -568,6 +833,7 @@ Authorization: Bearer {{auth_token}}
 }
 ```
 
+<<<<<<< Updated upstream
 ---
 
 ## 7. List Student Exams (Protected)
@@ -872,6 +1138,11 @@ if (jsonData.success && jsonData.data) {
 ### Resource Errors
 
 **Duplicate student email:**
+=======
+## Common Error Responses
+
+Duplicate student email:
+>>>>>>> Stashed changes
 
 ```json
 {
@@ -884,7 +1155,11 @@ if (jsonData.success && jsonData.data) {
 }
 ```
 
+<<<<<<< Updated upstream
 **Student not found:**
+=======
+Student not found:
+>>>>>>> Stashed changes
 
 ```json
 {
@@ -897,6 +1172,7 @@ if (jsonData.success && jsonData.data) {
 }
 ```
 
+<<<<<<< Updated upstream
 **Exam not found:**
 
 ```json
@@ -911,6 +1187,9 @@ if (jsonData.success && jsonData.data) {
 ```
 
 ### Validation Errors
+=======
+Validation error:
+>>>>>>> Stashed changes
 
 ```json
 {
@@ -923,11 +1202,24 @@ if (jsonData.success && jsonData.data) {
 }
 ```
 
+<<<<<<< Updated upstream
 ---
 
 ## Notes
 
 `backend/.env.example` ships with `MOCK_MODE=false` and `RAG_BASE_URL` pointed at the local RAG service (port 8100), so the default configuration runs the **real RAG pipeline** (Mode A above) when the `rag` package is importable. If it isn't, the backend falls through to direct Gemini (Mode B) as long as `GEMINI_API_KEY` is set. Set `MOCK_MODE=true` to bypass everything and use built-in templates (Mode C). The `mock_mode` field in the health check reflects whichever value is active.
+=======
+## Notes
+
+`backend/.env.example` ships with `MOCK_MODE=false` and `RAG_BASE_URL`
+pointed at the local RAG service (port 8100), so the default
+configuration runs the **real RAG pipeline** (Mode A above) when the
+`rag` package is importable. If it isn't, the backend falls through to
+direct Gemini (Mode B) as long as `GEMINI_API_KEY` is set. Set
+`MOCK_MODE=true` to bypass everything and use built-in templates (Mode C).
+The `mock_mode` field in the health check reflects whichever value is
+active.
+>>>>>>> Stashed changes
 
 If the app is using SQLite, data is stored in:
 
@@ -936,5 +1228,8 @@ backend/shikkhaai.db
 ```
 
 If you delete that database file, IDs will reset after the app creates a new database.
+<<<<<<< Updated upstream
 
 **Students created before JWT auth was added** have `password_hash = NULL` and cannot log in. They must re-register, or you can wipe the database.
+=======
+>>>>>>> Stashed changes
