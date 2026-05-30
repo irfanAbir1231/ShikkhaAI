@@ -13,27 +13,30 @@ class RagClient:
         if settings.mock_mode:
             return self._mock_exam(payload)
 
-        # Try direct in-process call first (no separate RAG server needed)
-        try:
-            from dotenv import load_dotenv
-            load_dotenv("rag/.env")
-            from rag.generate import generate_questions  # noqa: PLC0415
+        # Optional in-process call (monorepo dev only). Disabled by default so a
+        # standalone backend deploy never imports the heavy RAG deps and instead
+        # talks to the RAG service over HTTP (RAG_BASE_URL).
+        if settings.rag_inprocess:
+            try:
+                from dotenv import load_dotenv
+                load_dotenv("rag/.env")
+                from rag.generate import generate_questions  # noqa: PLC0415
 
-            req = self._to_rag_request(payload)
-            result = generate_questions(
-                subject=req["subject"],
-                class_level=req["class_level"],
-                difficulty=req["difficulty"],
-                count=req["count"],
-                query_override=req.get("topic"),
-            )
-            data = self._adapt_rag_response(result)
-            logger.info("Using in-process RAG for exam generation")
-            return self._normalize_exam(data=data, request_payload=payload, source="rag")
-        except ImportError:
-            pass  # RAG module not in path — fall through to HTTP
-        except Exception as exc:
-            raise RuntimeError(f"RAG generation failed: {exc}") from exc
+                req = self._to_rag_request(payload)
+                result = generate_questions(
+                    subject=req["subject"],
+                    class_level=req["class_level"],
+                    difficulty=req["difficulty"],
+                    count=req["count"],
+                    query_override=req.get("topic"),
+                )
+                data = self._adapt_rag_response(result)
+                logger.info("Using in-process RAG for exam generation")
+                return self._normalize_exam(data=data, request_payload=payload, source="rag")
+            except ImportError:
+                pass  # RAG module not in path — fall through to HTTP
+            except Exception as exc:
+                raise RuntimeError(f"RAG generation failed: {exc}") from exc
 
         # HTTP RAG service: preferred when running separately on RAG_BASE_URL
         if settings.rag_base_url:
@@ -176,24 +179,25 @@ Rules:
         if settings.mock_mode:
             return self._mock_ask(payload)
 
-        # Try direct in-process call first
-        try:
-            from dotenv import load_dotenv
-            load_dotenv("rag/.env")
-            from rag.generate import generate_answer  # noqa: PLC0415
+        # Optional in-process call (monorepo dev only); see generate_exam.
+        if settings.rag_inprocess:
+            try:
+                from dotenv import load_dotenv
+                load_dotenv("rag/.env")
+                from rag.generate import generate_answer  # noqa: PLC0415
 
-            result = generate_answer(
-                query=payload["message"],
-                mode=payload["mode"],
-                subject=payload["subject"],
-                class_level=payload["class_level"],
-                pdf_context=payload.get("pdf_context"),
-            )
-            return {"response": result.get("response", ""), "sources": result.get("sources", [])}
-        except ImportError:
-            pass
-        except Exception as exc:
-            raise RuntimeError(f"RAG ask failed: {exc}") from exc
+                result = generate_answer(
+                    query=payload["message"],
+                    mode=payload["mode"],
+                    subject=payload["subject"],
+                    class_level=payload["class_level"],
+                    pdf_context=payload.get("pdf_context"),
+                )
+                return {"response": result.get("response", ""), "sources": result.get("sources", [])}
+            except ImportError:
+                pass
+            except Exception as exc:
+                raise RuntimeError(f"RAG ask failed: {exc}") from exc
 
         # HTTP fallback (RAG service only — no direct Gemini for study companion)
         if not settings.rag_base_url:

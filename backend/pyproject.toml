@@ -3,7 +3,7 @@ name = "backend"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.14.5"
+requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.136.1",
     "httpx>=0.28.1",
@@ -14,5 +14,14 @@ dependencies = [
     "uvicorn>=0.46.0",
     "google-genai>=1.19.0",
     "python-jose[cryptography]>=3.5.0",
-    "passlib[bcrypt]>=1.7.4",
+    "bcrypt>=4.1.0",
 ]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]

@@ -1,11 +1,18 @@
 # RAG service dependencies.
 # IMPORTANT: install in a Python 3.11 venv — torch / sentence-transformers /
-# chromadb have no wheels for Python 3.14 (the backend's runtime).
+# chromadb wheels are most reliable there.
 #
 #   py -3.11 -m venv .rag-venv
 #   .rag-venv\Scripts\activate
 #   pip install -r rag/requirements.txt
 #   uvicorn rag_server:app --port 8100
+#
+# On Render set PYTHON_VERSION=3.11.9 (see render.yaml).
+
+# Pull the CPU-only torch build — the default PyPI wheel bundles CUDA (~800MB)
+# and is pointless on Render's CPU instances.
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch
 
 pymupdf
 ebooklib
@@ -16,6 +23,6 @@ sentence-transformers
 # NOT the older google-generativeai package.
 google-genai
 fastapi
-uvicorn
+uvicorn[standard]
 pydantic
 python-dotenv

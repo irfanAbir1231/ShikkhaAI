@@ -1,3 +1,4 @@
+import logging
 from typing import Any
 
 from fastapi import Request
@@ -5,6 +6,8 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from starlette.exceptions import HTTPException as StarletteHTTPException
+
+logger = logging.getLogger("shikkhaai")
 
 
 class AppError(Exception):
@@ -74,4 +77,19 @@ async def http_exception_handler(
     return JSONResponse(
         status_code=exc.status_code,
         content=error_response(code="HTTP_ERROR", message=detail),
+    )
+
+
+async def unhandled_exception_handler(
+    request: Request,
+    exc: Exception,
+) -> JSONResponse:
+    """Catch-all so unexpected errors never leak a stack trace to the client."""
+    logger.exception("Unhandled error on %s %s", request.method, request.url.path)
+    return JSONResponse(
+        status_code=500,
+        content=error_response(
+            code="INTERNAL_ERROR",
+            message="An internal error occurred. Please try again later.",
+        ),
     )

@@ -34,7 +34,9 @@ def _get_client() -> "genai.Client":
     real generation call."""
     global _client
     if _client is None:
-        api_key = os.environ.get("GEMINI_API_KEY")
+        raw = os.environ.get("GEMINI_API_KEY", "")
+        # Support a comma-separated pool of keys; use the first valid one.
+        api_key = next((k.strip() for k in raw.split(",") if k.strip()), "")
         if not api_key:
             raise RuntimeError(
                 "GEMINI_API_KEY is not set. Add it to rag/.env "

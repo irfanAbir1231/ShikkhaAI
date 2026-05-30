@@ -16,6 +16,7 @@ wheels/
 !.env.example
 .uv-cache/
 *.db
+*.log
 
 # Flutter/Dart
 frontend/.dart_tool/
