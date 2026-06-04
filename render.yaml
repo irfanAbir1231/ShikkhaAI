@@ -60,7 +60,7 @@ services:
   - type: web
     name: shikkhaai-rag
     runtime: python
-    plan: starter
+    plan: free
     rootDir: .
     buildCommand: pip install -r rag/requirements.txt
     startCommand: uvicorn rag_server:app --host 0.0.0.0 --port $PORT
