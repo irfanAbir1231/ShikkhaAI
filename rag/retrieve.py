@@ -33,7 +33,7 @@ def get_collection():
 
     client = chromadb.PersistentClient(path=CHROMA_DB_PATH)
 
-    return client.get_collection(COLLECTION_NAME)
+    return client.get_or_create_collection(COLLECTION_NAME)
 
 
 def retrieve_context(

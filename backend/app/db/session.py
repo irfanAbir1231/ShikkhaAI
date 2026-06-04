@@ -50,11 +50,7 @@
 
 from collections.abc import Generator
 
-<<<<<<< Updated upstream
-from sqlalchemy import create_engine, inspect, text
-=======
-from sqlalchemy import create_engine, event
->>>>>>> Stashed changes
+from sqlalchemy import create_engine, event, inspect, text
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import NullPool, QueuePool
 
@@ -107,13 +103,12 @@ def init_db() -> None:
     # create_all is idempotent — safe to call on every startup
     Base.metadata.create_all(bind=engine)
 
-<<<<<<< Updated upstream
     # SQLite-specific column migrations for tables that existed before new models
     if engine.dialect.name.startswith("sqlite"):
         _sqlite_migrate(engine)
 
 
-def _sqlite_migrate(engine) -> None:
+def _sqlite_migrate(engine):
     """Add missing columns to existing SQLite tables (non-destructive)."""
     inspector = inspect(engine)
     existing_tables = {t for t in inspector.get_table_names()}
@@ -181,9 +176,8 @@ def _sqlite_migrate(engine) -> None:
                 conn.commit()
                 conn.execute(text("CREATE INDEX ix_topic_performance_student_id ON topic_performance (student_id)"))
                 conn.commit()
-=======
+
 
 def close_db() -> None:
     """Close database connections gracefully."""
     engine.dispose()
->>>>>>> Stashed changes
