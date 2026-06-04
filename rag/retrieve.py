@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Optional
 
 import chromadb
-from sentence_transformers import SentenceTransformer
+from fastembed import TextEmbedding
 
 # Resolve relative to the repo root (rag/ is a package), so retrieval works
 # regardless of the directory uvicorn is launched from.
@@ -14,14 +14,14 @@ CHROMA_DB_PATH = str(Path(__file__).resolve().parent.parent / "chroma_db")
 COLLECTION_NAME = "nctb_curriculum"
 
 # MUST MATCH INGEST MODEL
-EMBED_MODEL = "paraphrase-multilingual-MiniLM-L12-v2"
+EMBED_MODEL = "BAAI/bge-small-en-v1.5"
 
 
 # ─────────────────────────────────────────────────────────────
 # LOAD MODEL
 # ─────────────────────────────────────────────────────────────
 
-model = SentenceTransformer(EMBED_MODEL)
+model = TextEmbedding(model_name=EMBED_MODEL)
 
 
 # ─────────────────────────────────────────────────────────────
@@ -50,7 +50,7 @@ def retrieve_context(
     if total == 0:
         return []
 
-    query_embedding = model.encode(query, normalize_embeddings=True).tolist()
+    query_embedding = list(model.embed([query]))[0].tolist()
 
     where = None
 

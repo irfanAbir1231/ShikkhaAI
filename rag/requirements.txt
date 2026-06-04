@@ -9,16 +9,11 @@
 #
 # On Render set PYTHON_VERSION=3.11.9 (see render.yaml).
 
-# Pull the CPU-only torch build — the default PyPI wheel bundles CUDA (~800MB)
-# and is pointless on Render's CPU instances.
---extra-index-url https://download.pytorch.org/whl/cpu
-torch
-
 pymupdf
 ebooklib
 beautifulsoup4
 chromadb
-sentence-transformers
+fastembed
 # Code uses `from google import genai` -> this is the google-genai SDK,
 # NOT the older google-generativeai package.
 google-genai

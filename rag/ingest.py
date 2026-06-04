@@ -260,8 +260,7 @@ from pathlib import Path
 import chromadb
 import fitz
 import numpy as np
-import torch
-from sentence_transformers import SentenceTransformer
+from fastembed import TextEmbedding
 
 CHROMA_DB_PATH = "./chroma_db"
 COLLECTION_NAME = "nctb_curriculum"
@@ -269,7 +268,7 @@ UPLOADS_DIR = "./uploads"
 
 # EMBED_MODEL = "sentence-transformers/paraphrase-MiniLM-L3-v2"
 
-EMBED_MODEL = "paraphrase-multilingual-MiniLM-L12-v2"
+EMBED_MODEL = "BAAI/bge-small-en-v1.5"
 
 CHUNK_SIZE = 1000
 CHUNK_OVERLAP = 120
@@ -278,27 +277,13 @@ MAX_PAGES = 15
 EMBED_BATCH = 128
 
 
-def load_model() -> SentenceTransformer:
+def load_model() -> TextEmbedding:
     print("[1/5] Loading embedding model...")
-
-    device = "cuda" if torch.cuda.is_available() else "cpu"
-
-    print(f"      device: {device}")
     print(f"      model : {EMBED_MODEL}")
-
     t = time.time()
-
-    try:
-        # ONNX backend
-        model = SentenceTransformer(EMBED_MODEL, device=device, backend="onnx")
-        print("      backend: ONNX")
-    except Exception:
-        # fallback
-        model = SentenceTransformer(EMBED_MODEL, device=device)
-        print("      backend: PyTorch fallback")
-
+    model = TextEmbedding(model_name=EMBED_MODEL)
+    print(f"      backend: ONNX (fastembed)")
     print(f"      loaded in {time.time() - t:.1f}s\n")
-
     return model
 
 
@@ -534,13 +519,7 @@ def index_file(path: str, col, model) -> int:
 
         batch = all_chunks[i : i + EMBED_BATCH]
 
-        vecs = model.encode(
-            batch,
-            batch_size=EMBED_BATCH,
-            normalize_embeddings=True,
-            convert_to_numpy=True,
-            show_progress_bar=False,
-        )
+        vecs = np.array(list(model.embed(batch)))
 
         embeddings.append(vecs)
 
@@ -570,8 +549,8 @@ def index_file(path: str, col, model) -> int:
 
     print(f"stored in {time.time() - t:.1f}s")
 
-    print(f"\n✓ Indexed {len(all_chunks)} chunks")
-    print(f"✓ Collection size: {col.count()}")
+    print(f"\n[OK] Indexed {len(all_chunks)} chunks")
+    print(f"[OK] Collection size: {col.count()}")
 
     return len(all_chunks)
 
