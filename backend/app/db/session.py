@@ -109,9 +109,8 @@ def init_db() -> None:
     # create_all is idempotent — safe to call on every startup
     Base.metadata.create_all(bind=engine)
 
-    # SQLite-specific column migrations for tables that existed before new models
-    if engine.dialect.name.startswith("sqlite"):
-        _sqlite_migrate(engine)
+    # Run schema migrations for all dialects (PostgreSQL on Render, SQLite locally)
+    _migrate_schema(engine)
 
     # Seed curriculum data if empty
     from app.db.seed_curriculum import seed_curriculum
@@ -123,10 +122,11 @@ def init_db() -> None:
         db.close()
 
 
-def _sqlite_migrate(engine):
-    """Add missing columns to existing SQLite tables (non-destructive)."""
+def _migrate_schema(engine):
+    """Add missing columns and constraints to existing tables (non-destructive, dialect-aware)."""
     inspector = inspect(engine)
-    existing_tables = {t for t in inspector.get_table_names()}
+    existing_tables = set(inspector.get_table_names())
+    is_sqlite = engine.dialect.name.startswith("sqlite")
 
     with engine.connect() as conn:
         # students.password (pre-auth records)
@@ -153,13 +153,13 @@ def _sqlite_migrate(engine):
                 conn.execute(text("ALTER TABLE curriculum_topics ADD COLUMN chapter_number INTEGER"))
                 conn.commit()
 
-        # topic_performance.subject (added for per-subject tracking)
+        # topic_performance.subject + unique constraint migration
         if "topic_performance" in existing_tables:
             cols = {c["name"] for c in inspector.get_columns("topic_performance")}
             if "subject" not in cols:
                 conn.execute(text("ALTER TABLE topic_performance ADD COLUMN subject VARCHAR(100) DEFAULT 'General'"))
                 conn.commit()
-                # Populate subject from most recent Attempt + Exam for each (student_id, topic)
+                # Populate subject from most recent Attempt + Exam for each student
                 conn.execute(text("""
                     UPDATE topic_performance
                     SET subject = COALESCE((
@@ -172,35 +172,52 @@ def _sqlite_migrate(engine):
                     ), 'General')
                 """))
                 conn.commit()
-                # Recreate table with new unique constraint (SQLite cannot drop constraints)
-                conn.execute(text("""
-                    CREATE TABLE topic_performance_new (
-                        id INTEGER NOT NULL PRIMARY KEY,
-                        student_id INTEGER NOT NULL,
-                        subject VARCHAR(100) NOT NULL DEFAULT 'General',
-                        topic VARCHAR(150) NOT NULL,
-                        attempts_count INTEGER NOT NULL DEFAULT 0,
-                        average_score FLOAT NOT NULL DEFAULT 0.0,
-                        consistency_score FLOAT NOT NULL DEFAULT 0.0,
-                        last_score FLOAT NOT NULL DEFAULT 0.0,
-                        updated_at DATETIME,
-                        CONSTRAINT uq_topic_performance_student_subject_topic UNIQUE (student_id, subject, topic)
-                    )
-                """))
-                conn.commit()
-                conn.execute(text("""
-                    INSERT INTO topic_performance_new
-                    (id, student_id, subject, topic, attempts_count, average_score, consistency_score, last_score, updated_at)
-                    SELECT id, student_id, subject, topic, attempts_count, average_score, consistency_score, last_score, updated_at
-                    FROM topic_performance
-                """))
-                conn.commit()
-                conn.execute(text("DROP TABLE topic_performance"))
-                conn.commit()
-                conn.execute(text("ALTER TABLE topic_performance_new RENAME TO topic_performance"))
-                conn.commit()
-                conn.execute(text("CREATE INDEX ix_topic_performance_student_id ON topic_performance (student_id)"))
-                conn.commit()
+
+                if is_sqlite:
+                    # SQLite: recreate table (cannot drop constraints)
+                    conn.execute(text("""
+                        CREATE TABLE topic_performance_new (
+                            id INTEGER NOT NULL PRIMARY KEY,
+                            student_id INTEGER NOT NULL,
+                            subject VARCHAR(100) NOT NULL DEFAULT 'General',
+                            topic VARCHAR(150) NOT NULL,
+                            attempts_count INTEGER NOT NULL DEFAULT 0,
+                            average_score FLOAT NOT NULL DEFAULT 0.0,
+                            consistency_score FLOAT NOT NULL DEFAULT 0.0,
+                            last_score FLOAT NOT NULL DEFAULT 0.0,
+                            updated_at DATETIME,
+                            CONSTRAINT uq_topic_performance_student_subject_topic UNIQUE (student_id, subject, topic)
+                        )
+                    """))
+                    conn.commit()
+                    conn.execute(text("""
+                        INSERT INTO topic_performance_new
+                        (id, student_id, subject, topic, attempts_count, average_score, consistency_score, last_score, updated_at)
+                        SELECT id, student_id, subject, topic, attempts_count, average_score, consistency_score, last_score, updated_at
+                        FROM topic_performance
+                    """))
+                    conn.commit()
+                    conn.execute(text("DROP TABLE topic_performance"))
+                    conn.commit()
+                    conn.execute(text("ALTER TABLE topic_performance_new RENAME TO topic_performance"))
+                    conn.commit()
+                    conn.execute(text("CREATE INDEX ix_topic_performance_student_id ON topic_performance (student_id)"))
+                    conn.commit()
+                else:
+                    # PostgreSQL: drop old constraint if present, add new one if absent
+                    conn.execute(text(
+                        "ALTER TABLE topic_performance DROP CONSTRAINT IF EXISTS uq_topic_performance_student_topic"
+                    ))
+                    conn.commit()
+                    result = conn.execute(text(
+                        "SELECT 1 FROM pg_constraint WHERE conname = 'uq_topic_performance_student_subject_topic'"
+                    )).fetchone()
+                    if not result:
+                        conn.execute(text(
+                            "ALTER TABLE topic_performance ADD CONSTRAINT uq_topic_performance_student_subject_topic "
+                            "UNIQUE (student_id, subject, topic)"
+                        ))
+                        conn.commit()
 
 
 def close_db() -> None:
