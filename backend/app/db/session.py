@@ -48,10 +48,13 @@
 #             conn.commit()
 
 
+import logging
 from collections.abc import Generator
 from typing import Any
 
 from sqlalchemy import create_engine, event, inspect, text
+
+logger = logging.getLogger("shikkhaai")
 from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.pool import NullPool, QueuePool
 
