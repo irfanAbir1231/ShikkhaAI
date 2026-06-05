@@ -1,9 +1,4 @@
-"""
-rag_router.py — FastAPI router exposing RAG endpoints
-Member 2 includes it in main.py with:
-    from rag.rag_router import router as rag_router
-    app.include_router(rag_router, prefix="/rag")
-"""
+"""rag_router.py — FastAPI router exposing RAG endpoints"""
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
@@ -11,6 +6,7 @@ from typing import Optional
 
 from .retrieve import retrieve_context, build_rag_context
 from .generate import generate_questions, generate_answer
+from .topic_segmenter import segment_text_by_headers, TopicChunk
 
 router = APIRouter()
 
@@ -24,6 +20,7 @@ class GenerateRequest(BaseModel):
     # Optional retrieval hint. Backend passes the exam topic here so the
     # curriculum context is fetched for that topic instead of a generic query.
     topic: Optional[str] = None
+    # Optional chapter filter for topic-aware exam generation
     chapter: Optional[str] = None
 
 
@@ -39,34 +36,26 @@ class WeakTopicsRequest(BaseModel):
     topics: list[dict]
 
 
+class ExtractTopicsRequest(BaseModel):
+    """Request for topic/chapter extraction from textbook text."""
+    text: str
+    chapter_prefix: Optional[str] = None
+
+
+class ExtractedTopic(BaseModel):
+    """A detected topic/chapter from the text."""
+    topic: str
+    chapter: str
+    text_snippet: str
+    text_length: int
+
+
 class AskRequest(BaseModel):
     query: str
     mode: str
     subject: str
     class_level: str
     pdf_context: Optional[str] = None
-
-
-class ExtractTopicsRequest(BaseModel):
-    book_id: str
-    chapter_title: str
-    chapter_text: str
-    subject: str
-    class_level: str
-
-
-class ExtractedTopic(BaseModel):
-    topic_title: str
-    topic_order: int
-    page_start: int
-    page_end: int
-    chunk_ids: list[str]
-
-
-class ExtractTopicsResponse(BaseModel):
-    book_id: str
-    chapter_title: str
-    topics: list[ExtractedTopic]
 
 
 # ─── Endpoints ────────────────────────────────────────────────────────────────
@@ -77,6 +66,9 @@ def generate_exam(req: GenerateRequest):
     """
     Called by Member 2's /generate-exam endpoint after student profile lookup.
     Returns questions matching the API contract.
+
+    If topic or chapter is provided, generates topic-aware exam questions
+    filtered to that specific topic or chapter.
     """
     try:
         result = generate_questions(
@@ -104,6 +96,40 @@ def retrieve(req: RetrieveRequest):
         chapter=req.chapter,
     )
     return {"chunks": chunks}
+
+
+@router.post("/extract-topics")
+def extract_topics(req: ExtractTopicsRequest):
+    """
+    Extract topics and chapters from textbook text.
+
+    Segments the input text by detecting chapter headers, section headers,
+    and topic boundaries. Returns a list of extracted topic chunks with
+    their associated chapter names.
+    """
+    try:
+        chunks: list[TopicChunk] = segment_text_by_headers(
+            text=req.text,
+            chapter_prefix=req.chapter_prefix,
+            default_topic="General Content",
+        )
+
+        result = [
+            ExtractedTopic(
+                topic=c.topic,
+                chapter=c.chapter,
+                text_snippet=c.text[:200] + "..." if len(c.text) > 200 else c.text,
+                text_length=len(c.text),
+            )
+            for c in chunks
+        ]
+
+        return {
+            "total_chunks": len(result),
+            "chunks": result,
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.post("/context")
@@ -171,24 +197,14 @@ def weak_topics(req: WeakTopicsRequest):
     return {"weak_topics": weak}
 
 
-@router.post("/extract-topics")
-def extract_topics(req: ExtractTopicsRequest):
+@router.get("/topics")
+def get_topics(subject: Optional[str] = None, class_level: Optional[str] = None):
     """
-    Stub endpoint for chapter/topic extraction from textbook text.
-    In a full implementation this calls rag/topic_segmenter.py.
-    For now returns a single topic representing the whole chapter
-    so the UI flow remains unbroken.
+    Get all unique chapters stored in ChromaDB.
     """
-    return ExtractTopicsResponse(
-        book_id=req.book_id,
-        chapter_title=req.chapter_title,
-        topics=[
-            ExtractedTopic(
-                topic_title=req.chapter_title,
-                topic_order=1,
-                page_start=1,
-                page_end=1,
-                chunk_ids=[],
-            )
-        ],
-    ).model_dump()
+    try:
+        from .retrieve import get_unique_chapters
+        topics = get_unique_chapters(subject=subject, class_level=class_level)
+        return {"topics": topics}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

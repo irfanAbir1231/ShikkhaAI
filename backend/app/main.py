@@ -15,7 +15,7 @@ from app.api.routes_notes import router as notes_router
 from app.api.routes_students import router as students_router
 from app.api.routes_study_companion import router as study_companion_router
 from app.core.config import settings, validate_settings
-from app.core.logging_config import setup_logging, get_logger
+from app.core.logging_config import get_logger, setup_logging
 from app.core.responses import (
     AppError,
     app_error_handler,
@@ -24,10 +24,18 @@ from app.core.responses import (
     unhandled_exception_handler,
     validation_exception_handler,
 )
-from app.db.session import init_db, close_db
+from app.db.session import close_db, init_db
 
 setup_logging()
 logger = get_logger(__name__)
+
+try:
+    from rag.rag_router import router as rag_router
+    RAG_ROUTER_AVAILABLE = True
+except (ImportError, ModuleNotFoundError) as exc:
+    # We log this at a debug or info level since in-process RAG is optional
+    logger.info("RAG router could not be imported (RAG dependencies not in this venv): %s", exc)
+    RAG_ROUTER_AVAILABLE = False
 
 
 @asynccontextmanager
@@ -81,28 +89,15 @@ app.add_exception_handler(Exception, unhandled_exception_handler)
 # ── Routers ───────────────────────────────────────────────────────────────────
 app.include_router(students_router)
 app.include_router(exams_router)
-app.include_router(analytics_router)   # GET /student/{id}/dashboard|analytics|topics
-app.include_router(curriculum_router)  # GET /curriculum/{class}/{subject}/chapters|topics
-app.include_router(notes_router)       # GET|POST|DELETE /notes
-app.include_router(study_companion_router)  # POST /study-companion/ask
-
-# Mount RAG router if dependencies are available (monorepo dev mode)
-try:
-    import sys
-    from pathlib import Path
-
-    # Add repo root to path so `rag` package is importable when uvicorn
-    # is launched from inside backend/
-    repo_root = Path(__file__).resolve().parent.parent.parent
-    if str(repo_root) not in sys.path:
-        sys.path.insert(0, str(repo_root))
-
-    from rag.rag_router import router as rag_router
-
+app.include_router(analytics_router)
+app.include_router(curriculum_router)
+app.include_router(notes_router)
+app.include_router(study_companion_router)
+if RAG_ROUTER_AVAILABLE:
     app.include_router(rag_router, prefix="/rag")
     logger.info("RAG router mounted at /rag")
-except Exception as exc:
-    logger.warning("RAG router not mounted: %s", exc)
+else:
+    logger.info("RAG router not available (chromadb/fastembed not installed in backend venv)")
 
 
 @app.get("/health")

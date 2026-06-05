@@ -65,21 +65,22 @@ if settings.database_url.startswith("sqlite"):
 else:
     poolclass = QueuePool
 
-_engine_kwargs: dict[str, Any] = dict(
-    connect_args=connect_args,
-    pool_pre_ping=True,
-    poolclass=poolclass,
-    echo=settings.debug,
-)
-if not settings.database_url.startswith("sqlite"):
-    _engine_kwargs.update(
-        pool_size=20 if settings.environment == "production" else 5,
-        max_overflow=40 if settings.environment == "production" else 10,
-        pool_recycle=3600,
-        pool_timeout=30,
-    )
+engine_kwargs: dict[str, Any] = {
+    "connect_args": connect_args,
+    "pool_pre_ping": True,
+    "poolclass": poolclass,
+    "pool_recycle": 3600,
+    "echo": settings.debug,
+}
+if poolclass is not NullPool:
+    engine_kwargs["pool_size"] = 20 if settings.environment == "production" else 5
+    engine_kwargs["max_overflow"] = 40 if settings.environment == "production" else 10
+    engine_kwargs["pool_timeout"] = 30
 
-engine = create_engine(settings.database_url, **_engine_kwargs)
+engine = create_engine(
+    settings.database_url,
+    **engine_kwargs
+)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

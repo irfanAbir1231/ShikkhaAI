@@ -159,14 +159,12 @@ def chunk_text(text: str) -> list[str]:
     text_len = len(text)
 
     while start < text_len:
-
         end = min(start + CHUNK_SIZE, text_len)
 
         chunk = text[start:end]
 
         # Try ending at sentence boundary
         if end < text_len:
-
             best = max(chunk.rfind(". "), chunk.rfind("? "), chunk.rfind("! "))
 
             if best > CHUNK_SIZE * 0.5:
@@ -293,7 +291,7 @@ def index_file(path: str, col, model) -> int:
     print(f"      extraction time : {time.time() - t:.1f}s")
 
     # ─────────────────────────────
-    # chunk
+    # chunk + segment by topics
     # ─────────────────────────────
 
     print("\n[4/5] Chunking text...")
@@ -354,7 +352,6 @@ def index_file(path: str, col, model) -> int:
     total = len(all_chunks)
 
     for i in range(0, total, EMBED_BATCH):
-
         batch = all_chunks[i : i + EMBED_BATCH]
 
         vecs = np.array(list(model.embed(batch)))
@@ -429,7 +426,6 @@ def index_all(upload_dir=UPLOADS_DIR):
 
 
 if __name__ == "__main__":
-
     parser = argparse.ArgumentParser()
 
     parser.add_argument("--file", default=None, help="Single PDF file")
@@ -437,7 +433,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.file:
-
         model = load_model()
 
         col = get_collection()

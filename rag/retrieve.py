@@ -41,8 +41,12 @@ def retrieve_context(
     subject: Optional[str] = None,
     class_level: Optional[str] = None,
     chapter: Optional[str] = None,
+    topic: Optional[str] = None,
     n_results: int = 3,
 ) -> list[dict]:
+    """
+    Retrieve context from ChromaDB with optional chapter and topic filtering.
+    """
 
     collection = get_collection()
 
@@ -56,11 +60,13 @@ def retrieve_context(
     where_clauses = []
 
     if subject:
-        where_clauses.append({"subject": subject})
+        where_clauses.append({"subject": subject.lower()})
     if class_level:
-        where_clauses.append({"class": class_level})
+        where_clauses.append({"class": str(class_level)})
     if chapter:
         where_clauses.append({"chapter": chapter})
+    if topic:
+        where_clauses.append({"topic": topic})
 
     if len(where_clauses) == 1:
         where = where_clauses[0]
@@ -80,20 +86,38 @@ def retrieve_context(
 
     results = collection.query(**kwargs)
 
+    # Fallback: if no results with chapter/topic filters, retry without them
+    docs = results["documents"][0] if results and results["documents"] else []
+    if not docs and (chapter or topic):
+        fallback_clauses = []
+        if subject:
+            fallback_clauses.append({"subject": subject.lower()})
+        if class_level:
+            fallback_clauses.append({"class": str(class_level)})
+
+        if len(fallback_clauses) == 1:
+            kwargs["where"] = fallback_clauses[0]
+        elif len(fallback_clauses) > 1:
+            kwargs["where"] = {"$and": fallback_clauses}
+        else:
+            kwargs.pop("where", None)
+
+        results = collection.query(**kwargs)
+
     output = []
 
-    docs = results["documents"][0]
-    metas = results["metadatas"][0]
-    dists = results["distances"][0]
+    docs = results["documents"][0] if results and results["documents"] else []
+    metas = results["metadatas"][0] if results and results["metadatas"] else []
+    dists = results["distances"][0] if results and results["distances"] else []
 
     for doc, meta, dist in zip(docs, metas, dists):
-
         output.append(
             {
                 "text": doc,
                 "subject": meta.get("subject", ""),
                 "class": meta.get("class", ""),
                 "chapter": meta.get("chapter", ""),
+                "topic": meta.get("topic", ""),
                 "source": meta.get("source", ""),
                 "distance": round(float(dist), 4),
             }
@@ -107,6 +131,7 @@ def build_rag_context(
     subject: Optional[str] = None,
     class_level: Optional[str] = None,
     chapter: Optional[str] = None,
+    topic: Optional[str] = None,
 ) -> str:
 
     chunks = retrieve_context(
@@ -114,6 +139,7 @@ def build_rag_context(
         subject=subject,
         class_level=class_level,
         chapter=chapter,
+        topic=topic,
     )
 
     if not chunks:
@@ -122,7 +148,6 @@ def build_rag_context(
     parts = []
 
     for i, c in enumerate(chunks, 1):
-
         parts.append(
             f"[Chunk {i} | "
             f"{c['subject'].title()} "
@@ -132,3 +157,49 @@ def build_rag_context(
         )
 
     return "\n\n".join(parts)
+
+
+def get_unique_chapters(
+    subject: Optional[str] = None,
+    class_level: Optional[str] = None,
+) -> list[dict]:
+    """
+    Retrieve all unique chapters from ChromaDB.
+    Returns a list of dicts: [{"subject": "...", "chapter": "..."}]
+    """
+    collection = get_collection()
+    total = collection.count()
+    if total == 0:
+        return []
+
+    where_clauses = []
+    if subject:
+        where_clauses.append({"subject": subject.lower()})
+    if class_level:
+        where_clauses.append({"class": str(class_level)})
+
+    kwargs = {"include": ["metadatas"]}
+    if len(where_clauses) == 1:
+        kwargs["where"] = where_clauses[0]
+    elif len(where_clauses) > 1:
+        kwargs["where"] = {"$and": where_clauses}
+
+    results = collection.get(**kwargs)
+    metas = results.get("metadatas", [])
+    if not metas:
+        return []
+
+    seen = set()
+    output = []
+    for meta in metas:
+        subj = meta.get("subject", "").lower()
+        chap = meta.get("chapter", "")
+        if not subj or not chap:
+            continue
+        key = (subj, chap)
+        if key not in seen:
+            seen.add(key)
+            output.append({"subject": subj, "chapter": chap})
+
+    output.sort(key=lambda x: (x["subject"], x["chapter"]))
+    return output

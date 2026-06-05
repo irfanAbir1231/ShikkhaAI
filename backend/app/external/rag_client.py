@@ -1,5 +1,5 @@
 import logging
-from typing import Any
+from typing import Any, Optional
 
 import httpx
 
@@ -254,6 +254,45 @@ Rules:
             return [self._normalize_weak_topic(topic) for topic in weak_topics]
         except (httpx.HTTPError, ValueError, TypeError, KeyError):
             return self._mock_weak_topics(payload)
+
+    def get_topics(self, subject: Optional[str] = None, class_level: Optional[str] = None) -> list[dict[str, Any]]:
+        if settings.mock_mode:
+            return []
+
+        # RAG inprocess fallback
+        if settings.rag_inprocess:
+            try:
+                from dotenv import load_dotenv
+                load_dotenv("rag/.env")
+                from rag.retrieve import get_unique_chapters_and_topics  # noqa: PLC0415
+                logger.info("Using in-process RAG for get_topics")
+                return get_unique_chapters_and_topics(subject=subject, class_level=class_level)
+            except ImportError:
+                pass
+            except Exception as exc:
+                logger.warning("In-process get_topics failed: %s", exc)
+
+        # HTTP RAG service call
+        if settings.rag_base_url:
+            try:
+                params = {}
+                if subject:
+                    params["subject"] = subject
+                if class_level:
+                    params["class_level"] = class_level
+                with httpx.Client(timeout=settings.rag_timeout_seconds) as client:
+                    response = client.get(
+                        f"{settings.rag_base_url}/topics",
+                        params=params,
+                    )
+                    response.raise_for_status()
+                    data = response.json()
+                logger.info("Using HTTP RAG service for get_topics")
+                return data.get("topics", [])
+            except Exception as exc:
+                logger.warning("RAG HTTP get_topics failed: %s. Returning empty list.", exc)
+
+        return []
 
     def _mock_ask(self, payload: dict[str, Any]) -> dict[str, Any]:
         return {

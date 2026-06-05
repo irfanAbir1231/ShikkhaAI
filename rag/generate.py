@@ -39,8 +39,7 @@ def _get_client() -> "genai.Client":
         api_key = next((k.strip() for k in raw.split(",") if k.strip()), "")
         if not api_key:
             raise RuntimeError(
-                "GEMINI_API_KEY is not set. Add it to rag/.env "
-                "(see rag/.env.example)."
+                "GEMINI_API_KEY is not set. Add it to rag/.env (see rag/.env.example)."
             )
         _client = genai.Client(api_key=api_key)
     return _client
@@ -89,7 +88,7 @@ CURRICULUM CONTEXT:
 {context}
 {topic_block}
 TASK:
-Generate {count} exam questions for Class {class_level} {subject.title()}{f' on the topic "{topic}"' if topic else ''}.
+Generate {count} exam questions for Class {class_level} {subject.title()}{f' on the topic "{topic}"' if topic else ""}.
 
 Difficulty:
 {difficulty} ({focus})
@@ -142,27 +141,44 @@ def generate_questions(
     query_override: str = None,
     chapter: str = None,
 ):
+    """
+    Generate exam questions using RAG context with optional chapter filtering.
 
+    Args:
+        subject: Subject name (e.g., 'science', 'math')
+        class_level: Class level as string (e.g., '8')
+        difficulty: Question difficulty level
+        count: Number of questions to generate
+        query_override: Specific topic/query to focus on
+        chapter: Optional chapter number to filter results
+    """
     query = query_override or f"{subject} class {class_level} {difficulty} questions"
+
+    # Build RAG context with optional chapter filter
+    if chapter:
+        query = f"{query} chapter {chapter}"
 
     context = build_rag_context(
         query,
         subject=subject,
         class_level=class_level,
         chapter=chapter,
+        topic=query_override if query_override else None,
     )
 
     if not context:
         print("[!] No RAG context found.")
         return {"questions": []}
 
+    # If chapter is specified, add it to the prompt
+    topic = query_override or chapter
     prompt = build_prompt(
         context,
         subject,
         class_level,
         difficulty,
         count,
-        topic=query_override,
+        topic=topic,
     )
 
     print(f"[+] Generating {count} questions...")
@@ -241,8 +257,7 @@ def generate_answer(
         }
 
     mode_instruction = MODE_PROMPTS.get(
-        mode,
-        "Give a clear, helpful explanation suitable for a Bangladeshi student."
+        mode, "Give a clear, helpful explanation suitable for a Bangladeshi student."
     )
 
     pdf_block = ""
@@ -295,7 +310,6 @@ def save_mock(data: dict):
         "w",
         encoding="utf-8",
     ) as f:
-
         json.dump(
             data,
             f,
@@ -307,7 +321,6 @@ def save_mock(data: dict):
 
 
 if __name__ == "__main__":
-
     parser = argparse.ArgumentParser()
 
     parser.add_argument("--subject", required=True)
