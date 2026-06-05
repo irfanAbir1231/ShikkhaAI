@@ -255,33 +255,70 @@ class AnalyticsService:
     # ── Topics by curriculum ──────────────────────────────────────────────────
 
     def get_topics(self, db: Session, student: Student) -> dict[str, Any]:
+        # 1. Fetch curriculum topics from database
         curriculum_topics = db.scalars(
             select(CurriculumTopic)
             .where(CurriculumTopic.class_level == student.grade_level)
             .order_by(CurriculumTopic.subject, CurriculumTopic.display_order)
         ).all()
 
+        # 2. Fetch student topic performance
         performances = db.scalars(
             select(TopicPerformance).where(TopicPerformance.student_id == student.id)
         ).all()
         perf_by_key: dict[tuple[str, str], TopicPerformance] = {
-            (p.subject, p.topic): p for p in performances
+            (p.subject.lower(), p.topic.lower()): p for p in performances
         }
+
+        # 3. Fetch textbook-derived topics from ChromaDB via RAG client
+        from app.external.rag_client import RagClient
+        rag_client = RagClient()
+        textbook_topics = []
+        try:
+            textbook_topics = rag_client.get_topics(class_level=student.grade_level)
+        except Exception as exc:
+            logger.warning("Failed to fetch textbook topics: %s", exc)
+
+        # 4. Merge curriculum topics and textbook topics
+        curriculum_set = {(ct.subject.lower(), ct.topic.lower()) for ct in curriculum_topics}
+        
+        unified_topics = []
+        for ct in curriculum_topics:
+            unified_topics.append({
+                "id": f"topic_{ct.id}",
+                "name": ct.topic,
+                "subject": ct.subject,
+            })
+            
+        for tt in textbook_topics:
+            subj = tt.get("subject", "")
+            topic_name = tt.get("topic", "")
+            if not subj or not topic_name:
+                continue
+            if (subj.lower(), topic_name.lower()) not in curriculum_set:
+                curriculum_set.add((subj.lower(), topic_name.lower()))
+                unified_topics.append({
+                    "id": f"rag_{subj.lower()}_{topic_name.lower().replace(' ', '_')}",
+                    "name": topic_name,
+                    "subject": subj,
+                })
 
         # Group by subject
         subjects_map: dict[str, list] = {}
-        for ct in curriculum_topics:
-            subjects_map.setdefault(ct.subject, []).append(ct)
+        for item in unified_topics:
+            subj_key = item["subject"].title() if item["subject"] else "General"
+            subjects_map.setdefault(subj_key, []).append(item)
 
         subjects_data = []
         total_topics = 0
         total_completed = 0
 
-        for subject, topics in subjects_map.items():
+        for subject, items in subjects_map.items():
             topic_items = []
             subj_completed = 0
-            for ct in topics:
-                perf = perf_by_key.get((ct.subject, ct.topic))
+            for item in items:
+                topic_name = item["name"]
+                perf = perf_by_key.get((subject.lower(), topic_name.lower()))
                 completion = round(perf.average_score, 1) if perf else 0.0
                 is_done = completion >= 60.0
                 if is_done:
@@ -290,15 +327,16 @@ class AnalyticsService:
                     perf.updated_at.strftime("%Y-%m-%d") if (perf and perf.updated_at) else None
                 )
                 topic_items.append({
-                    "id": f"topic_{ct.id}",
-                    "name": ct.topic,
+                    "id": item["id"],
+                    "name": topic_name,
                     "completion_percentage": completion,
                     "attempts_count": perf.attempts_count if perf else 0,
                     "last_score": round(perf.last_score, 1) if perf else None,
                     "last_attempted": last_attempted,
                     "is_completed": is_done,
+                    "subject": subject,
                 })
-            n = len(topics)
+            n = len(items)
             pct = round(subj_completed / n * 100, 1) if n else 0.0
             subjects_data.append({
                 "subject": subject,
@@ -311,7 +349,7 @@ class AnalyticsService:
             total_topics += n
             total_completed += subj_completed
 
-        # If no curriculum seeded yet — fall back to TopicPerformance data
+        # If no curriculum or textbook topics found — fall back to TopicPerformance data
         if not subjects_data:
             subjects_data = self._fallback_topics_from_performance(db, student.id, performances)
             total_topics = sum(s["total_topics"] for s in subjects_data)

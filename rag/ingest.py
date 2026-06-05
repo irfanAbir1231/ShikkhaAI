@@ -339,14 +339,12 @@ def chunk_text(text: str) -> list[str]:
     text_len = len(text)
 
     while start < text_len:
-
         end = min(start + CHUNK_SIZE, text_len)
 
         chunk = text[start:end]
 
         # Try ending at sentence boundary
         if end < text_len:
-
             best = max(chunk.rfind(". "), chunk.rfind("? "), chunk.rfind("! "))
 
             if best > CHUNK_SIZE * 0.5:
@@ -401,7 +399,6 @@ def extract_pages(path: str) -> list[str]:
     limit = min(MAX_PAGES, len(doc))
 
     for i in range(limit):
-
         # cleaner extraction
         text = doc[i].get_text("text")
 
@@ -455,12 +452,14 @@ def index_file(path: str, col, model) -> int:
     print(f"      extraction time : {time.time() - t:.1f}s")
 
     # ─────────────────────────────
-    # chunk
+    # chunk + segment by topics
     # ─────────────────────────────
 
-    print("\n[4/5] Chunking text...")
+    print("\n[4/5] Chunking and segmenting by topics...")
 
     t = time.time()
+
+    from .topic_segmenter import segment_text_by_headers
 
     all_chunks = []
     all_ids = []
@@ -469,32 +468,54 @@ def index_file(path: str, col, model) -> int:
     chunk_counter = 0
 
     for page_num, text in enumerate(pages):
+        if not text.strip():
+            continue
 
-        chunks = chunk_text(text)
+        # Segment text by headers to get topic/chapter info
+        segments = segment_text_by_headers(
+            text, chapter_prefix=meta["chapter"], default_topic="General"
+        )
 
-        print(f"      page {page_num + 1}: {len(chunks)} chunks")
+        print(f"      page {page_num + 1}: {len(segments)} segments detected")
 
-        for chunk_i, chunk in enumerate(chunks):
-
-            chunk_id = f"{stem}_p{page_num}_c{chunk_i}"
-
-            all_chunks.append(chunk)
-
-            all_ids.append(chunk_id)
-
-            all_metas.append(
-                {
-                    "source": filename,
-                    "class": meta["class"],
-                    "subject": meta["subject"],
-                    "chapter": meta["chapter"],
-                    "page": page_num + 1,
-                    "chunk_index": chunk_counter,
-                    "file_hash": md5,
-                }
-            )
-
-            chunk_counter += 1
+        for seg in segments:
+            # Further chunk large segments if needed
+            if len(seg.text) > CHUNK_SIZE:
+                sub_chunks = chunk_text(seg.text)
+                for sub_i, sub_chunk in enumerate(sub_chunks):
+                    chunk_id = f"{stem}_p{page_num}_c{chunk_counter}_t{sub_i}"
+                    all_chunks.append(sub_chunk)
+                    all_ids.append(chunk_id)
+                    all_metas.append(
+                        {
+                            "source": filename,
+                            "class": meta["class"],
+                            "subject": meta["subject"],
+                            "chapter": seg.chapter,
+                            "topic": seg.topic,
+                            "page": page_num + 1,
+                            "chunk_index": chunk_counter,
+                            "file_hash": md5,
+                        }
+                    )
+                    chunk_counter += 1
+            else:
+                chunk_id = f"{stem}_p{page_num}_c{chunk_counter}"
+                all_chunks.append(seg.text)
+                all_ids.append(chunk_id)
+                all_metas.append(
+                    {
+                        "source": filename,
+                        "class": meta["class"],
+                        "subject": meta["subject"],
+                        "chapter": seg.chapter,
+                        "topic": seg.topic,
+                        "page": page_num + 1,
+                        "chunk_index": chunk_counter,
+                        "file_hash": md5,
+                    }
+                )
+                chunk_counter += 1
 
     print(f"\n      total chunks: {len(all_chunks)}")
     print(f"      chunk time  : {time.time() - t:.1f}s")
@@ -516,7 +537,6 @@ def index_file(path: str, col, model) -> int:
     total = len(all_chunks)
 
     for i in range(0, total, EMBED_BATCH):
-
         batch = all_chunks[i : i + EMBED_BATCH]
 
         vecs = np.array(list(model.embed(batch)))
@@ -591,7 +611,6 @@ def index_all(upload_dir=UPLOADS_DIR):
 
 
 if __name__ == "__main__":
-
     parser = argparse.ArgumentParser()
 
     parser.add_argument("--file", default=None, help="Single PDF file")
@@ -599,7 +618,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.file:
-
         model = load_model()
 
         col = get_collection()

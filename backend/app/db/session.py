@@ -64,16 +64,21 @@ if settings.database_url.startswith("sqlite"):
 else:
     poolclass = QueuePool
 
+engine_kwargs = {
+    "connect_args": connect_args,
+    "pool_pre_ping": True,
+    "poolclass": poolclass,
+    "pool_recycle": 3600,
+    "echo": settings.debug,
+}
+if poolclass is not NullPool:
+    engine_kwargs["pool_size"] = 20 if settings.environment == "production" else 5
+    engine_kwargs["max_overflow"] = 40 if settings.environment == "production" else 10
+    engine_kwargs["pool_timeout"] = 30
+
 engine = create_engine(
     settings.database_url,
-    connect_args=connect_args,
-    pool_pre_ping=True,
-    poolclass=poolclass,
-    pool_size=20 if settings.environment == "production" else 5,
-    max_overflow=40 if settings.environment == "production" else 10,
-    pool_recycle=3600,
-    pool_timeout=30,
-    echo=settings.debug,
+    **engine_kwargs
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
