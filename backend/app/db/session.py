@@ -153,6 +153,15 @@ def _migrate_schema(engine):
                 conn.execute(text("ALTER TABLE curriculum_topics ADD COLUMN chapter_number INTEGER"))
                 conn.commit()
 
+            # If the table contains data for classes other than 8 or subjects other than
+            # science, clear it so seed_curriculum can re-seed with the correct subset.
+            result = conn.execute(text(
+                "SELECT COUNT(*) FROM curriculum_topics WHERE class_level != '8' OR LOWER(subject) != 'science'"
+            )).fetchone()
+            if result and result[0] > 0:
+                conn.execute(text("DELETE FROM curriculum_topics"))
+                conn.commit()
+
         # topic_performance.subject + unique constraint migration
         if "topic_performance" in existing_tables:
             cols = {c["name"] for c in inspector.get_columns("topic_performance")}

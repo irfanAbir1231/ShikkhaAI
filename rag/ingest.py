@@ -58,7 +58,7 @@ WORD_TO_NUM = {
 }
 
 # Only ingest these chapters (set to None for all)
-CHAPTERS_TO_INGEST = {1, 2}
+CHAPTERS_TO_INGEST = {1, 2, 3, 4, 5, 6}
 
 
 def detect_chapters(path: str) -> list[dict]:
