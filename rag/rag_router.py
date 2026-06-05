@@ -24,12 +24,14 @@ class GenerateRequest(BaseModel):
     # Optional retrieval hint. Backend passes the exam topic here so the
     # curriculum context is fetched for that topic instead of a generic query.
     topic: Optional[str] = None
+    chapter: Optional[str] = None
 
 
 class RetrieveRequest(BaseModel):
     query: str
     subject: Optional[str] = None
     class_level: Optional[str] = None
+    chapter: Optional[str] = None
 
 
 class WeakTopicsRequest(BaseModel):
@@ -43,6 +45,28 @@ class AskRequest(BaseModel):
     subject: str
     class_level: str
     pdf_context: Optional[str] = None
+
+
+class ExtractTopicsRequest(BaseModel):
+    book_id: str
+    chapter_title: str
+    chapter_text: str
+    subject: str
+    class_level: str
+
+
+class ExtractedTopic(BaseModel):
+    topic_title: str
+    topic_order: int
+    page_start: int
+    page_end: int
+    chunk_ids: list[str]
+
+
+class ExtractTopicsResponse(BaseModel):
+    book_id: str
+    chapter_title: str
+    topics: list[ExtractedTopic]
 
 
 # ─── Endpoints ────────────────────────────────────────────────────────────────
@@ -61,6 +85,7 @@ def generate_exam(req: GenerateRequest):
             difficulty=req.difficulty,
             count=req.count,
             query_override=req.topic or None,
+            chapter=req.chapter or None,
         )
         return result
     except Exception as e:
@@ -76,6 +101,7 @@ def retrieve(req: RetrieveRequest):
         query=req.query,
         subject=req.subject,
         class_level=req.class_level,
+        chapter=req.chapter,
     )
     return {"chunks": chunks}
 
@@ -89,6 +115,7 @@ def context(req: RetrieveRequest):
         query=req.query,
         subject=req.subject,
         class_level=req.class_level,
+        chapter=req.chapter,
     )
     return {"context": ctx}
 
@@ -142,3 +169,26 @@ def weak_topics(req: WeakTopicsRequest):
                 }
             )
     return {"weak_topics": weak}
+
+
+@router.post("/extract-topics")
+def extract_topics(req: ExtractTopicsRequest):
+    """
+    Stub endpoint for chapter/topic extraction from textbook text.
+    In a full implementation this calls rag/topic_segmenter.py.
+    For now returns a single topic representing the whole chapter
+    so the UI flow remains unbroken.
+    """
+    return ExtractTopicsResponse(
+        book_id=req.book_id,
+        chapter_title=req.chapter_title,
+        topics=[
+            ExtractedTopic(
+                topic_title=req.chapter_title,
+                topic_order=1,
+                page_start=1,
+                page_end=1,
+                chunk_ids=[],
+            )
+        ],
+    ).model_dump()

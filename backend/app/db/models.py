@@ -260,10 +260,14 @@ class StudyPlanTask(Base):
 
 class CurriculumTopic(Base):
     __tablename__ = "curriculum_topics"
-    __table_args__ = (UniqueConstraint("class_level", "subject", "topic", name="uq_curriculum_topic"),)
+    __table_args__ = (
+        UniqueConstraint("class_level", "subject", "chapter", "topic", name="uq_curriculum_topic_chapter"),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     class_level: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
     subject: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
+    chapter: Mapped[str] = mapped_column(String(150), nullable=False, default="General")
+    chapter_number: Mapped[int | None] = mapped_column(Integer, nullable=True)
     topic: Mapped[str] = mapped_column(String(150), nullable=False)
     display_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)

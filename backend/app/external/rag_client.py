@@ -147,6 +147,7 @@ Rules:
             "difficulty": payload.get("difficulty") or "medium",
             "count": int(payload.get("num_questions") or 7),
             "topic": payload.get("topic"),
+            "chapter": payload.get("chapter"),
         }
 
     def _adapt_rag_response(self, data: Any) -> dict[str, Any]:

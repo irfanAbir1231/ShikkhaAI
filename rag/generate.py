@@ -140,6 +140,7 @@ def generate_questions(
     difficulty: str = "medium",
     count: int = 7,
     query_override: str = None,
+    chapter: str = None,
 ):
 
     query = query_override or f"{subject} class {class_level} {difficulty} questions"
@@ -148,6 +149,7 @@ def generate_questions(
         query,
         subject=subject,
         class_level=class_level,
+        chapter=chapter,
     )
 
     if not context:

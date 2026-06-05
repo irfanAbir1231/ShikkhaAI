@@ -40,6 +40,7 @@ def retrieve_context(
     query: str,
     subject: Optional[str] = None,
     class_level: Optional[str] = None,
+    chapter: Optional[str] = None,
     n_results: int = 3,
 ) -> list[dict]:
 
@@ -52,16 +53,21 @@ def retrieve_context(
 
     query_embedding = list(model.embed([query]))[0].tolist()
 
-    where = None
+    where_clauses = []
 
-    if subject and class_level:
-        where = {"$and": [{"subject": subject}, {"class": class_level}]}
+    if subject:
+        where_clauses.append({"subject": subject})
+    if class_level:
+        where_clauses.append({"class": class_level})
+    if chapter:
+        where_clauses.append({"chapter": chapter})
 
-    elif subject:
-        where = {"subject": subject}
-
-    elif class_level:
-        where = {"class": class_level}
+    if len(where_clauses) == 1:
+        where = where_clauses[0]
+    elif len(where_clauses) > 1:
+        where = {"$and": where_clauses}
+    else:
+        where = None
 
     kwargs = {
         "query_embeddings": [query_embedding],
@@ -100,12 +106,14 @@ def build_rag_context(
     query: str,
     subject: Optional[str] = None,
     class_level: Optional[str] = None,
+    chapter: Optional[str] = None,
 ) -> str:
 
     chunks = retrieve_context(
         query,
         subject=subject,
         class_level=class_level,
+        chapter=chapter,
     )
 
     if not chunks:

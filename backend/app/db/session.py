@@ -49,6 +49,7 @@
 
 
 from collections.abc import Generator
+from typing import Any
 
 from sqlalchemy import create_engine, event, inspect, text
 from sqlalchemy.orm import Session, sessionmaker
@@ -64,17 +65,21 @@ if settings.database_url.startswith("sqlite"):
 else:
     poolclass = QueuePool
 
-engine = create_engine(
-    settings.database_url,
+_engine_kwargs: dict[str, Any] = dict(
     connect_args=connect_args,
     pool_pre_ping=True,
     poolclass=poolclass,
-    pool_size=20 if settings.environment == "production" else 5,
-    max_overflow=40 if settings.environment == "production" else 10,
-    pool_recycle=3600,
-    pool_timeout=30,
     echo=settings.debug,
 )
+if not settings.database_url.startswith("sqlite"):
+    _engine_kwargs.update(
+        pool_size=20 if settings.environment == "production" else 5,
+        max_overflow=40 if settings.environment == "production" else 10,
+        pool_recycle=3600,
+        pool_timeout=30,
+    )
+
+engine = create_engine(settings.database_url, **_engine_kwargs)
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
@@ -107,6 +112,15 @@ def init_db() -> None:
     if engine.dialect.name.startswith("sqlite"):
         _sqlite_migrate(engine)
 
+    # Seed curriculum data if empty
+    from app.db.seed_curriculum import seed_curriculum
+
+    with SessionLocal() as db:
+        count = seed_curriculum(db)
+        if count:
+            print(f"[seed] Inserted {count} curriculum entries")
+        db.close()
+
 
 def _sqlite_migrate(engine):
     """Add missing columns to existing SQLite tables (non-destructive)."""
@@ -126,6 +140,16 @@ def _sqlite_migrate(engine):
             cols = {c["name"] for c in inspector.get_columns("exams")}
             if "class_level" not in cols:
                 conn.execute(text("ALTER TABLE exams ADD COLUMN class_level VARCHAR(50)"))
+                conn.commit()
+
+        # curriculum_topics.chapter / chapter_number (added for chapter/topic hierarchy)
+        if "curriculum_topics" in existing_tables:
+            cols = {c["name"] for c in inspector.get_columns("curriculum_topics")}
+            if "chapter" not in cols:
+                conn.execute(text("ALTER TABLE curriculum_topics ADD COLUMN chapter VARCHAR(150) DEFAULT 'General'"))
+                conn.commit()
+            if "chapter_number" not in cols:
+                conn.execute(text("ALTER TABLE curriculum_topics ADD COLUMN chapter_number INTEGER"))
                 conn.commit()
 
         # topic_performance.subject (added for per-subject tracking)

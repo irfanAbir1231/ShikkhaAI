@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.api.routes_analytics import router as analytics_router
+from app.api.routes_curriculum import router as curriculum_router
 from app.api.routes_exams import router as exams_router
 from app.api.routes_notes import router as notes_router
 from app.api.routes_students import router as students_router
@@ -81,8 +82,27 @@ app.add_exception_handler(Exception, unhandled_exception_handler)
 app.include_router(students_router)
 app.include_router(exams_router)
 app.include_router(analytics_router)   # GET /student/{id}/dashboard|analytics|topics
+app.include_router(curriculum_router)  # GET /curriculum/{class}/{subject}/chapters|topics
 app.include_router(notes_router)       # GET|POST|DELETE /notes
 app.include_router(study_companion_router)  # POST /study-companion/ask
+
+# Mount RAG router if dependencies are available (monorepo dev mode)
+try:
+    import sys
+    from pathlib import Path
+
+    # Add repo root to path so `rag` package is importable when uvicorn
+    # is launched from inside backend/
+    repo_root = Path(__file__).resolve().parent.parent.parent
+    if str(repo_root) not in sys.path:
+        sys.path.insert(0, str(repo_root))
+
+    from rag.rag_router import router as rag_router
+
+    app.include_router(rag_router, prefix="/rag")
+    logger.info("RAG router mounted at /rag")
+except Exception as exc:
+    logger.warning("RAG router not mounted: %s", exc)
 
 
 @app.get("/health")
