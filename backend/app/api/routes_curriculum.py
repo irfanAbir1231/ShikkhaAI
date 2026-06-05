@@ -14,6 +14,26 @@ logger = logging.getLogger("shikkhaai")
 router = APIRouter(prefix="/curriculum", tags=["curriculum"])
 
 
+@router.get("/debug/count")
+def debug_curriculum_count(db: Session = Depends(get_db)) -> dict[str, Any]:
+    """Public debug endpoint: return curriculum table stats."""
+    total = db.query(CurriculumTopic).count()
+    class8_science = (
+        db.query(CurriculumTopic)
+        .filter(CurriculumTopic.class_level == "8", CurriculumTopic.subject == "science")
+        .count()
+    )
+    sample = db.scalars(select(CurriculumTopic).limit(3)).all()
+    return success_response({
+        "total": total,
+        "class_8_science": class8_science,
+        "sample": [
+            {"class_level": r.class_level, "subject": r.subject, "chapter": r.chapter, "topic": r.topic}
+            for r in sample
+        ],
+    })
+
+
 @router.get("/{class_level}/{subject}/chapters")
 def get_chapters(
     class_level: str = Path(min_length=1, max_length=10),

@@ -118,7 +118,9 @@ def init_db() -> None:
     with SessionLocal() as db:
         count = seed_curriculum(db)
         if count:
-            print(f"[seed] Inserted {count} curriculum entries")
+            logger.info("[seed] Inserted %d curriculum entries", count)
+        else:
+            logger.info("[seed] Curriculum table already seeded correctly")
         db.close()
 
 
@@ -149,9 +151,11 @@ def _migrate_schema(engine):
             if "chapter" not in cols:
                 conn.execute(text("ALTER TABLE curriculum_topics ADD COLUMN chapter VARCHAR(150) DEFAULT 'General'"))
                 conn.commit()
+                logger.info("[migrate] Added chapter column to curriculum_topics")
             if "chapter_number" not in cols:
                 conn.execute(text("ALTER TABLE curriculum_topics ADD COLUMN chapter_number INTEGER"))
                 conn.commit()
+                logger.info("[migrate] Added chapter_number column to curriculum_topics")
 
             # If the table contains data for classes other than 8 or subjects other than
             # science, clear it so seed_curriculum can re-seed with the correct subset.
@@ -159,8 +163,12 @@ def _migrate_schema(engine):
                 "SELECT COUNT(*) FROM curriculum_topics WHERE class_level != '8' OR LOWER(subject) != 'science'"
             )).fetchone()
             if result and result[0] > 0:
+                logger.info("[migrate] Clearing %d old curriculum rows", result[0])
                 conn.execute(text("DELETE FROM curriculum_topics"))
                 conn.commit()
+            else:
+                row_count = conn.execute(text("SELECT COUNT(*) FROM curriculum_topics")).fetchone()
+                logger.info("[migrate] curriculum_topics has %d rows (no stale data found)", row_count[0] if row_count else 0)
 
         # topic_performance.subject + unique constraint migration
         if "topic_performance" in existing_tables:
