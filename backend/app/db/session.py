@@ -116,7 +116,7 @@ def init_db() -> None:
     _migrate_schema(engine)
 
     # Seed curriculum data if empty
-    from app.db.seed_curriculum import seed_curriculum
+    from app.db.seed_curriculum import seed_curriculum, seed_subtopics
 
     with SessionLocal() as db:
         count = seed_curriculum(db)
@@ -124,6 +124,12 @@ def init_db() -> None:
             logger.info("[seed] Inserted %d curriculum entries", count)
         else:
             logger.info("[seed] Curriculum table already seeded correctly")
+
+        subtopic_count = seed_subtopics(db)
+        if subtopic_count:
+            logger.info("[seed] Inserted %d subtopic entries", subtopic_count)
+        else:
+            logger.info("[seed] Subtopics already seeded correctly")
         db.close()
 
 
@@ -238,6 +244,120 @@ def _migrate_schema(engine):
                             "UNIQUE (student_id, subject, topic)"
                         ))
                         conn.commit()
+
+        # Create new tables if they don't exist (non-destructive)
+        _create_new_tables(conn, inspector, is_sqlite)
+
+
+def _create_new_tables(conn, inspector, is_sqlite):
+    """Create new subtopic and note versioning tables if they don't exist."""
+    existing_tables = set(inspector.get_table_names())
+
+    if "subtopics" not in existing_tables:
+        conn.execute(text("""
+            CREATE TABLE subtopics (
+                id INTEGER NOT NULL PRIMARY KEY,
+                curriculum_topic_id INTEGER NOT NULL,
+                name VARCHAR(150) NOT NULL,
+                summary TEXT,
+                display_order INTEGER NOT NULL DEFAULT 0,
+                created_at DATETIME,
+                CONSTRAINT uq_subtopic_curriculum_name UNIQUE (curriculum_topic_id, name)
+            )
+        """ if is_sqlite else """
+            CREATE TABLE subtopics (
+                id SERIAL PRIMARY KEY,
+                curriculum_topic_id INTEGER NOT NULL,
+                name VARCHAR(150) NOT NULL,
+                summary TEXT,
+                display_order INTEGER NOT NULL DEFAULT 0,
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                CONSTRAINT uq_subtopic_curriculum_name UNIQUE (curriculum_topic_id, name)
+            )
+        """))
+        conn.execute(text("CREATE INDEX ix_subtopics_curriculum_topic_id ON subtopics (curriculum_topic_id)"))
+        conn.commit()
+        logger.info("[migrate] Created subtopics table")
+
+    if "subtopic_performance" not in existing_tables:
+        conn.execute(text("""
+            CREATE TABLE subtopic_performance (
+                id INTEGER NOT NULL PRIMARY KEY,
+                student_id INTEGER NOT NULL,
+                subtopic_id INTEGER NOT NULL,
+                subject VARCHAR(100) NOT NULL DEFAULT 'General',
+                attempts_count INTEGER NOT NULL DEFAULT 0,
+                average_score FLOAT NOT NULL DEFAULT 0.0,
+                consistency_score FLOAT NOT NULL DEFAULT 0.0,
+                last_score FLOAT NOT NULL DEFAULT 0.0,
+                updated_at DATETIME,
+                CONSTRAINT uq_subtopic_performance_student_subtopic UNIQUE (student_id, subtopic_id)
+            )
+        """ if is_sqlite else """
+            CREATE TABLE subtopic_performance (
+                id SERIAL PRIMARY KEY,
+                student_id INTEGER NOT NULL,
+                subtopic_id INTEGER NOT NULL,
+                subject VARCHAR(100) NOT NULL DEFAULT 'General',
+                attempts_count INTEGER NOT NULL DEFAULT 0,
+                average_score FLOAT NOT NULL DEFAULT 0.0,
+                consistency_score FLOAT NOT NULL DEFAULT 0.0,
+                last_score FLOAT NOT NULL DEFAULT 0.0,
+                updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                CONSTRAINT uq_subtopic_performance_student_subtopic UNIQUE (student_id, subtopic_id)
+            )
+        """))
+        conn.execute(text("CREATE INDEX ix_subtopic_performance_student_id ON subtopic_performance (student_id)"))
+        conn.execute(text("CREATE INDEX ix_subtopic_performance_subtopic_id ON subtopic_performance (subtopic_id)"))
+        conn.commit()
+        logger.info("[migrate] Created subtopic_performance table")
+
+    if "note_versions" not in existing_tables:
+        conn.execute(text("""
+            CREATE TABLE note_versions (
+                id INTEGER NOT NULL PRIMARY KEY,
+                note_id INTEGER NOT NULL,
+                version INTEGER NOT NULL DEFAULT 1,
+                content TEXT NOT NULL,
+                generated_at DATETIME
+            )
+        """ if is_sqlite else """
+            CREATE TABLE note_versions (
+                id SERIAL PRIMARY KEY,
+                note_id INTEGER NOT NULL,
+                version INTEGER NOT NULL DEFAULT 1,
+                content TEXT NOT NULL,
+                generated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+            )
+        """))
+        conn.execute(text("CREATE INDEX ix_note_versions_note_id ON note_versions (note_id)"))
+        conn.commit()
+        logger.info("[migrate] Created note_versions table")
+
+    if "saved_notes" not in existing_tables:
+        conn.execute(text("""
+            CREATE TABLE saved_notes (
+                id INTEGER NOT NULL PRIMARY KEY,
+                student_id INTEGER NOT NULL,
+                note_id INTEGER NOT NULL,
+                bookmarked INTEGER NOT NULL DEFAULT 0,
+                saved_at DATETIME,
+                CONSTRAINT uq_saved_note_student_note UNIQUE (student_id, note_id)
+            )
+        """ if is_sqlite else """
+            CREATE TABLE saved_notes (
+                id SERIAL PRIMARY KEY,
+                student_id INTEGER NOT NULL,
+                note_id INTEGER NOT NULL,
+                bookmarked BOOLEAN NOT NULL DEFAULT FALSE,
+                saved_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                CONSTRAINT uq_saved_note_student_note UNIQUE (student_id, note_id)
+            )
+        """))
+        conn.execute(text("CREATE INDEX ix_saved_notes_student_id ON saved_notes (student_id)"))
+        conn.execute(text("CREATE INDEX ix_saved_notes_note_id ON saved_notes (note_id)"))
+        conn.commit()
+        logger.info("[migrate] Created saved_notes table")
 
 
 def close_db() -> None:

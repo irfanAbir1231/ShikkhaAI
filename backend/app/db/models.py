@@ -139,6 +139,8 @@ class Student(Base):
     topic_performances: Mapped[list["TopicPerformance"]] = relationship(back_populates="student", cascade="all, delete-orphan")
     notes: Mapped[list["Note"]] = relationship(back_populates="student", cascade="all, delete-orphan")
     study_plans: Mapped[list["StudyPlan"]] = relationship(back_populates="student", cascade="all, delete-orphan")
+    subtopic_performances: Mapped[list["SubtopicPerformance"]] = relationship(back_populates="student", cascade="all, delete-orphan")
+    saved_notes: Mapped[list["SavedNote"]] = relationship(back_populates="student", cascade="all, delete-orphan")
 
 
 class Exam(Base):
@@ -216,6 +218,12 @@ class Note(Base):
     updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
     student: Mapped[Student] = relationship(back_populates="notes")
+    versions: Mapped[list["NoteVersion"]] = relationship(
+        back_populates="note", cascade="all, delete-orphan", order_by="NoteVersion.version.desc()"
+    )
+    saves: Mapped[list["SavedNote"]] = relationship(
+        back_populates="note", cascade="all, delete-orphan"
+    )
 
 
 class StudyPlan(Base):
@@ -271,3 +279,82 @@ class CurriculumTopic(Base):
     chapter_number: Mapped[int | None] = mapped_column(Integer, nullable=True)
     topic: Mapped[str] = mapped_column(String(150), nullable=False)
     display_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+
+    subtopics: Mapped[list["Subtopic"]] = relationship(
+        back_populates="curriculum_topic", cascade="all, delete-orphan", order_by="Subtopic.display_order"
+    )
+
+
+# ─────────────────────────── Subtopic Models ─────────────────────────────────
+
+class Subtopic(Base):
+    __tablename__ = "subtopics"
+    __table_args__ = (
+        UniqueConstraint("curriculum_topic_id", "name", name="uq_subtopic_curriculum_name"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    curriculum_topic_id: Mapped[int] = mapped_column(
+        ForeignKey("curriculum_topics.id"), index=True, nullable=False
+    )
+    name: Mapped[str] = mapped_column(String(150), nullable=False)
+    summary: Mapped[str | None] = mapped_column(Text, nullable=True)
+    display_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+
+    curriculum_topic: Mapped["CurriculumTopic"] = relationship(back_populates="subtopics")
+    performances: Mapped[list["SubtopicPerformance"]] = relationship(
+        back_populates="subtopic", cascade="all, delete-orphan"
+    )
+
+
+class SubtopicPerformance(Base):
+    __tablename__ = "subtopic_performance"
+    __table_args__ = (
+        UniqueConstraint("student_id", "subtopic_id", name="uq_subtopic_performance_student_subtopic"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    student_id: Mapped[int] = mapped_column(ForeignKey("students.id"), index=True, nullable=False)
+    subtopic_id: Mapped[int] = mapped_column(ForeignKey("subtopics.id"), index=True, nullable=False)
+    subject: Mapped[str] = mapped_column(String(100), nullable=False, default="General")
+    attempts_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    average_score: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    consistency_score: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    last_score: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, onupdate=utc_now
+    )
+
+    student: Mapped[Student] = relationship(back_populates="subtopic_performances")
+    subtopic: Mapped[Subtopic] = relationship(back_populates="performances")
+
+
+# ─────────────────────────── Note Versioning & Saved Notes ───────────────────
+
+class NoteVersion(Base):
+    __tablename__ = "note_versions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    note_id: Mapped[int] = mapped_column(ForeignKey("notes.id"), index=True, nullable=False)
+    version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    generated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+
+    note: Mapped["Note"] = relationship(back_populates="versions")
+
+
+class SavedNote(Base):
+    __tablename__ = "saved_notes"
+    __table_args__ = (
+        UniqueConstraint("student_id", "note_id", name="uq_saved_note_student_note"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    student_id: Mapped[int] = mapped_column(ForeignKey("students.id"), index=True, nullable=False)
+    note_id: Mapped[int] = mapped_column(ForeignKey("notes.id"), index=True, nullable=False)
+    bookmarked: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    saved_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+
+    student: Mapped[Student] = relationship(back_populates="saved_notes")
+    note: Mapped["Note"] = relationship(back_populates="saves")

@@ -16,6 +16,8 @@ class ExamGenerateRequest(StrictRequestModel):
     class_level: str = Field(default="8", min_length=1, max_length=3)
     difficulty: Literal["easy", "medium", "hard"] = "medium"
     num_questions: int = Field(default=5, ge=1, le=20)
+    subtopic_ids: list[int] = Field(default_factory=list)
+    mastery_threshold: float = Field(default=90.0, ge=0.0, le=100.0)
 
     @field_validator("subject", "topic")
     @classmethod
@@ -32,6 +34,7 @@ class ExamQuestion(BaseModel):
     id: str
     type: Literal["mcq", "short_answer"]
     topic: str
+    subtopics: list[str] = Field(default_factory=list)
     prompt: str
     options: list[str] = Field(default_factory=list)
     marks: int = Field(default=1, ge=1)
@@ -122,6 +125,16 @@ class GeneratedNote(BaseModel):
     updated_at: datetime | None
 
 
+class WeakSubtopic(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    subtopic_id: int
+    name: str
+    topic: str
+    score: float
+    reason: str
+
+
 class ExamSubmitResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -132,6 +145,7 @@ class ExamSubmitResponse(BaseModel):
     mcq_correct: int
     mcq_total: int
     weak_topics: list[WeakTopic]
+    weak_subtopics: list[WeakSubtopic] = Field(default_factory=list)
     readiness_score: float
     short_answer_feedback: list[ShortAnswerFeedback]
     mcq_feedback: list[McqFeedback] = Field(default_factory=list)

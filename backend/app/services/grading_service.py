@@ -45,6 +45,8 @@ class GradingService:
                 {
                     "question_id": question_id,
                     "topic": str(item.get("topic") or "General"),
+                    "subtopics": item.get("subtopics") or [],
+                    "subtopic_ids": item.get("subtopic_ids") or [],
                     "is_correct": is_correct,
                     "score": 1.0 if is_correct else 0.0,
                 }

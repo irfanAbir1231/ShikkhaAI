@@ -104,6 +104,7 @@ STRICT JSON FORMAT:
       "id": 1,
       "type": "mcq",
       "topic": {topic_field_hint},
+      "subtopics": ["<relevant subtopic name>"],
       "difficulty": "{difficulty}",
       "question": "<question text>",
       "options": [
@@ -122,6 +123,7 @@ Rules:
 - answer field for MCQ is ONLY A/B/C/D
 - short_answer options must be []
 - every question.topic field must equal {topic_field_hint}
+- every question must include a "subtopics" array with 1-3 relevant subtopic names from the curriculum context
 - output JSON ONLY
 """
 

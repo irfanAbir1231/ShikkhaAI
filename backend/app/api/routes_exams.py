@@ -15,11 +15,14 @@ from app.schemas.exam import (
     ExamSubmitRequest,
     ExamSummaryResponse,
 )
+from app.schemas.subtopic import PracticeExamGenerateRequest
 from app.services.exam_service import ExamService
+from app.services.practice_exam_service import PracticeExamService
 
 logger = logging.getLogger("shikkhaai")
 router = APIRouter(prefix="/exam", tags=["exams"])
 exam_service = ExamService()
+practice_exam_service = PracticeExamService()
 
 
 def _verify_student_owns_resource(current_student: Student, student_id: int) -> None:
@@ -56,6 +59,17 @@ def submit_exam(
     _verify_student_owns_resource(current_student, payload.student_id)
     result = exam_service.submit_exam(db=db, payload=payload)
     return success_response(result)
+
+
+@router.post("/practice/generate")
+def generate_practice_exam(
+    payload: PracticeExamGenerateRequest,
+    db: Session = Depends(get_db),
+    current_student: Student = Depends(get_current_student),
+) -> dict[str, Any]:
+    _verify_student_owns_resource(current_student, payload.student_id)
+    exam = practice_exam_service.generate_practice_exam(db=db, payload=payload)
+    return success_response(exam)
 
 
 @router.get("/{exam_id}/attempts")

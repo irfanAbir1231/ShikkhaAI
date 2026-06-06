@@ -14,6 +14,7 @@ from app.api.routes_exams import router as exams_router
 from app.api.routes_notes import router as notes_router
 from app.api.routes_students import router as students_router
 from app.api.routes_study_companion import router as study_companion_router
+from app.api.routes_subtopics import router as subtopics_router
 from app.core.config import settings, validate_settings
 from app.core.logging_config import get_logger, setup_logging
 from app.core.responses import (
@@ -92,6 +93,7 @@ app.include_router(exams_router)
 app.include_router(analytics_router)
 app.include_router(curriculum_router)
 app.include_router(notes_router)
+app.include_router(subtopics_router)
 app.include_router(study_companion_router)
 if RAG_ROUTER_AVAILABLE:
     app.include_router(rag_router, prefix="/rag")

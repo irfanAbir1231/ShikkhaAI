@@ -144,6 +144,7 @@ from app.services.grading_service import GradingService
 from app.services.note_generation_service import NoteGenerationService
 from app.services.profile_service import ProfileService
 from app.services.student_service import StudentService
+from app.services.subtopic_service import SubtopicService
 
 logger = logging.getLogger("shikkhaai")
 
@@ -155,6 +156,7 @@ class ExamService:
         self.grading_service = GradingService()
         self.profile_service = ProfileService()
         self.note_generation_service = NoteGenerationService()
+        self.subtopic_service = SubtopicService()
 
     def generate_exam(self, db: Session, payload: ExamGenerateRequest) -> ExamResponse:
         self.student_service.fetch_student(db=db, student_id=payload.student_id)
@@ -232,6 +234,19 @@ class ExamService:
             touched_topics=touched_topics,
         )
 
+        # ── Subtopic performance tracking ──────────────────────────────────────
+        touched_subtopic_ids = self.subtopic_service.update_subtopic_performance(
+            db=db,
+            student_id=payload.student_id,
+            question_results=grade_result.question_results,
+            subject=exam.subject,
+        )
+        weak_subtopics = self.subtopic_service.detect_weak_subtopics(
+            db=db,
+            student_id=payload.student_id,
+            touched_subtopic_ids=touched_subtopic_ids,
+        )
+
         # ── Persist attempt ────────────────────────────────────────────────────
         attempt = Attempt(
             student_id=payload.student_id,
@@ -257,10 +272,25 @@ class ExamService:
             [wt.get("topic") for wt in weak_topics],
         )
 
-        # ── Auto-generate notes for weak topics ────────────────────────────────
+        # ── Auto-generate notes for weak topics/subtopics ──────────────────────
         # Runs after attempt is saved — failure here never breaks the response
         generated_notes: list[Any] = []
-        if weak_topics:
+        if weak_subtopics:
+            notes = self.note_generation_service.generate_notes_for_weak_subtopics(
+                db=db,
+                student_id=payload.student_id,
+                weak_subtopics=weak_subtopics,
+                subject=exam.subject,
+                class_level=exam.class_level,
+            )
+            if notes:
+                generated_notes = notes
+                logger.info(
+                    "Auto-generated %d focused note(s) for student_id=%s weak subtopics",
+                    len(notes),
+                    payload.student_id,
+                )
+        elif weak_topics:
             notes = self.note_generation_service.generate_notes_for_weak_topics(
                 db=db,
                 student_id=payload.student_id,
@@ -284,6 +314,7 @@ class ExamService:
             mcq_correct=attempt.mcq_correct,
             mcq_total=attempt.mcq_total,
             weak_topics=attempt.weak_topics,
+            weak_subtopics=weak_subtopics,
             readiness_score=attempt.readiness_score,
             short_answer_feedback=attempt.short_answer_feedback,
             mcq_feedback=grade_result.mcq_feedback,

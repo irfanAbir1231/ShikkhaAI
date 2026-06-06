@@ -11,6 +11,7 @@ from app.db.session import get_db
 from app.services.analytics_service import AnalyticsService
 from app.services.dashboard_service import DashboardService
 from app.services.student_service import StudentService
+from app.services.subtopic_service import SubtopicService
 
 logger = logging.getLogger("shikkhaai")
 router = APIRouter(prefix="/student", tags=["analytics"])
@@ -18,6 +19,7 @@ router = APIRouter(prefix="/student", tags=["analytics"])
 dashboard_service = DashboardService()
 analytics_service = AnalyticsService()
 student_service = StudentService()
+subtopic_service = SubtopicService()
 
 
 def _check_ownership(current_student: Student, student_id: int) -> None:
@@ -63,3 +65,20 @@ def get_topics(
     student = student_service.fetch_student(db=db, student_id=student_id)
     data = analytics_service.get_topics(db=db, student=student)
     return success_response(data)
+
+
+@router.get("/{student_id}/subtopics")
+def get_subtopic_analytics(
+    student_id: int = Path(gt=0),
+    db: Session = Depends(get_db),
+    current_student: Student = Depends(get_current_student),
+) -> dict[str, Any]:
+    _check_ownership(current_student, student_id)
+    performance = subtopic_service.get_subtopic_performance(db, student_id)
+    weak = subtopic_service.get_weak_subtopics_for_student(db, student_id)
+    mastered = [p for p in performance if p.get("mastery_score", 0) >= 90.0]
+    return success_response({
+        "subtopic_accuracy": performance,
+        "weak_subtopics": weak,
+        "mastered_subtopics": mastered,
+    })

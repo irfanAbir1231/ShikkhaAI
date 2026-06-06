@@ -131,6 +131,21 @@ class PracticeSuggestion(BaseModel):
     subject: str
 
 
+class SubtopicAccuracyDetail(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    subtopic_id: int
+    name: str
+    topic: str
+    chapter: str
+    subject: str
+    accuracy: float
+    total_questions: int
+    correct_answers: int
+    trend: float
+    last_attempted: str | None
+    is_mastered: bool
+
+
 class AnalyticsData(BaseModel):
     model_config = ConfigDict(extra="forbid")
     topic_accuracy: list[TopicAccuracyDetail]
@@ -141,6 +156,9 @@ class AnalyticsData(BaseModel):
     average_accuracy: float
     total_questions_attempted: int
     total_study_minutes: int
+    subtopic_accuracy: list[SubtopicAccuracyDetail] = []
+    weak_subtopics: list[SubtopicAccuracyDetail] = []
+    mastered_subtopics: list[SubtopicAccuracyDetail] = []
 
 
 # ─── Topics ──────────────────────────────────────────────────────────────────

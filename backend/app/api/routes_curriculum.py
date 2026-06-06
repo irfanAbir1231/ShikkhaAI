@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.api.routes_students import get_current_student
 from app.core.responses import AppError, success_response
-from app.db.models import CurriculumTopic, Student
+from app.db.models import CurriculumTopic, Student, Subtopic
 from app.db.session import get_db
 
 logger = logging.getLogger("shikkhaai")
@@ -99,3 +99,41 @@ def get_topics(
         })
 
     return success_response(topics)
+
+
+@router.get("/{class_level}/{subject}/subtopics")
+def get_subtopics(
+    class_level: str = Path(min_length=1, max_length=10),
+    subject: str = Path(min_length=1, max_length=100),
+    topic: str = Query(..., min_length=1),
+    db: Session = Depends(get_db),
+    current_student: Student = Depends(get_current_student),
+) -> dict[str, Any]:
+    """Return subtopics for a given class level, subject, and topic."""
+    # Find the curriculum topic first
+    ct = db.scalar(
+        select(CurriculumTopic).where(
+            CurriculumTopic.class_level == class_level,
+            CurriculumTopic.subject == subject.lower(),
+            CurriculumTopic.topic == topic,
+        )
+    )
+    if ct is None:
+        return success_response([])
+
+    subtopics = db.scalars(
+        select(Subtopic).where(Subtopic.curriculum_topic_id == ct.id).order_by(Subtopic.display_order)
+    ).all()
+
+    return success_response([
+        {
+            "id": s.id,
+            "name": s.name,
+            "summary": s.summary,
+            "topic": ct.topic,
+            "chapter": ct.chapter,
+            "subject": ct.subject,
+            "class_level": ct.class_level,
+        }
+        for s in subtopics
+    ])

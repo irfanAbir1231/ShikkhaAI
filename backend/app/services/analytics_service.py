@@ -5,7 +5,7 @@ from typing import Any
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.db.models import Attempt, CurriculumTopic, Exam, Student, TopicPerformance
+from app.db.models import Attempt, CurriculumTopic, Exam, Student, Subtopic, SubtopicPerformance, TopicPerformance
 
 logger = logging.getLogger("shikkhaai")
 
@@ -54,6 +54,14 @@ class AnalyticsService:
             if attempts else 0.0
         )
 
+        # Subtopic analytics
+        subtopic_performances = db.scalars(
+            select(SubtopicPerformance).where(SubtopicPerformance.student_id == student.id)
+        ).all()
+        subtopic_accuracy = self._build_subtopic_accuracy(db, subtopic_performances)
+        weak_subtopics = [s for s in subtopic_accuracy if not s["is_mastered"]]
+        mastered_subtopics = [s for s in subtopic_accuracy if s["is_mastered"]]
+
         return {
             "topic_accuracy": self._build_topic_accuracy(performances, exams_by_id, attempts),
             "weak_chapters": self._build_weak_chapters(performances),
@@ -63,9 +71,41 @@ class AnalyticsService:
             "average_accuracy": avg_accuracy,
             "total_questions_attempted": total_questions,
             "total_study_minutes": total_questions * 2,  # rough estimate: 2 min/question
+            "subtopic_accuracy": subtopic_accuracy,
+            "weak_subtopics": weak_subtopics,
+            "mastered_subtopics": mastered_subtopics,
         }
 
     # ── Topic accuracy detail ─────────────────────────────────────────────────
+
+    def _build_subtopic_accuracy(
+        self,
+        db: Session,
+        subtopic_performances: list,
+    ) -> list[dict[str, Any]]:
+        result = []
+        for p in subtopic_performances:
+            subtopic = db.get(Subtopic, p.subtopic_id)
+            if not subtopic:
+                continue
+            ct = subtopic.curriculum_topic
+            correct = round(p.average_score / 100 * p.attempts_count)
+            trend = round(p.last_score - p.average_score, 1)
+            last_attempted = p.updated_at.strftime("%Y-%m-%d") if p.updated_at else None
+            result.append({
+                "subtopic_id": p.subtopic_id,
+                "name": subtopic.name,
+                "topic": ct.topic if ct else "General",
+                "chapter": ct.chapter if ct else "General",
+                "subject": p.subject.title(),
+                "accuracy": round(p.average_score, 1),
+                "total_questions": p.attempts_count,
+                "correct_answers": correct,
+                "trend": trend,
+                "last_attempted": last_attempted,
+                "is_mastered": p.average_score >= 90.0,
+            })
+        return result
 
     def _build_topic_accuracy(
         self,
