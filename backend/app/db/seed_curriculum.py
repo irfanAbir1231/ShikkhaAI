@@ -1,7 +1,7 @@
 """Seed Bangladesh NCTB curriculum chapters and topics.
 
 Run automatically on startup if the curriculum_topics table is empty
-or does not contain the expected Class 8 Science entries.
+or does not contain the expected entries.
 """
 
 from sqlalchemy import text
@@ -28,25 +28,97 @@ def _expected_entries() -> list[dict]:
             })
             order += 1
 
-    # Only Class 8 Science is seeded because that is the only textbook currently
-    # ingested into the RAG vector database.
-    add("8", "science", "Food and Nutrition", 1, [
-        "Classes of Food", "Balanced Diet", "Food Preservation",
+    # Class 8 Science (English Medium) — 14 chapters from NCTB textbook
+    add("8", "science", "Classification of Animal World", 1, [
+        "Classification of Invertebrate Animals",
+        "Classification of Vertebrate Animals",
+        "Necessity of Classification",
     ])
-    add("8", "science", "Life Processes", 2, [
-        "Photosynthesis", "Respiration", "Excretion",
+    add("8", "science", "Growth and Heredity of Living Organism", 2, [
+        "Types of Cell Division",
+        "The Process of Mitosis Cell Division",
+        "Meiosis",
+        "Growth and Development",
     ])
-    add("8", "science", "Force and Motion", 3, [
-        "Newton's Laws of Motion", "Gravitation", "Work, Energy and Power",
+    add("8", "science", "Diffusion, Osmosis and Transpiration", 3, [
+        "Diffusion",
+        "Osmosis",
+        "Importance of Osmosis",
+        "Absorption of Water and Mineral Salts",
+        "Transpiration",
     ])
-    add("8", "science", "Light and Sound", 4, [
-        "Reflection of Light", "Refraction", "Properties of Sound",
+    add("8", "science", "Reproduction in Plants", 4, [
+        "Reproduction",
+        "Sexual Reproduction",
+        "Pollination",
+        "Structure of Seeds and its Germination",
     ])
-    add("8", "science", "Matter", 5, [
-        "Atomic Structure", "Chemical Reactions", "Metals and Non-metals",
+    add("8", "science", "Co-ordination and Secretion", 5, [
+        "Co-ordination in Plants",
+        "Nervous System",
+        "Brain",
+        "Spinal Cord",
+        "Excretory System",
     ])
-    add("8", "science", "Environment and Conservation", 6, [
-        "Ecosystem", "Biodiversity", "Conservation of Nature",
+    add("8", "science", "The Structure of Atoms", 6, [
+        "Evolution of the Idea of Atoms",
+        "Atomic Number, Mass Number and Isotopes",
+        "Properties and Application of Isotopes",
+        "Electron Distribution in Atoms",
+        "Cation and Anion",
+    ])
+    add("8", "science", "The Earth and Gravitation", 7, [
+        "Gravitation",
+        "Gravity and Acceleration due to Gravity",
+        "Mass and Weight",
+        "Relation between Mass and Weight",
+    ])
+    add("8", "science", "Chemical Reaction", 8, [
+        "Symbol, Formula and Valency",
+        "Addition Reaction",
+        "Combustion Reaction",
+        "Substitution or Displacement Reaction",
+        "Transformation of Energy through Chemical Reaction",
+    ])
+    add("8", "science", "Electric Circuits and Current Electricity", 9, [
+        "Electric Potential and Electric Current",
+        "Different Types of Current Flow",
+        "Resistance",
+        "Electric Circuit",
+        "Ammeter and Voltmeter",
+    ])
+    add("8", "science", "Acid, Base and Salt", 10, [
+        "Acid, Base and Indicators",
+        "Use of Acids and Bases",
+        "Properties of Acid and Alkali",
+        "Acid, Alkali and Salt Identification",
+    ])
+    add("8", "science", "Light", 11, [
+        "Refraction of Light",
+        "Laws of Refraction of Light",
+        "Practical Application of Refraction",
+        "Total Internal Reflection and Critical Angle",
+        "Optical Fibre and Magnifying Glass",
+    ])
+    add("8", "science", "The Outer Space and Satellites", 12, [
+        "The Outer Space",
+        "The Universe",
+        "Natural Planet or Satellite",
+        "Artificial Satellites",
+        "Motion of an Artificial Satellite",
+    ])
+    add("8", "science", "Food and Nutrition", 13, [
+        "Nutrition, Nutrition Value and Food Elements",
+        "Carbohydrate and Protein",
+        "Lipids",
+        "Vitamins",
+    ])
+    add("8", "science", "Environment and Ecosystem", 14, [
+        "Ecosystem",
+        "Components of Ecosystem",
+        "Types of Ecosystem",
+        "Food Chain and Food Web",
+        "Energy Flow in the Ecosystem",
     ])
 
     return entries

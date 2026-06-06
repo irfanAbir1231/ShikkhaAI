@@ -58,7 +58,7 @@ WORD_TO_NUM = {
 }
 
 # Only ingest these chapters (set to None for all)
-CHAPTERS_TO_INGEST = {1, 2, 3, 4, 5, 6}
+CHAPTERS_TO_INGEST = None
 
 
 def detect_chapters(path: str) -> list[dict]:
@@ -375,13 +375,19 @@ def index_file(path: str, col, model) -> int:
 
     t = time.time()
 
-    col.upsert(
-        ids=all_ids,
-        documents=all_chunks,
-        embeddings=embeddings.tolist(),
-        metadatas=all_metas,
-    )
+    MAX_BATCH = 5000
+    total = len(all_chunks)
+    for i in range(0, total, MAX_BATCH):
+        end = min(i + MAX_BATCH, total)
+        col.upsert(
+            ids=all_ids[i:end],
+            documents=all_chunks[i:end],
+            embeddings=embeddings[i:end].tolist(),
+            metadatas=all_metas[i:end],
+        )
+        print(f"      stored {end}/{total}", end="\r")
 
+    print()
     print(f"stored in {time.time() - t:.1f}s")
 
     print(f"\n[OK] Indexed {len(all_chunks)} chunks")
