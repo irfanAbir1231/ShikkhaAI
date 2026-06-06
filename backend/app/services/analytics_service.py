@@ -2,7 +2,7 @@ import logging
 from datetime import date, datetime, timedelta, timezone
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import select, or_
 from sqlalchemy.orm import Session
 
 from app.db.models import Attempt, CurriculumTopic, Exam, Student, Subtopic, SubtopicPerformance, TopicPerformance
@@ -295,11 +295,11 @@ class AnalyticsService:
     # ── Topics by curriculum ──────────────────────────────────────────────────
 
     def get_topics(self, db: Session, student: Student) -> dict[str, Any]:
-        # 1. Fetch curriculum topics from database
+        # 1. Fetch curriculum topics from database (ordered by chapter, then display_order)
         curriculum_topics = db.scalars(
             select(CurriculumTopic)
             .where(CurriculumTopic.class_level == student.grade_level)
-            .order_by(CurriculumTopic.subject, CurriculumTopic.display_order)
+            .order_by(CurriculumTopic.subject, CurriculumTopic.chapter_number, CurriculumTopic.display_order)
         ).all()
 
         # 2. Fetch student topic performance
@@ -310,86 +310,121 @@ class AnalyticsService:
             (p.subject.lower(), p.topic.lower()): p for p in performances
         }
 
-        # 3. Fetch textbook-derived topics from ChromaDB via RAG client
-        from app.external.rag_client import RagClient
-        rag_client = RagClient()
-        textbook_topics = []
-        try:
-            textbook_topics = rag_client.get_topics(class_level=student.grade_level)
-        except Exception as exc:
-            logger.warning("Failed to fetch textbook topics: %s", exc)
+        # 3. Fetch weak subtopics for this student (joined with Subtopic to get topic names)
+        weak_subtopic_results = db.execute(
+            select(Subtopic, SubtopicPerformance)
+            .join(SubtopicPerformance, Subtopic.id == SubtopicPerformance.subtopic_id)
+            .where(SubtopicPerformance.student_id == student.id)
+            .where(
+                or_(
+                    SubtopicPerformance.average_score < 60.0,
+                    SubtopicPerformance.consistency_score < 50.0,
+                    SubtopicPerformance.last_score < 50.0,
+                )
+            )
+        ).all()
 
-        # 4. Merge curriculum topics and textbook topics
-        curriculum_set = {(ct.subject.lower(), ct.topic.lower()) for ct in curriculum_topics}
-        
-        unified_topics = []
+        topic_to_weak_subtopics: dict[str, list[int]] = {}
+        for subtopic, perf in weak_subtopic_results:
+            topic_name = subtopic.curriculum_topic.topic if subtopic.curriculum_topic else "General"
+            topic_to_weak_subtopics.setdefault(topic_name, []).append(subtopic.id)
+
+        # 4. Build nested structure: subject → chapter → topics
+        # Group curriculum topics by (subject, chapter)
+        chapters_map: dict[tuple[str, str], list[CurriculumTopic]] = {}
         for ct in curriculum_topics:
-            unified_topics.append({
-                "id": f"topic_{ct.id}",
-                "name": ct.topic,
-                "subject": ct.subject,
-            })
-            
-        for tt in textbook_topics:
-            subj = tt.get("subject", "")
-            topic_name = tt.get("topic", "")
-            if not subj or not topic_name:
-                continue
-            if (subj.lower(), topic_name.lower()) not in curriculum_set:
-                curriculum_set.add((subj.lower(), topic_name.lower()))
-                unified_topics.append({
-                    "id": f"rag_{subj.lower()}_{topic_name.lower().replace(' ', '_')}",
-                    "name": topic_name,
-                    "subject": subj,
-                })
-
-        # Group by subject
-        subjects_map: dict[str, list] = {}
-        for item in unified_topics:
-            subj_key = item["subject"].title() if item["subject"] else "General"
-            subjects_map.setdefault(subj_key, []).append(item)
+            key = (ct.subject.lower(), ct.chapter)
+            chapters_map.setdefault(key, []).append(ct)
 
         subjects_data = []
         total_topics = 0
         total_completed = 0
 
-        for subject, items in subjects_map.items():
-            topic_items = []
+        # Collect subjects in order of first appearance
+        seen_subjects: list[str] = []
+        for ct in curriculum_topics:
+            subj_title = ct.subject.title()
+            if subj_title not in seen_subjects:
+                seen_subjects.append(subj_title)
+
+        for subject in seen_subjects:
+            subj_key = subject.lower()
+            # Get chapters for this subject in order of first appearance
+            seen_chapters: list[str] = []
+            chapter_numbers: dict[str, int | None] = {}
+            for ct in curriculum_topics:
+                if ct.subject.lower() == subj_key:
+                    if ct.chapter not in seen_chapters:
+                        seen_chapters.append(ct.chapter)
+                        chapter_numbers[ct.chapter] = ct.chapter_number
+
+            chapters_data = []
             subj_completed = 0
-            for item in items:
-                topic_name = item["name"]
-                perf = perf_by_key.get((subject.lower(), topic_name.lower()))
-                completion = round(perf.average_score, 1) if perf else 0.0
-                is_done = completion >= 60.0
-                if is_done:
-                    subj_completed += 1
-                last_attempted = (
-                    perf.updated_at.strftime("%Y-%m-%d") if (perf and perf.updated_at) else None
-                )
-                topic_items.append({
-                    "id": item["id"],
-                    "name": topic_name,
-                    "completion_percentage": completion,
-                    "attempts_count": perf.attempts_count if perf else 0,
-                    "last_score": round(perf.last_score, 1) if perf else None,
-                    "last_attempted": last_attempted,
-                    "is_completed": is_done,
-                    "subject": subject,
+            subj_total = 0
+
+            for chapter_name in seen_chapters:
+                key = (subj_key, chapter_name)
+                cts = chapters_map.get(key, [])
+                topic_items = []
+                chapter_total = 0
+                chapter_completed = 0
+
+                for ct in cts:
+                    topic_name = ct.topic
+                    perf = perf_by_key.get((subj_key, topic_name.lower()))
+                    completion = round(perf.average_score, 1) if perf else 0.0
+                    attempts = perf.attempts_count if perf else 0
+                    is_done = completion >= 60.0
+                    is_attempted = attempts > 0
+                    is_weak = is_attempted and completion < 60.0
+                    if is_done:
+                        chapter_completed += 1
+                        subj_completed += 1
+                    chapter_total += 1
+                    subj_total += 1
+
+                    last_attempted = (
+                        perf.updated_at.strftime("%Y-%m-%d") if (perf and perf.updated_at) else None
+                    )
+                    weak_ids = topic_to_weak_subtopics.get(topic_name, [])
+
+                    topic_items.append({
+                        "id": f"topic_{ct.id}",
+                        "name": topic_name,
+                        "chapter": chapter_name,
+                        "chapter_number": ct.chapter_number,
+                        "completion_percentage": completion,
+                        "attempts_count": attempts,
+                        "last_score": round(perf.last_score, 1) if perf else None,
+                        "last_attempted": last_attempted,
+                        "is_completed": is_done,
+                        "is_attempted": is_attempted,
+                        "is_weak": is_weak,
+                        "weak_subtopic_ids": weak_ids,
+                        "subject": subject,
+                    })
+
+                chapter_pct = round(chapter_completed / chapter_total * 100, 1) if chapter_total else 0.0
+                chapters_data.append({
+                    "chapter_name": chapter_name,
+                    "chapter_number": chapter_numbers.get(chapter_name),
+                    "overall_completion_percentage": chapter_pct,
+                    "topics": topic_items,
                 })
-            n = len(items)
-            pct = round(subj_completed / n * 100, 1) if n else 0.0
+
+            subj_pct = round(subj_completed / subj_total * 100, 1) if subj_total else 0.0
             subjects_data.append({
                 "subject": subject,
                 "icon_name": _icon_for(subject),
-                "total_topics": n,
+                "total_topics": subj_total,
                 "completed_topics": subj_completed,
-                "overall_completion_percentage": pct,
-                "topics": topic_items,
+                "overall_completion_percentage": subj_pct,
+                "chapters": chapters_data,
             })
-            total_topics += n
+            total_topics += subj_total
             total_completed += subj_completed
 
-        # If no curriculum or textbook topics found — fall back to TopicPerformance data
+        # If no curriculum topics found — fall back to TopicPerformance data
         if not subjects_data:
             subjects_data = self._fallback_topics_from_performance(db, student.id, performances)
             total_topics = sum(s["total_topics"] for s in subjects_data)
@@ -421,27 +456,41 @@ class AnalyticsService:
             for p in subj_perfs:
                 completion = round(p.average_score, 1)
                 is_done = completion >= 60.0
+                is_attempted = p.attempts_count > 0
+                is_weak = is_attempted and completion < 60.0
                 if is_done:
                     subj_completed += 1
                 last_attempted = p.updated_at.strftime("%Y-%m-%d") if p.updated_at else None
                 topic_items.append({
                     "id": f"topic_perf_{p.id}",
                     "name": p.topic,
+                    "chapter": "General",
                     "completion_percentage": completion,
                     "attempts_count": p.attempts_count,
                     "last_score": round(p.last_score, 1),
                     "last_attempted": last_attempted,
                     "is_completed": is_done,
+                    "is_attempted": is_attempted,
+                    "is_weak": is_weak,
+                    "weak_subtopic_ids": [],
                 })
             n = len(subj_perfs)
             pct = round(subj_completed / n * 100, 1) if n else 0.0
+
+            # Group into a single "General" chapter
             subjects_data.append({
                 "subject": subject,
                 "icon_name": _icon_for(subject),
                 "total_topics": n,
                 "completed_topics": subj_completed,
                 "overall_completion_percentage": pct,
-                "topics": topic_items,
+                "chapters": [
+                    {
+                        "chapter_name": "General",
+                        "overall_completion_percentage": pct,
+                        "topics": topic_items,
+                    }
+                ],
             })
 
         return subjects_data
