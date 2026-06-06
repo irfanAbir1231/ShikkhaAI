@@ -10,7 +10,7 @@ from app.core.security import create_access_token, decode_access_token
 from app.db.models import Attempt, Exam, Student, TopicPerformance
 from app.db.session import get_db
 from app.schemas.exam import AttemptResponse, ExamSummaryResponse, WeakTopic
-from app.schemas.student import LoginRequest, StudentCreate, StudentResponse, TokenResponse
+from app.schemas.student import LoginRequest, StudentCreate, StudentResponse, StudentUpdate, TokenResponse
 from app.services.student_service import StudentService
 
 router = APIRouter(prefix="/student", tags=["students"])
@@ -103,6 +103,23 @@ def get_student(
             status_code=403,
         )
     student = student_service.fetch_student(db=db, student_id=id)
+    return success_response(StudentResponse.model_validate(student))
+
+
+@router.patch("/{student_id}")
+def update_student(
+    payload: StudentUpdate,
+    student_id: int = Path(gt=0),
+    db: Session = Depends(get_db),
+    current_student: Student = Depends(get_current_student),
+) -> dict[str, Any]:
+    if current_student.id != student_id:
+        raise AppError(
+            code="FORBIDDEN",
+            message="You can only update your own profile.",
+            status_code=403,
+        )
+    student = student_service.update_student(db=db, student_id=student_id, payload=payload)
     return success_response(StudentResponse.model_validate(student))
 
 

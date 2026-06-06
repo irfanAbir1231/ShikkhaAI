@@ -7,7 +7,7 @@ from app.core.responses import AppError
 from app.core.security import hash_password, verify_password
 from app.db.models import Student
 from app.db.transactions import safe_commit
-from app.schemas.student import StudentCreate
+from app.schemas.student import StudentCreate, StudentUpdate
 
 logger = logging.getLogger("shikkhaai")
 
@@ -58,4 +58,15 @@ class StudentService:
                 message="Incorrect email or password.",
                 status_code=401,
             )
+        return student
+
+    def update_student(self, db: Session, student_id: int, payload: StudentUpdate) -> Student:
+        student = self.fetch_student(db=db, student_id=student_id)
+        if payload.name is not None:
+            student.name = payload.name
+        if payload.grade_level is not None:
+            student.grade_level = payload.grade_level
+        safe_commit(db)
+        db.refresh(student)
+        logger.info("Updated student id=%s", student.id)
         return student

@@ -1,3 +1,5 @@
+from typing import Optional
+
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
@@ -26,6 +28,21 @@ class StudentCreate(StrictRequestModel):
         if "@" not in email or "." not in email.rsplit("@", maxsplit=1)[-1]:
             raise ValueError("must be a valid email address")
         return email
+
+
+class StudentUpdate(StrictRequestModel):
+    name: Optional[str] = Field(default=None, min_length=1, max_length=120)
+    grade_level: Optional[str] = Field(default=None, min_length=1, max_length=50)
+
+    @field_validator("name", "grade_level")
+    @classmethod
+    def strip_optional_text(cls, value: Optional[str]) -> Optional[str]:
+        if value is None:
+            return None
+        stripped = value.strip()
+        if not stripped:
+            raise ValueError("must not be blank")
+        return stripped
 
 
 class StudentResponse(BaseModel):
