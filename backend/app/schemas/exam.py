@@ -72,6 +72,7 @@ class ExamSubmitRequest(StrictRequestModel):
     student_id: int = Field(gt=0)
     exam_id: int = Field(gt=0)
     answers: list[AnswerSubmission] = Field(min_length=1)
+    tab_switches: int = Field(default=0, ge=0)
 
     @field_validator("answers")
     @classmethod
