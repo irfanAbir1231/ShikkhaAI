@@ -102,7 +102,7 @@ Generate {count} exam questions for Class {class_level} {subject.title()} on the
 Difficulty: {difficulty} ({difficulty_focus})
 Mix: mostly MCQ, 1-2 short answer.
 
-Respond with valid JSON only. No markdown. No explanation.
+Respond with valid JSON only. No markdown.
 
 {{
   "questions": [
@@ -113,7 +113,8 @@ Respond with valid JSON only. No markdown. No explanation.
       "difficulty": "{difficulty}",
       "question": "<question text>",
       "options": ["A. ...", "B. ...", "C. ...", "D. ..."],
-      "answer": "A"
+      "answer": "A",
+      "explanation": "<1-2 sentences explaining why the correct answer is right>"
     }}
   ]
 }}
@@ -121,6 +122,7 @@ Respond with valid JSON only. No markdown. No explanation.
 Rules:
 - MCQ must have exactly 4 options
 - answer field for MCQ is ONLY A/B/C/D
+- explanation: 1-2 sentences explaining the correct answer
 - short_answer options must be []
 - output JSON ONLY"""
 
@@ -343,13 +345,20 @@ Rules:
             correct_answer = key_item.get("correct_answer") or key_item.get("answer") or ""
             explanation = str(question.get("explanation") or "")
 
+            # Map letter answer (A/B/C/D) to full option text so frontend comparison works
+            str_options = [str(option) for option in options]
+            letter = str(correct_answer).strip().upper()
+            if letter in {"A", "B", "C", "D"} and str_options:
+                option_map = {chr(65 + i): opt for i, opt in enumerate(str_options)}
+                correct_answer = option_map.get(letter, letter)
+
             normalized_questions.append(
                 {
                     "id": question_id,
                     "type": question_type,
                     "topic": topic,
                     "prompt": prompt,
-                    "options": [str(option) for option in options],
+                    "options": str_options,
                     "marks": int(question.get("marks") or 1),
                     "correct_answer": str(correct_answer),
                     "explanation": explanation,
