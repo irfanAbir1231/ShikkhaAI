@@ -3,7 +3,7 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
-from app.db.models import SubtopicPerformance
+from app.db.models import Subtopic, SubtopicPerformance
 from app.schemas.exam import ExamGenerateRequest, ExamResponse
 from app.schemas.subtopic import PracticeExamGenerateRequest
 from app.services.exam_service import ExamService

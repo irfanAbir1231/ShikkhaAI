@@ -359,6 +359,31 @@ def _create_new_tables(conn, inspector, is_sqlite):
         conn.commit()
         logger.info("[migrate] Created saved_notes table")
 
+    if "saved_exams" not in existing_tables:
+        conn.execute(text("""
+            CREATE TABLE saved_exams (
+                id INTEGER NOT NULL PRIMARY KEY,
+                student_id INTEGER NOT NULL,
+                exam_id INTEGER NOT NULL,
+                bookmarked INTEGER NOT NULL DEFAULT 0,
+                saved_at DATETIME,
+                CONSTRAINT uq_saved_exam_student_exam UNIQUE (student_id, exam_id)
+            )
+        """ if is_sqlite else """
+            CREATE TABLE saved_exams (
+                id SERIAL PRIMARY KEY,
+                student_id INTEGER NOT NULL,
+                exam_id INTEGER NOT NULL,
+                bookmarked BOOLEAN NOT NULL DEFAULT FALSE,
+                saved_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                CONSTRAINT uq_saved_exam_student_exam UNIQUE (student_id, exam_id)
+            )
+        """))
+        conn.execute(text("CREATE INDEX ix_saved_exams_student_id ON saved_exams (student_id)"))
+        conn.execute(text("CREATE INDEX ix_saved_exams_exam_id ON saved_exams (exam_id)"))
+        conn.commit()
+        logger.info("[migrate] Created saved_exams table")
+
 
 def close_db() -> None:
     """Close database connections gracefully."""

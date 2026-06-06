@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.api.routes_students import get_current_student
 from app.core.responses import AppError, success_response
-from app.db.models import Attempt, Exam, Student
+from app.db.models import Attempt, Exam, SavedExam, Student
 from app.db.session import get_db
 from app.schemas.exam import (
     AttemptResponse,
@@ -118,3 +118,100 @@ def _serialize_exam(exam: Exam) -> dict[str, Any]:
         source=exam.source,
         created_at=exam.created_at.isoformat(),
     ).model_dump()
+
+
+# ── Saved Exams ───────────────────────────────────────────────────────────────
+
+@router.post("/{exam_id}/save")
+def save_exam(
+    exam_id: int = Path(gt=0),
+    db: Session = Depends(get_db),
+    current_student: Student = Depends(get_current_student),
+) -> dict[str, Any]:
+    exam = db.get(Exam, exam_id)
+    if exam is None:
+        raise AppError(code="EXAM_NOT_FOUND", message="Exam not found.", status_code=404)
+
+    existing = db.execute(
+        select(SavedExam).where(
+            SavedExam.student_id == current_student.id,
+            SavedExam.exam_id == exam_id,
+        )
+    ).scalar_one_or_none()
+
+    if existing:
+        return success_response({"saved": True, "message": "Exam already saved"})
+
+    saved = SavedExam(student_id=current_student.id, exam_id=exam_id)
+    db.add(saved)
+    db.commit()
+    return success_response({"saved": True})
+
+
+@router.delete("/{exam_id}/save")
+def unsave_exam(
+    exam_id: int = Path(gt=0),
+    db: Session = Depends(get_db),
+    current_student: Student = Depends(get_current_student),
+) -> dict[str, Any]:
+    saved = db.execute(
+        select(SavedExam).where(
+            SavedExam.student_id == current_student.id,
+            SavedExam.exam_id == exam_id,
+        )
+    ).scalar_one_or_none()
+
+    if saved:
+        db.delete(saved)
+        db.commit()
+    return success_response({"saved": False})
+
+
+@router.post("/{exam_id}/bookmark")
+def toggle_exam_bookmark(
+    exam_id: int = Path(gt=0),
+    db: Session = Depends(get_db),
+    current_student: Student = Depends(get_current_student),
+) -> dict[str, Any]:
+    saved = db.execute(
+        select(SavedExam).where(
+            SavedExam.student_id == current_student.id,
+            SavedExam.exam_id == exam_id,
+        )
+    ).scalar_one_or_none()
+
+    if not saved:
+        saved = SavedExam(student_id=current_student.id, exam_id=exam_id, bookmarked=True)
+        db.add(saved)
+    else:
+        saved.bookmarked = not saved.bookmarked
+
+    db.commit()
+    db.refresh(saved)
+    return success_response({"bookmarked": saved.bookmarked})
+
+
+@router.get("/saved/list")
+def list_saved_exams(
+    db: Session = Depends(get_db),
+    current_student: Student = Depends(get_current_student),
+) -> dict[str, Any]:
+    saved = db.execute(
+        select(SavedExam).where(SavedExam.student_id == current_student.id)
+    ).scalars().all()
+
+    result = []
+    for s in saved:
+        exam = db.get(Exam, s.exam_id)
+        if exam:
+            result.append({
+                "id": s.id,
+                "exam_id": s.exam_id,
+                "subject": exam.subject,
+                "topic": exam.topic,
+                "difficulty": exam.difficulty,
+                "num_questions": len(exam.questions) if isinstance(exam.questions, list) else 0,
+                "bookmarked": s.bookmarked,
+                "saved_at": s.saved_at.isoformat() if s.saved_at else None,
+            })
+    return success_response(result)

@@ -141,6 +141,7 @@ class Student(Base):
     study_plans: Mapped[list["StudyPlan"]] = relationship(back_populates="student", cascade="all, delete-orphan")
     subtopic_performances: Mapped[list["SubtopicPerformance"]] = relationship(back_populates="student", cascade="all, delete-orphan")
     saved_notes: Mapped[list["SavedNote"]] = relationship(back_populates="student", cascade="all, delete-orphan")
+    saved_exams: Mapped[list["SavedExam"]] = relationship(back_populates="student", cascade="all, delete-orphan")
 
 
 class Exam(Base):
@@ -358,3 +359,19 @@ class SavedNote(Base):
 
     student: Mapped[Student] = relationship(back_populates="saved_notes")
     note: Mapped["Note"] = relationship(back_populates="saves")
+
+
+class SavedExam(Base):
+    __tablename__ = "saved_exams"
+    __table_args__ = (
+        UniqueConstraint("student_id", "exam_id", name="uq_saved_exam_student_exam"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    student_id: Mapped[int] = mapped_column(ForeignKey("students.id"), index=True, nullable=False)
+    exam_id: Mapped[int] = mapped_column(ForeignKey("exams.id"), index=True, nullable=False)
+    bookmarked: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    saved_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+
+    student: Mapped[Student] = relationship(back_populates="saved_exams")
+    exam: Mapped[Exam] = relationship()
