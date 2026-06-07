@@ -1,11 +1,11 @@
 """rag_router.py — FastAPI router exposing RAG endpoints"""
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, UploadFile, File, Form
 from pydantic import BaseModel
 from typing import Optional
 
 from .retrieve import retrieve_context, build_rag_context
-from .generate import generate_questions, generate_answer
+from .generate import generate_questions, generate_answer, _get_client, GEMINI_MODEL, SYSTEM_PROMPT, MODE_PROMPTS
 from .topic_segmenter import segment_text_by_headers, TopicChunk
 
 from .space_ingest import (
@@ -63,6 +63,23 @@ class AskRequest(BaseModel):
     subject: str
     class_level: str
     pdf_context: Optional[str] = None
+
+
+class SpaceAskRequest(BaseModel):
+    query: str
+    mode: str
+    space_id: int
+    subject: Optional[str] = None
+    class_level: Optional[str] = None
+
+
+class DeleteSpaceDocumentRequest(BaseModel):
+    space_id: int
+    filename: str
+
+
+class DeleteSpaceRequest(BaseModel):
+    space_id: int
 
 
 # ─── Endpoints ────────────────────────────────────────────────────────────────
@@ -204,7 +221,6 @@ def weak_topics(req: WeakTopicsRequest):
     return {"weak_topics": weak}
 
 
-# <<<<<<< HEAD
 @router.get("/topics")
 def get_topics(subject: Optional[str] = None, class_level: Optional[str] = None):
     """
@@ -216,45 +232,9 @@ def get_topics(subject: Optional[str] = None, class_level: Optional[str] = None)
         return {"topics": topics}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-# =======
-
-# ── Additions to rag/rag_router.py ───────────────────────────────────────────
-#
-# Paste these imports and route handlers into your existing rag_router.py.
-# They add three new endpoints:
-#
-#   POST /ingest-space-document   — ingest a PDF into ChromaDB scoped to space_id
-#   DELETE /space-document        — remove a document's chunks from ChromaDB
-#   DELETE /space-documents       — remove ALL chunks for a space (on space delete)
-#   POST /ask-space               — RAG query scoped to a space_id
-#
-# ─────────────────────────────────────────────────────────────────────────────
-
-from fastapi import UploadFile, File, Form
-from typing import Optional
-
-# Add this import at the top of rag_router.py:
-# from .space_ingest import ingest_space_document, delete_space_document, delete_space_all_documents, retrieve_space_context
 
 
-class SpaceAskRequest(BaseModel):
-    query: str
-    mode: str
-    space_id: int
-    subject: Optional[str] = None
-    class_level: Optional[str] = None
-
-
-class DeleteSpaceDocumentRequest(BaseModel):
-    space_id: int
-    filename: str
-
-
-class DeleteSpaceRequest(BaseModel):
-    space_id: int
-
-
-# ── Ingest ────────────────────────────────────────────────────────────────────
+# ── Space ingestion endpoints ─────────────────────────────────────────────────
 
 @router.post("/ingest-space-document")
 async def ingest_space_document_endpoint(
@@ -267,8 +247,6 @@ async def ingest_space_document_endpoint(
     Ingest a student-uploaded PDF into ChromaDB, tagged with space_id.
     Called by the backend SpaceService after the file passes validation.
     """
-    from .space_ingest import ingest_space_document
-
     pdf_bytes = await file.read()
     if not pdf_bytes:
         raise HTTPException(status_code=400, detail="Empty file.")
@@ -290,8 +268,6 @@ async def ingest_space_document_endpoint(
 @router.delete("/space-document")
 def delete_space_document_endpoint(req: DeleteSpaceDocumentRequest):
     """Remove all ChromaDB chunks for one document in a space."""
-    from .space_ingest import delete_space_document
-
     deleted = delete_space_document(space_id=req.space_id, filename=req.filename)
     return {"deleted_chunks": deleted}
 
@@ -299,8 +275,6 @@ def delete_space_document_endpoint(req: DeleteSpaceDocumentRequest):
 @router.delete("/space-documents")
 def delete_space_documents_endpoint(req: DeleteSpaceRequest):
     """Remove ALL ChromaDB chunks for a space (called when space is deleted)."""
-    from .space_ingest import delete_space_all_documents
-
     deleted = delete_space_all_documents(space_id=req.space_id)
     return {"deleted_chunks": deleted}
 
@@ -314,9 +288,6 @@ def ask_space(req: SpaceAskRequest):
     Retrieves only chunks belonging to that space from ChromaDB,
     then generates a Gemini answer grounded in those documents.
     """
-    from .space_ingest import retrieve_space_context
-    from .generate import _get_client, GEMINI_MODEL, SYSTEM_PROMPT, MODE_PROMPTS
-
     context = retrieve_space_context(
         query=req.query,
         space_id=req.space_id,
@@ -371,4 +342,3 @@ CRITICAL RULES:
         "response": (response.text or "").strip(),
         "sources": [],
     }
-# >>>>>>> 79e4e27 (Personal Workspace is created)

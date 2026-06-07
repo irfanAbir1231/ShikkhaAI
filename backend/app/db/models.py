@@ -288,6 +288,7 @@ class Space(Base):
     student_id: Mapped[int] = mapped_column(ForeignKey("students.id"), index=True, nullable=False)
     name: Mapped[str] = mapped_column(String(120), nullable=False)
     subject: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    class_level: Mapped[str | None] = mapped_column(String(50), nullable=True)
     description: Mapped[str | None] = mapped_column(String(500), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
     updated_at: Mapped[datetime] = mapped_column(

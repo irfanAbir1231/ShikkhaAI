@@ -81,6 +81,7 @@ class SpaceService:
             student_id=student_id,
             name=payload.name.strip(),
             subject=payload.subject.strip() if payload.subject else None,
+            class_level=payload.class_level.strip() if payload.class_level else None,
             description=payload.description.strip() if payload.description else None,
         )
         db.add(space)
@@ -122,6 +123,8 @@ class SpaceService:
             space.name = payload.name.strip()
         if payload.subject is not None:
             space.subject = payload.subject.strip() or None
+        if payload.class_level is not None:
+            space.class_level = payload.class_level.strip() or None
         if payload.description is not None:
             space.description = payload.description.strip() or None
         space.updated_at = utc_now()

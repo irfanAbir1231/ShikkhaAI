@@ -6,6 +6,7 @@ class SpaceCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
     name: str = Field(min_length=1, max_length=120)
     subject: str | None = Field(default=None, max_length=100)
+    class_level: str | None = Field(default=None, max_length=50)
     description: str | None = Field(default=None, max_length=500)
 
 
@@ -13,6 +14,7 @@ class SpaceUpdate(BaseModel):
     model_config = ConfigDict(extra="forbid")
     name: str | None = Field(default=None, min_length=1, max_length=120)
     subject: str | None = Field(default=None, max_length=100)
+    class_level: str | None = Field(default=None, max_length=50)
     description: str | None = Field(default=None, max_length=500)
 
 
@@ -39,6 +41,7 @@ class SpaceResponse(BaseModel):
     student_id: int
     name: str
     subject: str | None
+    class_level: str | None
     description: str | None
     document_count: int
     created_at: datetime
@@ -51,6 +54,7 @@ class SpaceDetailResponse(BaseModel):
     student_id: int
     name: str
     subject: str | None
+    class_level: str | None
     description: str | None
     documents: list[SpaceDocumentResponse]
     created_at: datetime
