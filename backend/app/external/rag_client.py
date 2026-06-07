@@ -1,4 +1,5 @@
 import logging
+import time
 from typing import Any, Optional
 
 import httpx
@@ -138,6 +139,57 @@ Rules:
         data = self._adapt_rag_response(result)
         return self._normalize_exam(data=data, request_payload=payload, source="gemini")
 
+    def _ask_via_gemini(self, payload: dict[str, Any]) -> dict[str, Any]:
+        import json
+        from google import genai
+
+        message = payload.get("message", "")
+        mode = payload.get("mode", "simple")
+        subject = payload.get("subject", "science")
+        class_level = payload.get("class_level", "8")
+
+        mode_instructions = {
+            "simple": "Explain in very simple, easy-to-understand language suitable for a young student.",
+            "detailed": "Provide a detailed, thorough explanation with examples and depth.",
+            "exam_style": "Frame the answer as an exam-style response with key points, definitions, and examples a student would write in an exam.",
+            "analogy": "Use creative analogies and real-life comparisons to make the concept memorable.",
+        }.get(mode, "Explain clearly and simply.")
+
+        prompt = (
+            f"You are ShikkhaAI, a helpful AI tutor for Bangladeshi students.\n\n"
+            f"A Class {class_level} student asks about {subject}:\n"
+            f'"""{message}"""\n\n'
+            f"Instructions:\n"
+            f"- {mode_instructions}\n"
+            f"- Keep the answer accurate and curriculum-relevant.\n"
+            f"- Use Bangladeshi educational context where appropriate.\n"
+            f"- Respond in a friendly, encouraging tone.\n"
+            f"- Format with markdown-style headers, bullet points, and bold text for readability.\n\n"
+            f"Respond with a JSON object ONLY (no markdown code blocks):\n"
+            f'{{\n  "response": "Your complete answer here with markdown formatting escaped for JSON"\n}}'
+        )
+
+        client = genai.Client(api_key=settings.gemini_api_key)
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt,
+        )
+        raw = response.text.strip()
+        if raw.startswith("```"):
+            raw = raw.split("\n", 1)[1].rsplit("\n```", 1)[0] if "\n" in raw else raw.strip("`")
+            if raw.startswith("json"):
+                raw = raw[4:].strip()
+        try:
+            data = json.loads(raw)
+            answer = data.get("response", raw)
+        except json.JSONDecodeError:
+            answer = raw
+
+        return {
+            "response": answer,
+            "sources": [],
+        }
+
     def _to_rag_request(self, payload: dict[str, Any]) -> dict[str, Any]:
         """Map the backend ExamGenerateRequest shape to member1's RAG
         /generate-exam contract (subject lowercase, class_level string,
@@ -200,39 +252,67 @@ Rules:
             except ImportError:
                 pass
             except Exception as exc:
-                raise RuntimeError(f"RAG ask failed: {exc}") from exc
+                logger.warning("In-process RAG ask failed: %s", exc)
 
-        # HTTP fallback (RAG service only — no direct Gemini for study companion)
-        if not settings.rag_base_url:
-            raise RuntimeError(
-                "RAG module not importable and RAG_BASE_URL not set. "
-                "The study companion requires the RAG service to be available."
-            )
-        try:
-            with httpx.Client(timeout=settings.rag_timeout_seconds) as client:
-                response = client.post(
-                    f"{settings.rag_base_url}/ask",
-                    json={
-                        "query": payload["message"],
-                        "mode": payload["mode"],
-                        "subject": payload["subject"],
-                        "class_level": payload["class_level"],
-                        "pdf_context": payload.get("pdf_context"),
-                    },
-                )
-                response.raise_for_status()
-                data = response.json()
-            return {
-                "response": data.get("response", ""),
-                "sources": data.get("sources", []),
-            }
-        except httpx.ConnectError as exc:
-            raise RuntimeError(
-                f"RAG server at {settings.rag_base_url} is not reachable. "
-                "Run: uvicorn rag_server:app --port 8100"
-            ) from exc
-        except (httpx.HTTPError, TypeError, KeyError) as exc:
-            raise RuntimeError(f"RAG HTTP ask failed: {exc}") from exc
+        # HTTP RAG service with Gemini fallback
+        if settings.rag_base_url:
+            max_retries = 2
+            for attempt in range(max_retries + 1):
+                try:
+                    with httpx.Client(timeout=settings.rag_timeout_seconds) as client:
+                        response = client.post(
+                            f"{settings.rag_base_url}/ask",
+                            json={
+                                "query": payload["message"],
+                                "mode": payload["mode"],
+                                "subject": payload["subject"],
+                                "class_level": payload["class_level"],
+                                "pdf_context": payload.get("pdf_context"),
+                            },
+                        )
+                        response.raise_for_status()
+                        data = response.json()
+                    return {
+                        "response": data.get("response", ""),
+                        "sources": data.get("sources", []),
+                    }
+                except httpx.HTTPStatusError as exc:
+                    if exc.response.status_code in (429, 503) and attempt < max_retries:
+                        delay = 2 * (attempt + 1)
+                        logger.warning(
+                            "RAG server returned %d (attempt %d/%d). Retrying in %ds...",
+                            exc.response.status_code,
+                            attempt + 1,
+                            max_retries + 1,
+                            delay,
+                        )
+                        time.sleep(delay)
+                        continue
+                    logger.warning(
+                        "RAG ask failed with status %d. Falling back to Gemini.",
+                        exc.response.status_code,
+                    )
+                    break
+                except httpx.ConnectError as exc:
+                    logger.warning(
+                        "RAG server at %s is not reachable (%s). Falling back to Gemini.",
+                        settings.rag_base_url,
+                        exc,
+                    )
+                    break
+                except (httpx.HTTPError, TypeError, KeyError) as exc:
+                    logger.warning("RAG HTTP ask failed: %s. Falling back to Gemini.", exc)
+                    break
+
+        # Direct Gemini fallback when RAG is unavailable
+        if settings.gemini_api_key:
+            logger.info("Falling back to direct Gemini for study companion")
+            return self._ask_via_gemini(payload)
+
+        raise RuntimeError(
+            "Study companion is temporarily unavailable. The RAG service is not reachable "
+            "and no Gemini API key is configured. Please try again in a moment."
+        )
 
     def detect_weak_topics(self, payload: dict[str, Any]) -> list[dict[str, Any]]:
         if settings.mock_mode:
