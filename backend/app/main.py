@@ -13,16 +13,16 @@ from app.api.routes_curriculum import router as curriculum_router
 from app.api.routes_exams import router as exams_router
 from app.api.routes_notes import router as notes_router
 from app.api.routes_students import router as students_router
-<<<<<<< HEAD
+#<<<<<<< HEAD
 from app.api.routes_study_companion import router as study_companion_router
 from app.api.routes_subtopics import router as subtopics_router
 from app.core.config import settings, validate_settings
 from app.core.logging_config import get_logger, setup_logging
-=======
+# =======
 from app.core.config import settings
 from app.api.routes_spaces import router as spaces_router
 
->>>>>>> 79e4e27 (Personal Workspace is created)
+# >>>>>>> 79e4e27 (Personal Workspace is created)
 from app.core.responses import (
     AppError,
     app_error_handler,
@@ -96,7 +96,7 @@ app.add_exception_handler(Exception, unhandled_exception_handler)
 # ── Routers ───────────────────────────────────────────────────────────────────
 app.include_router(students_router)
 app.include_router(exams_router)
-<<<<<<< HEAD
+# <<<<<<< HEAD
 app.include_router(analytics_router)
 app.include_router(curriculum_router)
 app.include_router(notes_router)
@@ -107,11 +107,11 @@ if RAG_ROUTER_AVAILABLE:
     logger.info("RAG router mounted at /rag")
 else:
     logger.info("RAG router not available (chromadb/fastembed not installed in backend venv)")
-=======
+# =======
 app.include_router(analytics_router)   # GET /student/{id}/dashboard|analytics|topics
 app.include_router(notes_router)       # GET|POST|DELETE /notes
 app.include_router(spaces_router)
->>>>>>> 79e4e27 (Personal Workspace is created)
+# >>>>>>> 79e4e27 (Personal Workspace is created)
 
 
 @app.get("/health")

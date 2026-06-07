@@ -204,7 +204,7 @@ def weak_topics(req: WeakTopicsRequest):
     return {"weak_topics": weak}
 
 
-<<<<<<< HEAD
+# <<<<<<< HEAD
 @router.get("/topics")
 def get_topics(subject: Optional[str] = None, class_level: Optional[str] = None):
     """
@@ -216,7 +216,7 @@ def get_topics(subject: Optional[str] = None, class_level: Optional[str] = None)
         return {"topics": topics}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-=======
+# =======
 
 # ── Additions to rag/rag_router.py ───────────────────────────────────────────
 #
@@ -371,4 +371,4 @@ CRITICAL RULES:
         "response": (response.text or "").strip(),
         "sources": [],
     }
->>>>>>> 79e4e27 (Personal Workspace is created)
+# >>>>>>> 79e4e27 (Personal Workspace is created)

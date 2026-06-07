@@ -188,7 +188,7 @@ class CurriculumTopic(Base):
     topic: Mapped[str] = mapped_column(String(150), nullable=False)
     display_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
-<<<<<<< HEAD
+#<<<<<<< HEAD
     subtopics: Mapped[list["Subtopic"]] = relationship(
         back_populates="curriculum_topic", cascade="all, delete-orphan", order_by="Subtopic.display_order"
     )
@@ -231,7 +231,7 @@ class SubtopicPerformance(Base):
     average_score: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
     consistency_score: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
     last_score: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
-=======
+# =======
 
 
 
@@ -269,13 +269,13 @@ class Space(Base):
     name: Mapped[str] = mapped_column(String(120), nullable=False)
     subject: Mapped[str | None] = mapped_column(String(100), nullable=True)
     description: Mapped[str | None] = mapped_column(String(500), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
->>>>>>> 79e4e27 (Personal Workspace is created)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)#
+#>>>>>>> 79e4e27 (Personal Workspace is created)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=utc_now, onupdate=utc_now
     )
 
-<<<<<<< HEAD
+# <<<<<<< HEAD
     student: Mapped[Student] = relationship(back_populates="subtopic_performances")
     subtopic: Mapped[Subtopic] = relationship(back_populates="performances")
 
@@ -324,7 +324,7 @@ class SavedExam(Base):
 
     student: Mapped[Student] = relationship(back_populates="saved_exams")
     exam: Mapped[Exam] = relationship()
-=======
+# =======
     student: Mapped["Student"] = relationship(back_populates="spaces")
     documents: Mapped[list["SpaceDocument"]] = relationship(
         back_populates="space",
@@ -357,4 +357,4 @@ class SpaceDocument(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
 
     space: Mapped["Space"] = relationship(back_populates="documents")
->>>>>>> 79e4e27 (Personal Workspace is created)
+# >>>>>>> 79e4e27 (Personal Workspace is created)
