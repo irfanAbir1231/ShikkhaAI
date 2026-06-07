@@ -77,8 +77,16 @@ def list_spaces(
     db: Session = Depends(get_db),
     current_student: Student = Depends(get_current_student),
 ) -> dict[str, Any]:
-    spaces = space_service.list_spaces(db=db, student_id=current_student.id)
-    return success_response([_space_to_response(s) for s in spaces])
+    try:
+        spaces = space_service.list_spaces(db=db, student_id=current_student.id)
+        return success_response([_space_to_response(s) for s in spaces])
+    except Exception as exc:
+        logger.exception("Failed to list spaces for student_id=%s: %s", current_student.id, exc)
+        raise AppError(
+            code="SPACE_LIST_FAILED",
+            message="Could not load study spaces. The database may still be initializing.",
+            status_code=503,
+        ) from exc
 
 
 @router.get("/{space_id}")
