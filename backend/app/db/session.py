@@ -384,6 +384,62 @@ def _create_new_tables(conn, inspector, is_sqlite):
         conn.commit()
         logger.info("[migrate] Created saved_exams table")
 
+    if "spaces" not in existing_tables:
+        conn.execute(text("""
+            CREATE TABLE spaces (
+                id INTEGER NOT NULL PRIMARY KEY,
+                student_id INTEGER NOT NULL,
+                name VARCHAR(120) NOT NULL,
+                subject VARCHAR(100),
+                class_level VARCHAR(50),
+                description VARCHAR(500),
+                created_at DATETIME,
+                updated_at DATETIME
+            )
+        """ if is_sqlite else """
+            CREATE TABLE spaces (
+                id SERIAL PRIMARY KEY,
+                student_id INTEGER NOT NULL,
+                name VARCHAR(120) NOT NULL,
+                subject VARCHAR(100),
+                class_level VARCHAR(50),
+                description VARCHAR(500),
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+            )
+        """))
+        conn.execute(text("CREATE INDEX ix_spaces_student_id ON spaces (student_id)"))
+        conn.commit()
+        logger.info("[migrate] Created spaces table")
+
+    if "space_documents" not in existing_tables:
+        conn.execute(text("""
+            CREATE TABLE space_documents (
+                id INTEGER NOT NULL PRIMARY KEY,
+                space_id INTEGER NOT NULL,
+                filename VARCHAR(255) NOT NULL,
+                size_bytes INTEGER NOT NULL DEFAULT 0,
+                page_count INTEGER NOT NULL DEFAULT 0,
+                chunks_count INTEGER NOT NULL DEFAULT 0,
+                created_at DATETIME,
+                CONSTRAINT uq_space_document_space_filename UNIQUE (space_id, filename)
+            )
+        """ if is_sqlite else """
+            CREATE TABLE space_documents (
+                id SERIAL PRIMARY KEY,
+                space_id INTEGER NOT NULL,
+                filename VARCHAR(255) NOT NULL,
+                size_bytes INTEGER NOT NULL DEFAULT 0,
+                page_count INTEGER NOT NULL DEFAULT 0,
+                chunks_count INTEGER NOT NULL DEFAULT 0,
+                created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                CONSTRAINT uq_space_document_space_filename UNIQUE (space_id, filename)
+            )
+        """))
+        conn.execute(text("CREATE INDEX ix_space_documents_space_id ON space_documents (space_id)"))
+        conn.commit()
+        logger.info("[migrate] Created space_documents table")
+
 
 def close_db() -> None:
     """Close database connections gracefully."""
