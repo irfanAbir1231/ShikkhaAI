@@ -245,6 +245,14 @@ def _migrate_schema(engine):
                         ))
                         conn.commit()
 
+        # spaces.class_level (added after initial schema creation)
+        if "spaces" in existing_tables:
+            cols = {c["name"] for c in inspector.get_columns("spaces")}
+            if "class_level" not in cols:
+                conn.execute(text("ALTER TABLE spaces ADD COLUMN class_level VARCHAR(50)"))
+                conn.commit()
+                logger.info("[migrate] Added class_level column to spaces")
+
         # Create new tables if they don't exist (non-destructive)
         _create_new_tables(conn, inspector, is_sqlite)
 
