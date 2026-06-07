@@ -8,6 +8,13 @@ from .retrieve import retrieve_context, build_rag_context
 from .generate import generate_questions, generate_answer
 from .topic_segmenter import segment_text_by_headers, TopicChunk
 
+from .space_ingest import (
+    ingest_space_document,
+    delete_space_document,
+    delete_space_all_documents,
+    retrieve_space_context,
+)
+
 router = APIRouter()
 
 
@@ -197,6 +204,7 @@ def weak_topics(req: WeakTopicsRequest):
     return {"weak_topics": weak}
 
 
+<<<<<<< HEAD
 @router.get("/topics")
 def get_topics(subject: Optional[str] = None, class_level: Optional[str] = None):
     """
@@ -208,3 +216,159 @@ def get_topics(subject: Optional[str] = None, class_level: Optional[str] = None)
         return {"topics": topics}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+=======
+
+# ── Additions to rag/rag_router.py ───────────────────────────────────────────
+#
+# Paste these imports and route handlers into your existing rag_router.py.
+# They add three new endpoints:
+#
+#   POST /ingest-space-document   — ingest a PDF into ChromaDB scoped to space_id
+#   DELETE /space-document        — remove a document's chunks from ChromaDB
+#   DELETE /space-documents       — remove ALL chunks for a space (on space delete)
+#   POST /ask-space               — RAG query scoped to a space_id
+#
+# ─────────────────────────────────────────────────────────────────────────────
+
+from fastapi import UploadFile, File, Form
+from typing import Optional
+
+# Add this import at the top of rag_router.py:
+# from .space_ingest import ingest_space_document, delete_space_document, delete_space_all_documents, retrieve_space_context
+
+
+class SpaceAskRequest(BaseModel):
+    query: str
+    mode: str
+    space_id: int
+    subject: Optional[str] = None
+    class_level: Optional[str] = None
+
+
+class DeleteSpaceDocumentRequest(BaseModel):
+    space_id: int
+    filename: str
+
+
+class DeleteSpaceRequest(BaseModel):
+    space_id: int
+
+
+# ── Ingest ────────────────────────────────────────────────────────────────────
+
+@router.post("/ingest-space-document")
+async def ingest_space_document_endpoint(
+    space_id: int = Form(...),
+    subject: Optional[str] = Form(default=None),
+    class_level: Optional[str] = Form(default=None),
+    file: UploadFile = File(...),
+):
+    """
+    Ingest a student-uploaded PDF into ChromaDB, tagged with space_id.
+    Called by the backend SpaceService after the file passes validation.
+    """
+    from .space_ingest import ingest_space_document
+
+    pdf_bytes = await file.read()
+    if not pdf_bytes:
+        raise HTTPException(status_code=400, detail="Empty file.")
+
+    try:
+        result = ingest_space_document(
+            space_id=space_id,
+            filename=file.filename or "upload.pdf",
+            pdf_bytes=pdf_bytes,
+            subject=subject,
+            class_level=class_level,
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Ingestion failed: {exc}")
+
+    return result
+
+
+@router.delete("/space-document")
+def delete_space_document_endpoint(req: DeleteSpaceDocumentRequest):
+    """Remove all ChromaDB chunks for one document in a space."""
+    from .space_ingest import delete_space_document
+
+    deleted = delete_space_document(space_id=req.space_id, filename=req.filename)
+    return {"deleted_chunks": deleted}
+
+
+@router.delete("/space-documents")
+def delete_space_documents_endpoint(req: DeleteSpaceRequest):
+    """Remove ALL ChromaDB chunks for a space (called when space is deleted)."""
+    from .space_ingest import delete_space_all_documents
+
+    deleted = delete_space_all_documents(space_id=req.space_id)
+    return {"deleted_chunks": deleted}
+
+
+# ── Space-scoped ask ──────────────────────────────────────────────────────────
+
+@router.post("/ask-space")
+def ask_space(req: SpaceAskRequest):
+    """
+    Study-companion Q&A scoped to a space_id.
+    Retrieves only chunks belonging to that space from ChromaDB,
+    then generates a Gemini answer grounded in those documents.
+    """
+    from .space_ingest import retrieve_space_context
+    from .generate import _get_client, GEMINI_MODEL, SYSTEM_PROMPT, MODE_PROMPTS
+
+    context = retrieve_space_context(
+        query=req.query,
+        space_id=req.space_id,
+        n_results=5,
+    )
+
+    if not context:
+        return {
+            "response": (
+                "I couldn't find relevant information in your uploaded documents. "
+                "Make sure you have uploaded PDFs to this space, or try rephrasing your question."
+            ),
+            "sources": [],
+        }
+
+    mode_instruction = MODE_PROMPTS.get(
+        req.mode,
+        "Give a clear, helpful explanation based on the provided documents.",
+    )
+
+    class_level = req.class_level or "8"
+    subject_label = (req.subject or "the subject").title()
+
+    prompt = f"""You are ShikkhaAI, a helpful tutor for {subject_label} students.
+
+DOCUMENT CONTEXT (from student's uploaded files):
+{context}
+
+STUDENT QUESTION:
+{req.query}
+
+INSTRUCTIONS:
+{mode_instruction}
+
+CRITICAL RULES:
+- Answer STRICTLY based on the DOCUMENT CONTEXT provided above.
+- If the documents do NOT contain enough information, say: "I don't have enough information about that in your uploaded documents."
+- Do NOT use outside knowledge not present in the context.
+- Output markdown ONLY. No preamble.
+- Do NOT wrap your answer in JSON."""
+
+    try:
+        client = _get_client()
+        response = client.models.generate_content(
+            model=GEMINI_MODEL,
+            contents=SYSTEM_PROMPT + "\n\n" + prompt,
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=503, detail=f"Gemini generation failed: {exc}")
+
+    return {
+        "response": (response.text or "").strip(),
+        "sources": [],
+    }
+>>>>>>> 79e4e27 (Personal Workspace is created)
