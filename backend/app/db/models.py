@@ -77,6 +77,8 @@ class Attempt(Base):
     mcq_total: Mapped[int] = mapped_column(Integer, nullable=False)
     short_answer_feedback: Mapped[list[dict[str, Any]]] = mapped_column(JSON, nullable=False)
     weak_topics: Mapped[list[dict[str, Any]]] = mapped_column(JSON, nullable=False)
+    weak_subtopics: Mapped[list[dict[str, Any]]] = mapped_column(JSON, nullable=False, default=list)
+    generated_notes: Mapped[list[dict[str, Any]]] = mapped_column(JSON, nullable=False, default=list)
     readiness_score: Mapped[float] = mapped_column(Float, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
 

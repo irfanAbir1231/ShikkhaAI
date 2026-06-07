@@ -179,5 +179,7 @@ class AttemptResponse(BaseModel):
     mcq_total: int
     readiness_score: float
     weak_topics: list[WeakTopic]
+    weak_subtopics: list[WeakSubtopic] = Field(default_factory=list)
+    generated_notes: list[GeneratedNote] = Field(default_factory=list)
     short_answer_feedback: list[ShortAnswerFeedback]
     created_at: str

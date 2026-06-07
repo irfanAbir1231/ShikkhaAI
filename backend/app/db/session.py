@@ -245,6 +245,18 @@ def _migrate_schema(engine):
                         ))
                         conn.commit()
 
+        # attempts.weak_subtopics / generated_notes (persisted submit-time data)
+        if "attempts" in existing_tables:
+            cols = {c["name"] for c in inspector.get_columns("attempts")}
+            if "weak_subtopics" not in cols:
+                conn.execute(text("ALTER TABLE attempts ADD COLUMN weak_subtopics TEXT DEFAULT '[]'"))
+                conn.commit()
+                logger.info("[migrate] Added weak_subtopics column to attempts")
+            if "generated_notes" not in cols:
+                conn.execute(text("ALTER TABLE attempts ADD COLUMN generated_notes TEXT DEFAULT '[]'"))
+                conn.commit()
+                logger.info("[migrate] Added generated_notes column to attempts")
+
         # spaces.class_level (added after initial schema creation)
         if "spaces" in existing_tables:
             cols = {c["name"] for c in inspector.get_columns("spaces")}

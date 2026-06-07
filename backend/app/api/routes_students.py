@@ -214,6 +214,8 @@ def _serialize_attempt(attempt: Attempt) -> dict[str, Any]:
         mcq_total=attempt.mcq_total,
         readiness_score=attempt.readiness_score,
         weak_topics=attempt.weak_topics,
+        weak_subtopics=attempt.weak_subtopics or [],
+        generated_notes=attempt.generated_notes or [],
         short_answer_feedback=attempt.short_answer_feedback,
         created_at=attempt.created_at.isoformat(),
     ).model_dump()

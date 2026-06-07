@@ -247,33 +247,8 @@ class ExamService:
             touched_subtopic_ids=touched_subtopic_ids,
         )
 
-        # ── Persist attempt ────────────────────────────────────────────────────
-        attempt = Attempt(
-            student_id=payload.student_id,
-            exam_id=payload.exam_id,
-            answers=answers,
-            score_percentage=grade_result.score_percentage,
-            mcq_correct=grade_result.mcq_correct,
-            mcq_total=grade_result.mcq_total,
-            short_answer_feedback=short_answer_feedback,
-            weak_topics=weak_topics,
-            readiness_score=readiness_score,
-        )
-        db.add(attempt)
-        safe_commit(db)
-        db.refresh(attempt)
-
-        logger.info(
-            "Submitted exam_id=%s student_id=%s score=%s%% readiness=%s weak_topics=%s",
-            payload.exam_id,
-            payload.student_id,
-            grade_result.score_percentage,
-            readiness_score,
-            [wt.get("topic") for wt in weak_topics],
-        )
-
         # ── Auto-generate notes for weak topics/subtopics ──────────────────────
-        # Runs after attempt is saved — failure here never breaks the response
+        # Compute notes BEFORE persisting attempt so we can store them together
         generated_notes: list[Any] = []
         if weak_subtopics:
             notes = self.note_generation_service.generate_notes_for_weak_subtopics(
@@ -306,6 +281,33 @@ class ExamService:
                     payload.student_id,
                 )
 
+        # ── Persist attempt ────────────────────────────────────────────────────
+        attempt = Attempt(
+            student_id=payload.student_id,
+            exam_id=payload.exam_id,
+            answers=answers,
+            score_percentage=grade_result.score_percentage,
+            mcq_correct=grade_result.mcq_correct,
+            mcq_total=grade_result.mcq_total,
+            short_answer_feedback=short_answer_feedback,
+            weak_topics=weak_topics,
+            weak_subtopics=weak_subtopics,
+            generated_notes=generated_notes,
+            readiness_score=readiness_score,
+        )
+        db.add(attempt)
+        safe_commit(db)
+        db.refresh(attempt)
+
+        logger.info(
+            "Submitted exam_id=%s student_id=%s score=%s%% readiness=%s weak_topics=%s",
+            payload.exam_id,
+            payload.student_id,
+            grade_result.score_percentage,
+            readiness_score,
+            [wt.get("topic") for wt in weak_topics],
+        )
+
         return ExamSubmitResponse(
             attempt_id=attempt.id,
             student_id=attempt.student_id,
@@ -314,9 +316,9 @@ class ExamService:
             mcq_correct=attempt.mcq_correct,
             mcq_total=attempt.mcq_total,
             weak_topics=attempt.weak_topics,
-            weak_subtopics=weak_subtopics,
+            weak_subtopics=attempt.weak_subtopics,
             readiness_score=attempt.readiness_score,
             short_answer_feedback=attempt.short_answer_feedback,
             mcq_feedback=grade_result.mcq_feedback,
-            generated_notes=generated_notes,
+            generated_notes=attempt.generated_notes,
         )
