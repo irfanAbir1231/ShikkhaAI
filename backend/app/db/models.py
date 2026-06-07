@@ -3,7 +3,6 @@ from typing import Any
 
 from sqlalchemy import (
     Boolean,
-    Date,
     DateTime,
     Float,
     ForeignKey,
@@ -22,7 +21,7 @@ def utc_now() -> datetime:
     return datetime.now(timezone.utc)
 
 
-# ─────────────────────────── Existing Models ─────────────────────────────────
+# ─────────────────────────── Core Models ─────────────────────────────────────
 
 class Student(Base):
     __tablename__ = "students"
@@ -40,15 +39,12 @@ class Student(Base):
     exams: Mapped[list["Exam"]] = relationship(back_populates="student", cascade="all, delete-orphan")
     attempts: Mapped[list["Attempt"]] = relationship(back_populates="student", cascade="all, delete-orphan")
     topic_performances: Mapped[list["TopicPerformance"]] = relationship(back_populates="student", cascade="all, delete-orphan")
+    subtopic_performances: Mapped[list["SubtopicPerformance"]] = relationship(back_populates="student", cascade="all, delete-orphan")
     notes: Mapped[list["Note"]] = relationship(back_populates="student", cascade="all, delete-orphan")
     study_plans: Mapped[list["StudyPlan"]] = relationship(back_populates="student", cascade="all, delete-orphan")
-    subtopic_performances: Mapped[list["SubtopicPerformance"]] = relationship(back_populates="student", cascade="all, delete-orphan")
     saved_notes: Mapped[list["SavedNote"]] = relationship(back_populates="student", cascade="all, delete-orphan")
     saved_exams: Mapped[list["SavedExam"]] = relationship(back_populates="student", cascade="all, delete-orphan")
-
-    spaces: Mapped[list["Space"]] = relationship(
-    back_populates="student", cascade="all, delete-orphan"
-)
+    spaces: Mapped[list["Space"]] = relationship(back_populates="student", cascade="all, delete-orphan")
 
 
 class Exam(Base):
@@ -65,7 +61,7 @@ class Exam(Base):
     source: Mapped[str] = mapped_column(String(50), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
 
-    student: Mapped[Student] = relationship(back_populates="exams")
+    student: Mapped["Student"] = relationship(back_populates="exams")
     attempts: Mapped[list["Attempt"]] = relationship(back_populates="exam")
 
 
@@ -84,8 +80,8 @@ class Attempt(Base):
     readiness_score: Mapped[float] = mapped_column(Float, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
 
-    student: Mapped[Student] = relationship(back_populates="attempts")
-    exam: Mapped[Exam] = relationship(back_populates="attempts")
+    student: Mapped["Student"] = relationship(back_populates="attempts")
+    exam: Mapped["Exam"] = relationship(back_populates="attempts")
 
 
 class TopicPerformance(Base):
@@ -106,10 +102,10 @@ class TopicPerformance(Base):
         DateTime(timezone=True), default=utc_now, onupdate=utc_now
     )
 
-    student: Mapped[Student] = relationship(back_populates="topic_performances")
+    student: Mapped["Student"] = relationship(back_populates="topic_performances")
 
 
-# ─────────────────────────── New Models ──────────────────────────────────────
+# ─────────────────────────── Notes ───────────────────────────────────────────
 
 class Note(Base):
     __tablename__ = "notes"
@@ -125,7 +121,7 @@ class Note(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
     updated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
-    student: Mapped[Student] = relationship(back_populates="notes")
+    student: Mapped["Student"] = relationship(back_populates="notes")
     versions: Mapped[list["NoteVersion"]] = relationship(
         back_populates="note", cascade="all, delete-orphan", order_by="NoteVersion.version.desc()"
     )
@@ -133,6 +129,20 @@ class Note(Base):
         back_populates="note", cascade="all, delete-orphan"
     )
 
+
+class NoteVersion(Base):
+    __tablename__ = "note_versions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    note_id: Mapped[int] = mapped_column(ForeignKey("notes.id"), index=True, nullable=False)
+    version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    generated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+
+    note: Mapped["Note"] = relationship(back_populates="versions")
+
+
+# ─────────────────────────── Study Plan ──────────────────────────────────────
 
 class StudyPlan(Base):
     __tablename__ = "study_plans"
@@ -148,7 +158,7 @@ class StudyPlan(Base):
         DateTime(timezone=True), default=utc_now, onupdate=utc_now
     )
 
-    student: Mapped[Student] = relationship(back_populates="study_plans")
+    student: Mapped["Student"] = relationship(back_populates="study_plans")
     tasks: Mapped[list["StudyPlanTask"]] = relationship(
         back_populates="plan", cascade="all, delete-orphan", order_by="StudyPlanTask.scheduled_date"
     )
@@ -171,8 +181,10 @@ class StudyPlanTask(Base):
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
 
-    plan: Mapped[StudyPlan] = relationship(back_populates="tasks")
+    plan: Mapped["StudyPlan"] = relationship(back_populates="tasks")
 
+
+# ─────────────────────────── Curriculum ──────────────────────────────────────
 
 class CurriculumTopic(Base):
     __tablename__ = "curriculum_topics"
@@ -188,13 +200,10 @@ class CurriculumTopic(Base):
     topic: Mapped[str] = mapped_column(String(150), nullable=False)
     display_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
 
-#<<<<<<< HEAD
     subtopics: Mapped[list["Subtopic"]] = relationship(
         back_populates="curriculum_topic", cascade="all, delete-orphan", order_by="Subtopic.display_order"
     )
 
-
-# ─────────────────────────── Subtopic Models ─────────────────────────────────
 
 class Subtopic(Base):
     __tablename__ = "subtopics"
@@ -231,68 +240,12 @@ class SubtopicPerformance(Base):
     average_score: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
     consistency_score: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
     last_score: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
-# =======
+
+    student: Mapped["Student"] = relationship(back_populates="subtopic_performances")
+    subtopic: Mapped["Subtopic"] = relationship(back_populates="performances")
 
 
-
-# app/db/models.py  ── ADDENDUM
-# Paste these two classes into your existing models.py, after the CurriculumTopic class.
-# Add the `spaces` relationship into the Student class as shown below.
-
-# ─── Add to Student class ─────────────────────────────────────────────────────
-
-#     spaces: Mapped[list["Space"]] = relationship(
-#         back_populates="student", cascade="all, delete-orphan"
-#     )
-
-# ─────────────────────────────────────────────────────────────────────────────
-
-from datetime import datetime, timezone
-from sqlalchemy import DateTime, ForeignKey, Integer, String, UniqueConstraint
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-from app.db.base import Base
-
-
-def utc_now() -> datetime:
-    return datetime.now(timezone.utc)
-
-
-class Space(Base):
-    """A named study workspace that scopes PDF uploads and ChromaDB-backed AI chat."""
-
-    __tablename__ = "spaces"
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    student_id: Mapped[int] = mapped_column(
-        ForeignKey("students.id"), index=True, nullable=False
-    )
-    name: Mapped[str] = mapped_column(String(120), nullable=False)
-    subject: Mapped[str | None] = mapped_column(String(100), nullable=True)
-    description: Mapped[str | None] = mapped_column(String(500), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)#
-#>>>>>>> 79e4e27 (Personal Workspace is created)
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=utc_now, onupdate=utc_now
-    )
-
-# <<<<<<< HEAD
-    student: Mapped[Student] = relationship(back_populates="subtopic_performances")
-    subtopic: Mapped[Subtopic] = relationship(back_populates="performances")
-
-
-# ─────────────────────────── Note Versioning & Saved Notes ───────────────────
-
-class NoteVersion(Base):
-    __tablename__ = "note_versions"
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    note_id: Mapped[int] = mapped_column(ForeignKey("notes.id"), index=True, nullable=False)
-    version: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
-    content: Mapped[str] = mapped_column(Text, nullable=False)
-    generated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
-
-    note: Mapped["Note"] = relationship(back_populates="versions")
-
+# ─────────────────────────── Saved Notes / Exams ─────────────────────────────
 
 class SavedNote(Base):
     __tablename__ = "saved_notes"
@@ -306,7 +259,7 @@ class SavedNote(Base):
     bookmarked: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     saved_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
 
-    student: Mapped[Student] = relationship(back_populates="saved_notes")
+    student: Mapped["Student"] = relationship(back_populates="saved_notes")
     note: Mapped["Note"] = relationship(back_populates="saves")
 
 
@@ -322,9 +275,25 @@ class SavedExam(Base):
     bookmarked: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     saved_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
 
-    student: Mapped[Student] = relationship(back_populates="saved_exams")
-    exam: Mapped[Exam] = relationship()
-# =======
+    student: Mapped["Student"] = relationship(back_populates="saved_exams")
+    exam: Mapped["Exam"] = relationship()
+
+
+# ─────────────────────────── Study Spaces ────────────────────────────────────
+
+class Space(Base):
+    __tablename__ = "spaces"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    student_id: Mapped[int] = mapped_column(ForeignKey("students.id"), index=True, nullable=False)
+    name: Mapped[str] = mapped_column(String(120), nullable=False)
+    subject: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    description: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, onupdate=utc_now
+    )
+
     student: Mapped["Student"] = relationship(back_populates="spaces")
     documents: Mapped[list["SpaceDocument"]] = relationship(
         back_populates="space",
@@ -334,27 +303,17 @@ class SavedExam(Base):
 
 
 class SpaceDocument(Base):
-    """
-    Metadata record for a PDF uploaded to a Space.
-    The actual content lives in ChromaDB (tagged with space_id).
-    Postgres only stores filename, size, page count, and chunk count.
-    """
-
     __tablename__ = "space_documents"
     __table_args__ = (
         UniqueConstraint("space_id", "filename", name="uq_space_document_space_filename"),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
-    space_id: Mapped[int] = mapped_column(
-        ForeignKey("spaces.id"), index=True, nullable=False
-    )
+    space_id: Mapped[int] = mapped_column(ForeignKey("spaces.id"), index=True, nullable=False)
     filename: Mapped[str] = mapped_column(String(255), nullable=False)
     size_bytes: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     page_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    # How many ChromaDB chunks were created — informational only
     chunks_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
 
     space: Mapped["Space"] = relationship(back_populates="documents")
-# >>>>>>> 79e4e27 (Personal Workspace is created)
