@@ -6,7 +6,7 @@
 # from app.db.models import Attempt, Exam
 # from app.db.transactions import safe_commit
 # from app.external.rag_client import RagClient
-# from app.schemas.exam import ExamGenerateRequest, ExamResponse, ExamSubmitRequest, ExamSubmitResponse
+# from app.schemas.exam import ExamGenerateRequest, ExamResponse, ExamSubmitRequest, ExamSubmitResponse, GeneratedNote
 # from app.services.grading_service import GradingService
 # from app.services.profile_service import ProfileService
 # from app.services.student_service import StudentService
@@ -282,6 +282,11 @@ class ExamService:
                 )
 
         # ── Persist attempt ────────────────────────────────────────────────────
+        # Serialize Note ORM objects to plain dicts for JSON storage
+        generated_notes_data = [
+            GeneratedNote.model_validate(n).model_dump(mode="json")
+            for n in generated_notes
+        ]
         attempt = Attempt(
             student_id=payload.student_id,
             exam_id=payload.exam_id,
@@ -292,7 +297,7 @@ class ExamService:
             short_answer_feedback=short_answer_feedback,
             weak_topics=weak_topics,
             weak_subtopics=weak_subtopics,
-            generated_notes=generated_notes,
+            generated_notes=generated_notes_data,
             readiness_score=readiness_score,
         )
         db.add(attempt)
@@ -320,5 +325,8 @@ class ExamService:
             readiness_score=attempt.readiness_score,
             short_answer_feedback=attempt.short_answer_feedback,
             mcq_feedback=grade_result.mcq_feedback,
-            generated_notes=attempt.generated_notes,
+            generated_notes=[
+                GeneratedNote.model_validate(n) if not isinstance(n, dict) else GeneratedNote.model_validate(n)
+                for n in attempt.generated_notes
+            ],
         )
