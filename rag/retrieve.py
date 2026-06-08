@@ -18,10 +18,23 @@ EMBED_MODEL = "BAAI/bge-small-en-v1.5"
 
 
 # ─────────────────────────────────────────────────────────────
-# LOAD MODEL
+# LAZY MODEL LOAD — avoids OOM crash at import time on Render
 # ─────────────────────────────────────────────────────────────
 
-model = TextEmbedding(model_name=EMBED_MODEL)
+_embed_model: "TextEmbedding | None" = None
+
+
+def _get_model() -> TextEmbedding:
+    global _embed_model
+    if _embed_model is None:
+        print(f"[+] Loading embedding model {EMBED_MODEL}...")
+        try:
+            _embed_model = TextEmbedding(model_name=EMBED_MODEL)
+            print("[+] Embedding model ready.")
+        except Exception as exc:
+            print(f"[!] Failed to load embedding model: {exc}")
+            raise RuntimeError(f"Embedding model load failed: {exc}") from exc
+    return _embed_model
 
 
 # ─────────────────────────────────────────────────────────────
@@ -47,15 +60,26 @@ def retrieve_context(
     """
     Retrieve context from ChromaDB with optional chapter and topic filtering.
     """
+    try:
+        collection = get_collection()
+    except Exception as exc:
+        print(f"[!] ChromaDB connection failed: {exc}")
+        return []
 
-    collection = get_collection()
-
-    total = collection.count()
+    try:
+        total = collection.count()
+    except Exception as exc:
+        print(f"[!] ChromaDB count() failed: {exc}")
+        return []
 
     if total == 0:
         return []
 
-    query_embedding = list(model.embed([query]))[0].tolist()
+    try:
+        query_embedding = list(_get_model().embed([query]))[0].tolist()
+    except Exception as exc:
+        print(f"[!] Embedding failed for query '{query[:80]}': {exc}")
+        return []
 
     where_clauses = []
 
@@ -84,7 +108,11 @@ def retrieve_context(
     if where:
         kwargs["where"] = where
 
-    results = collection.query(**kwargs)
+    try:
+        results = collection.query(**kwargs)
+    except Exception as exc:
+        print(f"[!] ChromaDB query failed: {exc}")
+        return []
 
     # Fallback: if no results with chapter/topic filters, retry without them
     docs = results["documents"][0] if results and results["documents"] else []
@@ -102,7 +130,11 @@ def retrieve_context(
         else:
             kwargs.pop("where", None)
 
-        results = collection.query(**kwargs)
+        try:
+            results = collection.query(**kwargs)
+        except Exception as exc:
+            print(f"[!] ChromaDB fallback query failed: {exc}")
+            return []
 
     output = []
 

@@ -129,10 +129,36 @@ Rules:
 
 
 def extract_json(text: str) -> dict:
-
     text = re.sub(r"```json|```", "", text).strip()
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError as exc:
+        print(f"[!] JSON parse failed: {exc}")
+        print(f"[!] Raw Gemini response (first 500 chars): {text[:500]}")
+        raise
 
-    return json.loads(text)
+
+def _mock_questions(subject: str, class_level: str, difficulty: str, count: int) -> dict:
+    """Last-resort fallback when both RAG retrieval and Gemini generation fail."""
+    print("[!] Returning mock fallback questions — RAG + Gemini both unavailable.")
+    questions = []
+    for i in range(1, min(count, 3) + 1):
+        questions.append({
+            "id": i,
+            "type": "mcq",
+            "topic": f"{subject.title()} General",
+            "subtopics": ["General"],
+            "difficulty": difficulty,
+            "question": f"[Fallback Q{i}] Which of the following is a key concept in Class {class_level} {subject.title()}?",
+            "options": [
+                "A. Service temporarily unavailable — please retry",
+                "B. Option B",
+                "C. Option C",
+                "D. Option D",
+            ],
+            "answer": "A",
+        })
+    return {"questions": questions, "_fallback": True}
 
 
 def generate_questions(
@@ -160,15 +186,24 @@ def generate_questions(
     if chapter:
         query = f"{query} chapter {chapter}"
 
-    context = build_rag_context(
-        query,
-        subject=subject,
-        class_level=class_level,
-        chapter=chapter,
-        topic=query_override if query_override else None,
-    )
+    rag_ok = True
+    try:
+        context = build_rag_context(
+            query,
+            subject=subject,
+            class_level=class_level,
+            chapter=chapter,
+            topic=query_override if query_override else None,
+        )
+    except Exception as exc:
+        print(f"[!] RAG context retrieval failed: {exc}")
+        context = ""
+        rag_ok = False
 
     if not context:
+        if not rag_ok:
+            print("[!] RAG unavailable and no context — returning mock fallback.")
+            return _mock_questions(subject, class_level, difficulty, count)
         print("[!] No RAG context found.")
         return {"questions": []}
 
@@ -183,19 +218,29 @@ def generate_questions(
         topic=topic,
     )
 
-    print(f"[+] Generating {count} questions...")
+    print(f"[+] Generating {count} questions for {subject} class {class_level} ({difficulty})...")
 
     try:
-        response = _get_client().models.generate_content(
+        client = _get_client()
+        response = client.models.generate_content(
             model=GEMINI_MODEL,
             contents=SYSTEM_PROMPT + "\n\n" + prompt,
         )
     except Exception as exc:
-        raise RuntimeError(f"Gemini generation failed: {exc}") from exc
+        err_str = str(exc)
+        print(f"[!] Gemini generation failed: {err_str}")
+        if "RESOURCE_EXHAUSTED" in err_str or "429" in err_str:
+            raise RuntimeError(f"RESOURCE_EXHAUSTED: Gemini quota exceeded. {err_str}") from exc
+        print("[!] Gemini unavailable — returning mock fallback.")
+        return _mock_questions(subject, class_level, difficulty, count)
 
     raw = response.text or ""
 
-    result = extract_json(raw)
+    try:
+        result = extract_json(raw)
+    except (json.JSONDecodeError, ValueError) as exc:
+        print(f"[!] Could not parse Gemini JSON response: {exc} — returning mock fallback.")
+        return _mock_questions(subject, class_level, difficulty, count)
 
     for i, q in enumerate(result.get("questions", []), 1):
         q["id"] = i

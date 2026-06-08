@@ -1,5 +1,7 @@
 """rag_router.py — FastAPI router exposing RAG endpoints"""
 
+import traceback
+
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form
 from pydantic import BaseModel
 from typing import Optional
@@ -94,6 +96,11 @@ def generate_exam(req: GenerateRequest):
     If topic or chapter is provided, generates topic-aware exam questions
     filtered to that specific topic or chapter.
     """
+    print(
+        f"[/generate-exam] subject={req.subject!r} class={req.class_level!r} "
+        f"difficulty={req.difficulty!r} count={req.count} "
+        f"topic={req.topic!r} chapter={req.chapter!r}"
+    )
     try:
         result = generate_questions(
             subject=req.subject,
@@ -103,9 +110,24 @@ def generate_exam(req: GenerateRequest):
             query_override=req.topic or None,
             chapter=req.chapter or None,
         )
+        q_count = len(result.get("questions", []))
+        is_fallback = result.get("_fallback", False)
+        print(f"[/generate-exam] OK — {q_count} questions returned (fallback={is_fallback})")
         return result
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    except RuntimeError as exc:
+        err_msg = str(exc)
+        print(f"[/generate-exam] RuntimeError: {err_msg}")
+        traceback.print_exc()
+        if "RESOURCE_EXHAUSTED" in err_msg:
+            raise HTTPException(
+                status_code=503,
+                detail="Gemini API quota exceeded. Please wait a few minutes and retry.",
+            )
+        raise HTTPException(status_code=500, detail=err_msg)
+    except Exception as exc:
+        print(f"[/generate-exam] Unhandled exception: {exc}")
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(exc))
 
 
 @router.post("/retrieve")
