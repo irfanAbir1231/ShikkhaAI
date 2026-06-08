@@ -184,28 +184,14 @@ class ExamService:
         answer_key: list[dict[str, Any]],
         subtopic_ids: list[int],
     ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
-        """When RAG/Gemini does not return subtopics, look up the names from
-        the database and distribute them round-robin across questions so that
-        subtopic performance tracking works."""
+        """When the caller requested specific subtopic_ids, ensure every
+        question and answer_key item carries exactly those IDs (looked up
+        by name) so subtopic performance tracking works reliably even when
+        RAG/Gemini omits or mislabels subtopics."""
         if not subtopic_ids:
             return questions, answer_key
 
-        # Skip if questions already have subtopics (RAG service handled it)
-        has_subtopics = any(
-            isinstance(q.get("subtopics"), list) and len(q["subtopics"]) > 0
-            for q in questions
-        )
-        if has_subtopics:
-            # Still inject subtopic_ids if missing
-            for q in questions:
-                if "subtopic_ids" not in q:
-                    q["subtopic_ids"] = subtopic_ids
-            for ak in answer_key:
-                if "subtopic_ids" not in ak:
-                    ak["subtopic_ids"] = subtopic_ids
-            return questions, answer_key
-
-        # Look up subtopic names
+        # Look up subtopic names once
         subtopic_rows = db.scalars(
             select(Subtopic).where(Subtopic.id.in_(subtopic_ids))
         ).all()
@@ -213,7 +199,9 @@ class ExamService:
         if not id_name_map:
             return questions, answer_key
 
-        # Distribute subtopics round-robin across questions
+        # Distribute requested subtopic_ids round-robin across questions.
+        # This overrides any subtopic metadata RAG/Gemini returned so that
+        # grading tracks the subtopics the student actually asked to practice.
         for i, q in enumerate(questions):
             assigned_id = subtopic_ids[i % len(subtopic_ids)]
             assigned_name = id_name_map.get(assigned_id, "Unknown")
@@ -241,6 +229,14 @@ class ExamService:
         answer_key = rag_exam.get("answer_key", [])
         questions, answer_key = self._inject_subtopics(
             db, questions, answer_key, payload.subtopic_ids
+        )
+        logger.info(
+            "Injected subtopics for exam student_id=%s topic=%s subtopic_ids=%s questions_with_ids=%s answer_key_with_ids=%s",
+            payload.student_id,
+            payload.topic,
+            payload.subtopic_ids,
+            sum(1 for q in questions if q.get("subtopic_ids")),
+            sum(1 for ak in answer_key if ak.get("subtopic_ids")),
         )
 
         exam = Exam(

@@ -446,6 +446,8 @@ Rules:
 
             raw_subtopics = question.get("subtopics") or []
             subtopics = raw_subtopics if isinstance(raw_subtopics, list) else [str(raw_subtopics)]
+            raw_subtopic_ids = question.get("subtopic_ids") or []
+            subtopic_ids = raw_subtopic_ids if isinstance(raw_subtopic_ids, list) else [int(raw_subtopic_ids)] if raw_subtopic_ids else []
 
             normalized_questions.append(
                 {
@@ -458,6 +460,7 @@ Rules:
                     "correct_answer": str(correct_answer),
                     "explanation": explanation,
                     "subtopics": subtopics,
+                    "subtopic_ids": subtopic_ids,
                 }
             )
 
@@ -469,6 +472,7 @@ Rules:
                     "topic": topic,
                     "marks": int(question.get("marks") or 1),
                     "subtopics": subtopics,
+                    "subtopic_ids": subtopic_ids,
                 }
             )
 
