@@ -37,7 +37,7 @@ class RagClient:
             except ImportError:
                 pass  # RAG module not in path — fall through to HTTP
             except Exception as exc:
-                raise RuntimeError(f"RAG generation failed: {exc}") from exc
+                logger.warning("In-process RAG generation failed: %s. Falling through to HTTP/Gemini.", exc)
 
         # HTTP RAG service: preferred when running separately on RAG_BASE_URL
         if settings.rag_base_url:
@@ -129,17 +129,24 @@ Rules:
 - subtopics: include 1-2 relevant subtopic names for each question
 - output JSON ONLY"""
 
-        client = genai.Client(api_key=settings.gemini_api_key)
-        response = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=prompt,
-        )
-        raw = re.sub(r"```json|```", "", response.text).strip()
-        result = json.loads(raw)
-        for i, q in enumerate(result.get("questions", []), 1):
-            q["id"] = i
-        data = self._adapt_rag_response(result)
-        return self._normalize_exam(data=data, request_payload=payload, source="gemini")
+        try:
+            client = genai.Client(api_key=settings.gemini_api_key)
+            response = client.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=prompt,
+            )
+            raw = re.sub(r"```json|```", "", response.text).strip()
+            result = json.loads(raw)
+            for i, q in enumerate(result.get("questions", []), 1):
+                q["id"] = i
+            data = self._adapt_rag_response(result)
+            return self._normalize_exam(data=data, request_payload=payload, source="gemini")
+        except Exception as exc:
+            logger.warning(
+                "Gemini exam generation failed (%s). Falling back to mock exam.",
+                type(exc).__name__,
+            )
+            return self._mock_exam(payload)
 
     def _ask_via_gemini(self, payload: dict[str, Any]) -> dict[str, Any]:
         import json
