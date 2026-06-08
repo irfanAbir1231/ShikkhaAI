@@ -57,8 +57,12 @@ def submit_exam(
     current_student: Student = Depends(get_current_student),
 ) -> dict[str, Any]:
     _verify_student_owns_resource(current_student, payload.student_id)
-    result = exam_service.submit_exam(db=db, payload=payload)
-    return success_response(result)
+    try:
+        result = exam_service.submit_exam(db=db, payload=payload)
+        return success_response(result)
+    except Exception:
+        logger.exception("Exam submit failed for student_id=%s exam_id=%s", payload.student_id, payload.exam_id)
+        raise
 
 
 @router.post("/practice/generate")
@@ -102,6 +106,8 @@ def _serialize_attempt(attempt: Attempt) -> dict[str, Any]:
         mcq_total=attempt.mcq_total,
         readiness_score=attempt.readiness_score,
         weak_topics=attempt.weak_topics,
+        weak_subtopics=attempt.weak_subtopics or [],
+        generated_notes=attempt.generated_notes or [],
         short_answer_feedback=attempt.short_answer_feedback,
         created_at=attempt.created_at.isoformat(),
     ).model_dump()
