@@ -139,7 +139,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.responses import AppError
-from app.db.models import Attempt, Exam, Subtopic
+from app.db.models import Attempt, CurriculumTopic, Exam, Subtopic
 from app.db.transactions import safe_commit
 from app.external.rag_client import RagClient
 from app.schemas.exam import ExamGenerateRequest, ExamResponse, ExamSubmitRequest, ExamSubmitResponse, GeneratedNote
@@ -177,6 +177,21 @@ class ExamService:
         self.profile_service = ProfileService()
         self.note_generation_service = NoteGenerationService()
         self.subtopic_service = SubtopicService()
+
+    def _get_subtopic_ids_for_topic(self, db: Session, topic: str) -> list[int]:
+        """Look up all subtopic IDs for a given curriculum topic name.
+        Returns empty list if the topic has no subtopics in the database."""
+        if not topic:
+            return []
+        curriculum_topic = db.scalar(
+            select(CurriculumTopic).where(CurriculumTopic.topic == topic)
+        )
+        if curriculum_topic is None:
+            return []
+        subtopic_rows = db.scalars(
+            select(Subtopic).where(Subtopic.curriculum_topic_id == curriculum_topic.id)
+        ).all()
+        return [st.id for st in subtopic_rows]
 
     def _inject_subtopics(
         self,
@@ -228,14 +243,28 @@ class ExamService:
 
         questions = rag_exam.get("questions", [])
         answer_key = rag_exam.get("answer_key", [])
+
+        # Auto-discover subtopics for the selected topic so that EVERY exam
+        # tracks subtopic performance — weak subtopics naturally surface over
+        # time without requiring the user to manually select them.
+        subtopic_ids = payload.subtopic_ids
+        if not subtopic_ids and payload.topic:
+            subtopic_ids = self._get_subtopic_ids_for_topic(db, payload.topic)
+            if subtopic_ids:
+                logger.info(
+                    "Auto-discovered %s subtopic(s) for topic=%s",
+                    len(subtopic_ids),
+                    payload.topic,
+                )
+
         questions, answer_key = self._inject_subtopics(
-            db, questions, answer_key, payload.subtopic_ids
+            db, questions, answer_key, subtopic_ids
         )
         logger.info(
             "Injected subtopics for exam student_id=%s topic=%s subtopic_ids=%s questions_with_ids=%s answer_key_with_ids=%s",
             payload.student_id,
             payload.topic,
-            payload.subtopic_ids,
+            subtopic_ids,
             sum(1 for q in questions if q.get("subtopic_ids")),
             sum(1 for ak in answer_key if ak.get("subtopic_ids")),
         )
