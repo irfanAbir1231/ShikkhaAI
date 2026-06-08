@@ -220,11 +220,14 @@ Rules:
             if not isinstance(question, dict):
                 continue
             question_id = str(question.get("id") or f"q{index}")
+            raw_subtopics = question.get("subtopics") or []
+            subtopics = raw_subtopics if isinstance(raw_subtopics, list) else [str(raw_subtopics)]
             answer_key.append(
                 {
                     "question_id": question_id,
                     "type": question.get("type"),
                     "correct_answer": question.get("answer", ""),
+                    "subtopics": subtopics,
                 }
             )
 
@@ -432,6 +435,9 @@ Rules:
                 option_map = {chr(65 + i): opt for i, opt in enumerate(str_options)}
                 correct_answer = option_map.get(letter, letter)
 
+            raw_subtopics = question.get("subtopics") or []
+            subtopics = raw_subtopics if isinstance(raw_subtopics, list) else [str(raw_subtopics)]
+
             normalized_questions.append(
                 {
                     "id": question_id,
@@ -442,6 +448,7 @@ Rules:
                     "marks": int(question.get("marks") or 1),
                     "correct_answer": str(correct_answer),
                     "explanation": explanation,
+                    "subtopics": subtopics,
                 }
             )
 
@@ -452,6 +459,7 @@ Rules:
                     "correct_answer": str(correct_answer),
                     "topic": topic,
                     "marks": int(question.get("marks") or 1),
+                    "subtopics": subtopics,
                 }
             )
 
@@ -476,12 +484,14 @@ Rules:
                     "x = a + b",
                 ],
                 "answer": "ax^2 + bx + c = 0",
+                "subtopics": ["Core Concepts"],
             },
             {
                 "type": "mcq",
                 "prompt": f"Which expression is commonly used as a discriminant in {topic}?",
                 "options": ["b^2 - 4ac", "2a + b", "a^2 + c", "4ab - c"],
                 "answer": "b^2 - 4ac",
+                "subtopics": ["Formulas"],
             },
             {
                 "type": "mcq",
@@ -493,6 +503,7 @@ Rules:
                     "A constant function",
                 ],
                 "answer": "Two distinct real roots",
+                "subtopics": ["Problem Solving"],
             },
             {
                 "type": "mcq",
@@ -504,12 +515,14 @@ Rules:
                     "Change the topic",
                 ],
                 "answer": "Identify the known values",
+                "subtopics": ["Methodology"],
             },
             {
                 "type": "short_answer",
                 "prompt": f"Briefly explain one key idea from {topic}.",
                 "options": [],
                 "answer": f"A clear explanation of a key idea from {topic}.",
+                "subtopics": ["Theory"],
             },
         ]
 
@@ -528,6 +541,7 @@ Rules:
                     "marks": 1,
                     "correct_answer": template["answer"],
                     "explanation": "",
+                    "subtopics": template.get("subtopics", []),
                 }
             )
             answer_key.append(
@@ -537,6 +551,7 @@ Rules:
                     "correct_answer": template["answer"],
                     "topic": topic,
                     "marks": 1,
+                    "subtopics": template.get("subtopics", []),
                 }
             )
 

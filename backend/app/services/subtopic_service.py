@@ -23,14 +23,16 @@ class SubtopicService:
             # question_results may contain subtopic_ids from grading
             subtopic_ids = result.get("subtopic_ids") or []
             if not subtopic_ids:
-                # Fallback: try to match by subtopic name
-                subtopic_name = result.get("subtopic")
-                if subtopic_name:
+                # Fallback: try to match by subtopic name(s)
+                subtopic_names = result.get("subtopics") or []
+                if not isinstance(subtopic_names, list):
+                    subtopic_names = [str(subtopic_names)] if subtopic_names else []
+                for subtopic_name in subtopic_names:
                     subtopic = db.scalar(
                         select(Subtopic).where(Subtopic.name == subtopic_name)
                     )
                     if subtopic:
-                        subtopic_ids = [subtopic.id]
+                        subtopic_ids.append(subtopic.id)
 
             score = float(result.get("score") or 0.0) * 100.0
             for sid in subtopic_ids:
