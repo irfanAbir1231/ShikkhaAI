@@ -6,7 +6,7 @@
 # from app.db.models import Attempt, Exam
 # from app.db.transactions import safe_commit
 # from app.external.rag_client import RagClient
-# from app.schemas.exam import ExamGenerateRequest, ExamResponse, ExamSubmitRequest, ExamSubmitResponse, GeneratedNote
+# from app.schemas.exam import ExamGenerateRequest, ExamResponse, ExamSubmitRequest, ExamSubmitResponse, GeneratedNote, GeneratedNote
 # from app.services.grading_service import GradingService
 # from app.services.profile_service import ProfileService
 # from app.services.student_service import StudentService
@@ -139,7 +139,7 @@ from app.core.responses import AppError
 from app.db.models import Attempt, Exam
 from app.db.transactions import safe_commit
 from app.external.rag_client import RagClient
-from app.schemas.exam import ExamGenerateRequest, ExamResponse, ExamSubmitRequest, ExamSubmitResponse
+from app.schemas.exam import ExamGenerateRequest, ExamResponse, ExamSubmitRequest, ExamSubmitResponse, GeneratedNote
 from app.services.grading_service import GradingService
 from app.services.note_generation_service import NoteGenerationService
 from app.services.profile_service import ProfileService
