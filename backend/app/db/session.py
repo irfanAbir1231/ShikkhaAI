@@ -259,20 +259,17 @@ def _migrate_schema(engine):
                 conn.commit()
                 logger.info("[migrate] Added weak_subtopics column to attempts")
             elif not is_sqlite and col_types.get("weak_subtopics", "") == "text":
-                # Migrate existing TEXT column to JSON
-                conn.execute(text("ALTER TABLE attempts ALTER COLUMN weak_subtopics TYPE JSON USING weak_subtopics::JSON"))
-                conn.commit()
-                logger.info("[migrate] Migrated weak_subtopics from TEXT to JSON")
+                # TEXT columns with JSON data work fine via _safe_json_parse;
+                # ALTER TYPE fails because the text default '[]' can't cast to json.
+                # Leave as TEXT rather than risk startup failure.
+                logger.info("[migrate] weak_subtopics is TEXT (legacy) — leaving as-is, parser will handle it")
 
             if "generated_notes" not in cols:
                 conn.execute(text(f"ALTER TABLE attempts ADD COLUMN generated_notes {json_type} DEFAULT {json_default}"))
                 conn.commit()
                 logger.info("[migrate] Added generated_notes column to attempts")
             elif not is_sqlite and col_types.get("generated_notes", "") == "text":
-                # Migrate existing TEXT column to JSON
-                conn.execute(text("ALTER TABLE attempts ALTER COLUMN generated_notes TYPE JSON USING generated_notes::JSON"))
-                conn.commit()
-                logger.info("[migrate] Migrated generated_notes from TEXT to JSON")
+                logger.info("[migrate] generated_notes is TEXT (legacy) — leaving as-is, parser will handle it")
 
         # spaces.class_level (added after initial schema creation)
         if "spaces" in existing_tables:
