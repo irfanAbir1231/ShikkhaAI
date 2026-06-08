@@ -1,4 +1,5 @@
-# import logging
+import json
+import logging
 
 # from sqlalchemy.orm import Session
 
@@ -147,6 +148,23 @@ from app.services.student_service import StudentService
 from app.services.subtopic_service import SubtopicService
 
 logger = logging.getLogger("shikkhaai")
+
+
+def _safe_json_list(value: Any) -> list[Any]:
+    """Safely coerce a JSON column value to a Python list.
+
+    Handles the case where a TEXT-typed JSON column returns a raw string
+    instead of a parsed list (e.g. after an ALTER TABLE migration bug).
+    """
+    if isinstance(value, list):
+        return value
+    if isinstance(value, str):
+        try:
+            parsed = json.loads(value)
+            return parsed if isinstance(parsed, list) else []
+        except (json.JSONDecodeError, TypeError):
+            return []
+    return []
 
 
 class ExamService:
@@ -313,6 +331,10 @@ class ExamService:
             [wt.get("topic") for wt in weak_topics],
         )
 
+        # Defensively coerce JSON columns in case DB stores them as TEXT strings
+        _weak_subtopics = _safe_json_list(attempt.weak_subtopics)
+        _generated_notes = _safe_json_list(attempt.generated_notes)
+
         return ExamSubmitResponse(
             attempt_id=attempt.id,
             student_id=attempt.student_id,
@@ -321,12 +343,11 @@ class ExamService:
             mcq_correct=attempt.mcq_correct,
             mcq_total=attempt.mcq_total,
             weak_topics=attempt.weak_topics,
-            weak_subtopics=attempt.weak_subtopics,
+            weak_subtopics=_weak_subtopics,
             readiness_score=attempt.readiness_score,
             short_answer_feedback=attempt.short_answer_feedback,
             mcq_feedback=grade_result.mcq_feedback,
             generated_notes=[
-                GeneratedNote.model_validate(n) if not isinstance(n, dict) else GeneratedNote.model_validate(n)
-                for n in attempt.generated_notes
+                GeneratedNote.model_validate(n) for n in _generated_notes
             ],
         )

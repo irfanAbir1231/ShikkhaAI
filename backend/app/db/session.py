@@ -248,14 +248,31 @@ def _migrate_schema(engine):
         # attempts.weak_subtopics / generated_notes (persisted submit-time data)
         if "attempts" in existing_tables:
             cols = {c["name"] for c in inspector.get_columns("attempts")}
+            col_types = {c["name"]: str(c.get("type", "")).lower() for c in inspector.get_columns("attempts")}
+
+            # Add missing columns as JSON (PostgreSQL) / TEXT (SQLite)
+            json_type = "JSON" if not is_sqlite else "TEXT"
+            json_default = "'[]'::json" if not is_sqlite else "'[]'"
+
             if "weak_subtopics" not in cols:
-                conn.execute(text("ALTER TABLE attempts ADD COLUMN weak_subtopics TEXT DEFAULT '[]'"))
+                conn.execute(text(f"ALTER TABLE attempts ADD COLUMN weak_subtopics {json_type} DEFAULT {json_default}"))
                 conn.commit()
                 logger.info("[migrate] Added weak_subtopics column to attempts")
+            elif not is_sqlite and col_types.get("weak_subtopics", "") == "text":
+                # Migrate existing TEXT column to JSON
+                conn.execute(text("ALTER TABLE attempts ALTER COLUMN weak_subtopics TYPE JSON USING weak_subtopics::JSON"))
+                conn.commit()
+                logger.info("[migrate] Migrated weak_subtopics from TEXT to JSON")
+
             if "generated_notes" not in cols:
-                conn.execute(text("ALTER TABLE attempts ADD COLUMN generated_notes TEXT DEFAULT '[]'"))
+                conn.execute(text(f"ALTER TABLE attempts ADD COLUMN generated_notes {json_type} DEFAULT {json_default}"))
                 conn.commit()
                 logger.info("[migrate] Added generated_notes column to attempts")
+            elif not is_sqlite and col_types.get("generated_notes", "") == "text":
+                # Migrate existing TEXT column to JSON
+                conn.execute(text("ALTER TABLE attempts ALTER COLUMN generated_notes TYPE JSON USING generated_notes::JSON"))
+                conn.commit()
+                logger.info("[migrate] Migrated generated_notes from TEXT to JSON")
 
         # spaces.class_level (added after initial schema creation)
         if "spaces" in existing_tables:

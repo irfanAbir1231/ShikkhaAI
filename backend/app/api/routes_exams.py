@@ -1,3 +1,4 @@
+import json
 import logging
 from typing import Any
 
@@ -23,6 +24,19 @@ logger = logging.getLogger("shikkhaai")
 router = APIRouter(prefix="/exam", tags=["exams"])
 exam_service = ExamService()
 practice_exam_service = PracticeExamService()
+
+
+def _safe_json_list(value: Any) -> list[Any]:
+    """Safely coerce a JSON column value to a Python list."""
+    if isinstance(value, list):
+        return value
+    if isinstance(value, str):
+        try:
+            parsed = json.loads(value)
+            return parsed if isinstance(parsed, list) else []
+        except (json.JSONDecodeError, TypeError):
+            return []
+    return []
 
 
 def _verify_student_owns_resource(current_student: Student, student_id: int) -> None:
@@ -106,8 +120,8 @@ def _serialize_attempt(attempt: Attempt) -> dict[str, Any]:
         mcq_total=attempt.mcq_total,
         readiness_score=attempt.readiness_score,
         weak_topics=attempt.weak_topics,
-        weak_subtopics=attempt.weak_subtopics or [],
-        generated_notes=attempt.generated_notes or [],
+        weak_subtopics=_safe_json_list(attempt.weak_subtopics),
+        generated_notes=_safe_json_list(attempt.generated_notes),
         short_answer_feedback=attempt.short_answer_feedback,
         created_at=attempt.created_at.isoformat(),
     ).model_dump()
