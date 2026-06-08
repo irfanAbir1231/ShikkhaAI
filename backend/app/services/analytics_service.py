@@ -324,10 +324,22 @@ class AnalyticsService:
             )
         ).all()
 
+        logger.info(
+            "get_topics: student_id=%s weak_subtopic_results_count=%s",
+            student.id,
+            len(weak_subtopic_results),
+        )
+
         topic_to_weak_subtopics: dict[str, list[int]] = {}
         for subtopic, perf in weak_subtopic_results:
             topic_name = subtopic.curriculum_topic.topic if subtopic.curriculum_topic else "General"
             topic_to_weak_subtopics.setdefault(topic_name, []).append(subtopic.id)
+
+        logger.info(
+            "get_topics: student_id=%s topic_to_weak_subtopics=%s",
+            student.id,
+            topic_to_weak_subtopics,
+        )
 
         # 4. Build nested structure: subject → chapter → topics
         # Group curriculum topics by (subject, chapter)

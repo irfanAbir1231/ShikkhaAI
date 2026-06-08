@@ -1,9 +1,12 @@
+import logging
 from typing import Any
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.db.models import Subtopic, SubtopicPerformance, utc_now
+
+logger = logging.getLogger("shikkhaai")
 
 
 class SubtopicService:
@@ -17,17 +20,28 @@ class SubtopicService:
         """Groups question_results by subtopic, computes average score per subtopic,
         upserts SubtopicPerformance rows. Returns list of touched subtopic_ids."""
         subtopic_scores: dict[int, list[float]] = {}
-        subtopic_names: dict[int, str] = {}
+        subtopic_id_to_name: dict[int, str] = {}
+
+        logger.info(
+            "update_subtopic_performance: student_id=%s question_results_count=%s",
+            student_id,
+            len(question_results),
+        )
 
         for result in question_results:
-            # question_results may contain subtopic_ids from grading
             subtopic_ids = result.get("subtopic_ids") or []
+            logger.debug(
+                "update_subtopic_performance: result subtopic_ids=%s subtopics=%s score=%s",
+                subtopic_ids,
+                result.get("subtopics"),
+                result.get("score"),
+            )
             if not subtopic_ids:
                 # Fallback: try to match by subtopic name(s)
-                subtopic_names = result.get("subtopics") or []
-                if not isinstance(subtopic_names, list):
-                    subtopic_names = [str(subtopic_names)] if subtopic_names else []
-                for subtopic_name in subtopic_names:
+                subtopic_name_list = result.get("subtopics") or []
+                if not isinstance(subtopic_name_list, list):
+                    subtopic_name_list = [str(subtopic_name_list)] if subtopic_name_list else []
+                for subtopic_name in subtopic_name_list:
                     subtopic = db.scalar(
                         select(Subtopic).where(Subtopic.name == subtopic_name)
                     )
@@ -38,10 +52,16 @@ class SubtopicService:
             for sid in subtopic_ids:
                 sid = int(sid)
                 subtopic_scores.setdefault(sid, []).append(score)
-                if sid not in subtopic_names:
+                if sid not in subtopic_id_to_name:
                     st = db.get(Subtopic, sid)
                     if st:
-                        subtopic_names[sid] = st.name
+                        subtopic_id_to_name[sid] = st.name
+
+        logger.info(
+            "update_subtopic_performance: student_id=%s subtopic_scores_keys=%s",
+            student_id,
+            list(subtopic_scores.keys()),
+        )
 
         touched_subtopic_ids: list[int] = []
         for subtopic_id, scores in subtopic_scores.items():
