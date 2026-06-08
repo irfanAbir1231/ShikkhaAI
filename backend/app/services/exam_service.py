@@ -1,7 +1,8 @@
 import json
 import logging
 
-# from sqlalchemy.orm import Session
+# from sqlalchemy import select
+from sqlalchemy.orm import Session
 
 # from app.core.responses import AppError
 # from app.db.models import Attempt, Exam
@@ -137,7 +138,7 @@ from typing import Any
 from sqlalchemy.orm import Session
 
 from app.core.responses import AppError
-from app.db.models import Attempt, Exam
+from app.db.models import Attempt, Exam, Subtopic
 from app.db.transactions import safe_commit
 from app.external.rag_client import RagClient
 from app.schemas.exam import ExamGenerateRequest, ExamResponse, ExamSubmitRequest, ExamSubmitResponse, GeneratedNote
@@ -176,6 +177,56 @@ class ExamService:
         self.note_generation_service = NoteGenerationService()
         self.subtopic_service = SubtopicService()
 
+    def _inject_subtopics(
+        self,
+        db: Session,
+        questions: list[dict[str, Any]],
+        answer_key: list[dict[str, Any]],
+        subtopic_ids: list[int],
+    ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+        """When RAG/Gemini does not return subtopics, look up the names from
+        the database and distribute them round-robin across questions so that
+        subtopic performance tracking works."""
+        if not subtopic_ids:
+            return questions, answer_key
+
+        # Skip if questions already have subtopics (RAG service handled it)
+        has_subtopics = any(
+            isinstance(q.get("subtopics"), list) and len(q["subtopics"]) > 0
+            for q in questions
+        )
+        if has_subtopics:
+            # Still inject subtopic_ids if missing
+            for q in questions:
+                if "subtopic_ids" not in q:
+                    q["subtopic_ids"] = subtopic_ids
+            for ak in answer_key:
+                if "subtopic_ids" not in ak:
+                    ak["subtopic_ids"] = subtopic_ids
+            return questions, answer_key
+
+        # Look up subtopic names
+        subtopic_rows = db.scalars(
+            select(Subtopic).where(Subtopic.id.in_(subtopic_ids))
+        ).all()
+        id_name_map = {st.id: st.name for st in subtopic_rows}
+        if not id_name_map:
+            return questions, answer_key
+
+        # Distribute subtopics round-robin across questions
+        for i, q in enumerate(questions):
+            assigned_id = subtopic_ids[i % len(subtopic_ids)]
+            assigned_name = id_name_map.get(assigned_id, "Unknown")
+            q["subtopics"] = [assigned_name]
+            q["subtopic_ids"] = [assigned_id]
+        for i, ak in enumerate(answer_key):
+            assigned_id = subtopic_ids[i % len(subtopic_ids)]
+            assigned_name = id_name_map.get(assigned_id, "Unknown")
+            ak["subtopics"] = [assigned_name]
+            ak["subtopic_ids"] = [assigned_id]
+
+        return questions, answer_key
+
     def generate_exam(self, db: Session, payload: ExamGenerateRequest) -> ExamResponse:
         self.student_service.fetch_student(db=db, student_id=payload.student_id)
         rag_exam = self.rag_client.generate_exam(payload.model_dump())
@@ -186,15 +237,21 @@ class ExamService:
             rag_exam.get("source"),
         )
 
+        questions = rag_exam.get("questions", [])
+        answer_key = rag_exam.get("answer_key", [])
+        questions, answer_key = self._inject_subtopics(
+            db, questions, answer_key, payload.subtopic_ids
+        )
+
         exam = Exam(
             student_id=payload.student_id,
             subject=payload.subject,
             class_level=payload.class_level,
             topic=payload.topic,
             difficulty=payload.difficulty,
-            questions=rag_exam["questions"],
-            answer_key=rag_exam["answer_key"],
-            source=rag_exam["source"],
+            questions=questions,
+            answer_key=answer_key,
+            source=rag_exam.get("source", "unknown"),
         )
         db.add(exam)
         safe_commit(db)

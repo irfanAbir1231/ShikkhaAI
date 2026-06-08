@@ -111,6 +111,7 @@ Respond with valid JSON only. No markdown.
       "id": 1,
       "type": "mcq",
       "topic": "{topic}",
+      "subtopics": ["<relevant subtopic name>"],
       "difficulty": "{difficulty}",
       "question": "<question text>",
       "options": ["A. ...", "B. ...", "C. ...", "D. ..."],
@@ -125,6 +126,7 @@ Rules:
 - answer field for MCQ is ONLY A/B/C/D
 - explanation: 1-2 sentences explaining the correct answer
 - short_answer options must be []
+- subtopics: include 1-2 relevant subtopic names for each question
 - output JSON ONLY"""
 
         client = genai.Client(api_key=settings.gemini_api_key)
@@ -194,7 +196,7 @@ Rules:
         """Map the backend ExamGenerateRequest shape to member1's RAG
         /generate-exam contract (subject lowercase, class_level string,
         count instead of num_questions, topic as a retrieval hint)."""
-        return {
+        req: dict[str, Any] = {
             "student_id": payload.get("student_id"),
             "subject": str(payload.get("subject") or "").strip().lower(),
             "class_level": str(payload.get("class_level") or "8"),
@@ -203,6 +205,13 @@ Rules:
             "topic": payload.get("topic"),
             "chapter": payload.get("chapter"),
         }
+        subtopic_ids = payload.get("subtopic_ids")
+        if subtopic_ids:
+            req["subtopic_ids"] = subtopic_ids
+        focus = payload.get("focus_subtopics")
+        if focus:
+            req["focus_subtopics"] = focus
+        return req
 
     def _adapt_rag_response(self, data: Any) -> dict[str, Any]:
         """Member1's RAG embeds the correct answer inside each question and
