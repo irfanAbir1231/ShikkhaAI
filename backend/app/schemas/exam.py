@@ -35,6 +35,7 @@ class ExamQuestion(BaseModel):
     type: Literal["mcq", "short_answer"]
     topic: str
     subtopics: list[str] = Field(default_factory=list)
+    subtopic_ids: list[int] = Field(default_factory=list)
     prompt: str
     options: list[str] = Field(default_factory=list)
     marks: int = Field(default=1, ge=1)
