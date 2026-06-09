@@ -330,17 +330,30 @@ CRITICAL RULES:
 - Do NOT wrap your answer in JSON. Write plain markdown text."""
 
     try:
+        # Do NOT use SYSTEM_PROMPT here — it instructs "JSON only", which
+        # conflicts with the user prompt telling Gemini to output markdown.
         response = _get_client().models.generate_content(
             model=GEMINI_MODEL,
-            contents=SYSTEM_PROMPT + "\n\n" + prompt,
+            contents=prompt,
         )
     except Exception as exc:
         # Re-raise with a clear message so the RAG router can report it
         raise RuntimeError(f"Gemini generation failed: {exc}") from exc
 
-    text = response.text or ""
+    text = (response.text or "").strip()
+
+    # Safety: if Gemini still returns JSON despite the prompt, extract the
+    # inner response so the frontend doesn't render raw JSON.
+    if text.startswith("{"):
+        try:
+            parsed = json.loads(text)
+            if isinstance(parsed, dict) and "response" in parsed:
+                text = str(parsed["response"])
+        except json.JSONDecodeError:
+            pass
+
     return {
-        "response": text.strip(),
+        "response": text,
         "sources": [],
     }
 
