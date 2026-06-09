@@ -242,6 +242,10 @@ class SubtopicPerformance(Base):
     average_score: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
     consistency_score: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
     last_score: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utc_now)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utc_now, onupdate=utc_now
+    )
 
     student: Mapped["Student"] = relationship(back_populates="subtopic_performances")
     subtopic: Mapped["Subtopic"] = relationship(back_populates="performances")
