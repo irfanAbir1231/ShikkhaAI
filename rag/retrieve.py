@@ -114,7 +114,7 @@ def retrieve_context(
         print(f"[!] ChromaDB query failed: {exc}")
         return []
 
-    # Fallback: if no results with chapter/topic filters, retry without them
+    # Fallback 1: if no results with chapter/topic filters, retry without them
     docs = results["documents"][0] if results and results["documents"] else []
     if not docs and (chapter or topic):
         fallback_clauses = []
@@ -134,6 +134,18 @@ def retrieve_context(
             results = collection.query(**kwargs)
         except Exception as exc:
             print(f"[!] ChromaDB fallback query failed: {exc}")
+            return []
+
+    # Fallback 2: if still no results, do an unfiltered semantic search.
+    # This keeps the companion useful when the detected subject doesn't
+    # exactly match ingested metadata (e.g., only 'science' is indexed).
+    docs = results["documents"][0] if results and results["documents"] else []
+    if not docs and where is not None:
+        kwargs.pop("where", None)
+        try:
+            results = collection.query(**kwargs)
+        except Exception as exc:
+            print(f"[!] ChromaDB unfiltered fallback query failed: {exc}")
             return []
 
     output = []
