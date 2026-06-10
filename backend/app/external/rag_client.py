@@ -80,10 +80,39 @@ class RagClient:
             "No GEMINI_API_KEY, RAG module not importable, and RAG_BASE_URL not set."
         )
 
+    @staticmethod
+    def _is_quota_error(exc: Exception) -> bool:
+        err = str(exc).lower()
+        return "resource_exhausted" in err or "429" in err or "quota" in err
+
+    def _gemini_generate_with_rotation(
+        self,
+        prompt: str,
+        model: str = "gemini-2.5-flash",
+    ) -> "genai.types.GenerateContentResponse":
+        """Call Gemini, rotating through the key pool on quota errors."""
+        from google import genai
+
+        keys = settings.gemini_api_keys
+        if not keys:
+            raise RuntimeError("No Gemini API keys configured")
+
+        last_exc: Exception | None = None
+        for key in keys:
+            try:
+                client = genai.Client(api_key=key)
+                return client.models.generate_content(model=model, contents=prompt)
+            except Exception as exc:
+                last_exc = exc
+                if self._is_quota_error(exc) and len(keys) > 1:
+                    logger.warning("Gemini key quota exceeded, rotating to next key...")
+                    continue
+                raise
+        raise RuntimeError(f"All {len(keys)} Gemini keys exhausted. {last_exc}") from last_exc
+
     def _generate_via_gemini(self, payload: dict[str, Any]) -> dict[str, Any]:
         import json
         import re
-        from google import genai
 
         req = self._to_rag_request(payload)
         subject = req["subject"]
@@ -130,11 +159,7 @@ Rules:
 - output JSON ONLY"""
 
         try:
-            client = genai.Client(api_key=settings.gemini_api_key)
-            response = client.models.generate_content(
-                model="gemini-2.5-flash",
-                contents=prompt,
-            )
+            response = self._gemini_generate_with_rotation(prompt)
             raw = re.sub(r"```json|```", "", response.text).strip()
             result = json.loads(raw)
             for i, q in enumerate(result.get("questions", []), 1):
@@ -150,7 +175,6 @@ Rules:
 
     def _ask_via_gemini(self, payload: dict[str, Any]) -> dict[str, Any]:
         import json
-        from google import genai
 
         message = payload.get("message", "")
         mode = payload.get("mode", "simple")
@@ -178,11 +202,7 @@ Rules:
             f'{{\n  "response": "Your complete answer here with markdown formatting escaped for JSON"\n}}'
         )
 
-        client = genai.Client(api_key=settings.gemini_api_key)
-        response = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=prompt,
-        )
+        response = self._gemini_generate_with_rotation(prompt)
         raw = response.text.strip()
         if raw.startswith("```"):
             raw = raw.split("\n", 1)[1].rsplit("\n```", 1)[0] if "\n" in raw else raw.strip("`")

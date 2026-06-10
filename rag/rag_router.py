@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from typing import Optional
 
 from .retrieve import retrieve_context, build_rag_context
-from .generate import generate_questions, generate_answer, _get_client, GEMINI_MODEL, SYSTEM_PROMPT, MODE_PROMPTS
+from .generate import generate_questions, generate_answer, _gemini_generate, GEMINI_MODEL, SYSTEM_PROMPT, MODE_PROMPTS
 from .topic_segmenter import segment_text_by_headers, TopicChunk
 
 from .space_ingest import (
@@ -352,9 +352,7 @@ CRITICAL RULES:
 - Do NOT wrap your answer in JSON."""
 
     try:
-        client = _get_client()
-        response = client.models.generate_content(
-            model=GEMINI_MODEL,
+        response = _gemini_generate(
             contents=SYSTEM_PROMPT + "\n\n" + prompt,
         )
     except Exception as exc:

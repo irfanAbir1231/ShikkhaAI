@@ -26,6 +26,17 @@ DIFFICULTY_TOPIC_MAP = {
 
 
 _client: "genai.Client | None" = None
+_gemini_keys: list[str] = []
+_gemini_key_index: int = 0
+
+
+def _load_keys() -> list[str]:
+    """Parse comma-separated GEMINI_API_KEY pool."""
+    global _gemini_keys
+    if not _gemini_keys:
+        raw = os.environ.get("GEMINI_API_KEY", "")
+        _gemini_keys = [k.strip() for k in raw.split(",") if k.strip()]
+    return _gemini_keys
 
 
 def _get_client() -> "genai.Client":
@@ -34,15 +45,48 @@ def _get_client() -> "genai.Client":
     real generation call."""
     global _client
     if _client is None:
-        raw = os.environ.get("GEMINI_API_KEY", "")
-        # Support a comma-separated pool of keys; use the first valid one.
-        api_key = next((k.strip() for k in raw.split(",") if k.strip()), "")
-        if not api_key:
+        keys = _load_keys()
+        if not keys:
             raise RuntimeError(
                 "GEMINI_API_KEY is not set. Add it to rag/.env (see rag/.env.example)."
             )
-        _client = genai.Client(api_key=api_key)
+        _client = genai.Client(api_key=keys[_gemini_key_index])
     return _client
+
+
+def _rotate_key() -> None:
+    """Move to the next key in the pool and invalidate the current client."""
+    global _client, _gemini_key_index
+    _client = None
+    _gemini_key_index = (_gemini_key_index + 1) % max(len(_load_keys()), 1)
+
+
+def _is_quota_error(exc: Exception) -> bool:
+    """True if the exception signals a rate-limit / quota exhaustion."""
+    err = str(exc).lower()
+    return "resource_exhausted" in err or "429" in err or "quota" in err
+
+
+def _gemini_generate(contents: str, model: str = GEMINI_MODEL) -> "genai.types.GenerateContentResponse":
+    """Call Gemini with automatic key-pool rotation on quota errors."""
+    keys = _load_keys()
+    attempts = len(keys) if keys else 1
+    last_exc: Exception | None = None
+
+    for _ in range(attempts):
+        try:
+            client = _get_client()
+            return client.models.generate_content(model=model, contents=contents)
+        except Exception as exc:
+            last_exc = exc
+            if _is_quota_error(exc) and len(keys) > 1:
+                print(f"[!] Gemini key {_gemini_key_index} quota exceeded. Rotating...")
+                _rotate_key()
+                continue
+            raise
+
+    # All keys exhausted
+    raise RuntimeError(f"All {len(keys)} Gemini keys exhausted. {last_exc}") from last_exc
 
 
 SYSTEM_PROMPT = """
@@ -221,9 +265,7 @@ def generate_questions(
     print(f"[+] Generating {count} questions for {subject} class {class_level} ({difficulty})...")
 
     try:
-        client = _get_client()
-        response = client.models.generate_content(
-            model=GEMINI_MODEL,
+        response = _gemini_generate(
             contents=SYSTEM_PROMPT + "\n\n" + prompt,
         )
     except Exception as exc:
@@ -332,10 +374,7 @@ CRITICAL RULES:
     try:
         # Do NOT use SYSTEM_PROMPT here — it instructs "JSON only", which
         # conflicts with the user prompt telling Gemini to output markdown.
-        response = _get_client().models.generate_content(
-            model=GEMINI_MODEL,
-            contents=prompt,
-        )
+        response = _gemini_generate(contents=prompt)
     except Exception as exc:
         # Re-raise with a clear message so the RAG router can report it
         raise RuntimeError(f"Gemini generation failed: {exc}") from exc
