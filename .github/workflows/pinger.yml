@@ -1,0 +1,21 @@
+name: Keep Render Services Awake
+
+on:
+  schedule:
+    # Every 10 minutes
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping RAG service health
+        run: |
+          echo "Pinging RAG service at ${{ vars.RAG_HEALTH_URL || secrets.RAG_HEALTH_URL }}"
+          curl -sfS -m 30 "${{ vars.RAG_HEALTH_URL || secrets.RAG_HEALTH_URL }}" || echo "RAG ping failed"
+
+      - name: Ping backend health
+        run: |
+          echo "Pinging backend at ${{ vars.BACKEND_HEALTH_URL || secrets.BACKEND_HEALTH_URL }}"
+          curl -sfS -m 30 "${{ vars.BACKEND_HEALTH_URL || secrets.BACKEND_HEALTH_URL }}" || echo "Backend ping failed"
