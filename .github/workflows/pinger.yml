@@ -13,9 +13,11 @@ jobs:
       - name: Ping RAG service health
         run: |
           echo "Pinging RAG service at ${{ vars.RAG_HEALTH_URL || secrets.RAG_HEALTH_URL }}"
-          curl -sfS -m 30 "${{ vars.RAG_HEALTH_URL || secrets.RAG_HEALTH_URL }}" || echo "RAG ping failed"
+          # Render free-tier cold starts need ~50-60s; use 90s timeout
+          curl -sfS --retry 2 --retry-delay 5 -m 90 "${{ vars.RAG_HEALTH_URL || secrets.RAG_HEALTH_URL }}" || echo "RAG ping failed"
 
       - name: Ping backend health
         run: |
           echo "Pinging backend at ${{ vars.BACKEND_HEALTH_URL || secrets.BACKEND_HEALTH_URL }}"
-          curl -sfS -m 30 "${{ vars.BACKEND_HEALTH_URL || secrets.BACKEND_HEALTH_URL }}" || echo "Backend ping failed"
+          # Render free-tier cold starts need ~50-60s; use 90s timeout
+          curl -sfS --retry 2 --retry-delay 5 -m 90 "${{ vars.BACKEND_HEALTH_URL || secrets.BACKEND_HEALTH_URL }}" || echo "Backend ping failed"
