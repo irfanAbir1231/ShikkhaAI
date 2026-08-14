@@ -20,8 +20,13 @@ DEMO_GRADE_LEVEL = getenv("DEMO_USER_GRADE_LEVEL", "8").strip() or "8"
 
 
 def seed_demo_user(db: Session) -> bool:
-    """Insert the demo student once and return whether a row was created."""
-    if not DEMO_EMAIL or not DEMO_PASSWORD:
+    """Insert the public demo student once and report whether it was created.
+
+    DEMO_USER_PASSWORD is optional because the public demo-login endpoint does
+    not authenticate with a password. If one is configured, normal password
+    login remains available for the demo account as well.
+    """
+    if not DEMO_EMAIL:
         return False
 
     existing = db.scalar(select(Student).where(Student.email == DEMO_EMAIL))
