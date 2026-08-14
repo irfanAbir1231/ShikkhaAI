@@ -113,8 +113,12 @@ class Settings:
 
 @lru_cache
 def get_settings() -> Settings:
-    rag_base_url = getenv("RAG_BASE_URL")
     environment = _get_environment()
+    rag_base_url = getenv("RAG_BASE_URL")
+    if not rag_base_url and environment == "production":
+        # Keep the deployed backend connected to the companion service even
+        # when an existing Render service has not yet synced the Blueprint env.
+        rag_base_url = "https://shikkhaai-rag.onrender.com/rag"
     debug = _as_bool(getenv("DEBUG"), environment != "production")
     cors_origins = _as_list(
         getenv("CORS_ORIGINS"),

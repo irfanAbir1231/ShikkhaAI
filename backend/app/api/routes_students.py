@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 from app.core.responses import AppError, success_response
 from app.core.security import create_access_token, decode_access_token
 from app.db.models import Attempt, Exam, Student, TopicPerformance
+from app.db.seed_demo import DEMO_EMAIL, seed_demo_user
 from app.db.session import get_db
 from app.schemas.exam import AttemptResponse, ExamSummaryResponse, WeakTopic
 from app.schemas.student import LoginRequest, StudentCreate, StudentResponse, StudentUpdate, TokenResponse
@@ -62,6 +63,31 @@ def register_student(
     db: Session = Depends(get_db),
 ) -> dict[str, Any]:
     student = student_service.register_student(db=db, payload=payload)
+    access_token = create_access_token(data={"sub": str(student.id)})
+    return success_response(
+        {
+            "student": StudentResponse.model_validate(student).model_dump(),
+            "access_token": access_token,
+            "token_type": "bearer",
+        }
+    )
+
+
+@router.post("/demo-login")
+def demo_login(db: Session = Depends(get_db)) -> dict[str, Any]:
+    """Create or open the intentionally public interviewer demo session."""
+    student = db.scalar(select(Student).where(Student.email == DEMO_EMAIL))
+    if student is None:
+        seed_demo_user(db)
+        student = db.scalar(select(Student).where(Student.email == DEMO_EMAIL))
+
+    if student is None:
+        raise AppError(
+            code="DEMO_UNAVAILABLE",
+            message="The demo account could not be initialized.",
+            status_code=503,
+        )
+
     access_token = create_access_token(data={"sub": str(student.id)})
     return success_response(
         {

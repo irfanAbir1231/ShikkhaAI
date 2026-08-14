@@ -130,6 +130,13 @@ def init_db() -> None:
             logger.info("[seed] Inserted %d subtopic entries", subtopic_count)
         else:
             logger.info("[seed] Subtopics already seeded correctly")
+
+        from app.db.seed_demo import seed_demo_user
+
+        if seed_demo_user(db):
+            logger.info("[seed] Created interviewer demo account")
+        else:
+            logger.info("[seed] Interviewer demo account already exists")
         db.close()
 
 

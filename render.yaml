@@ -41,7 +41,7 @@ services:
       # https://shikkhaai-rag.onrender.com/rag — set in the dashboard after the
       # RAG service's URL is known (can't be templated with the prefix here).
       - key: RAG_BASE_URL
-        sync: false
+        value: https://shikkhaai-rag.onrender.com/rag
       - key: RAG_TIMEOUT_SECONDS
         value: "60"
       - key: RAG_INPROCESS
@@ -54,7 +54,13 @@ services:
       - key: ACCESS_TOKEN_EXPIRE_MINUTES
         value: "60"
       - key: CORS_ORIGINS
-        sync: false
+        value: https://shikkha-a-iweb.vercel.app,https://shikkhaai-web.vercel.app
+      - key: DEMO_USER_EMAIL
+        value: demo@shikkhaai.app
+      - key: DEMO_USER_NAME
+        value: ShikkhaAI Demo User
+      - key: DEMO_USER_GRADE_LEVEL
+        value: "8"
 
   # ── RAG service ─────────────────────────────────────────────────────────────
   # Uses fastembed/ONNX with a lazy-loaded small embedding model. This keeps
