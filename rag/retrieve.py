@@ -2,127 +2,176 @@
 retrieve.py — fast retrieval from ChromaDB
 """
 
+from pathlib import Path
 from typing import Optional
 
 import chromadb
-from sentence_transformers import SentenceTransformer
+from fastembed import TextEmbedding
 
-
-
-CHROMA_DB_PATH = "./chroma_db"
+# Resolve relative to the repo root (rag/ is a package), so retrieval works
+# regardless of the directory uvicorn is launched from.
+CHROMA_DB_PATH = str(Path(__file__).resolve().parent.parent / "chroma_db")
 COLLECTION_NAME = "nctb_curriculum"
 
 # MUST MATCH INGEST MODEL
-EMBED_MODEL = "sentence-transformers/paraphrase-MiniLM-L3-v2"
+EMBED_MODEL = "BAAI/bge-small-en-v1.5"
 
 
 # ─────────────────────────────────────────────────────────────
-# LOAD MODEL
+# LAZY MODEL LOAD — avoids OOM crash at import time on Render
 # ─────────────────────────────────────────────────────────────
 
-model = SentenceTransformer(EMBED_MODEL)
+_embed_model: "TextEmbedding | None" = None
+
+
+def _get_model() -> TextEmbedding:
+    global _embed_model
+    if _embed_model is None:
+        print(f"[+] Loading embedding model {EMBED_MODEL}...")
+        try:
+            _embed_model = TextEmbedding(model_name=EMBED_MODEL)
+            print("[+] Embedding model ready.")
+        except Exception as exc:
+            print(f"[!] Failed to load embedding model: {exc}")
+            raise RuntimeError(f"Embedding model load failed: {exc}") from exc
+    return _embed_model
 
 
 # ─────────────────────────────────────────────────────────────
 # CHROMA
 # ─────────────────────────────────────────────────────────────
 
+
 def get_collection():
 
-    client = chromadb.PersistentClient(
-        path=CHROMA_DB_PATH
-    )
+    client = chromadb.PersistentClient(path=CHROMA_DB_PATH)
 
-    return client.get_collection(COLLECTION_NAME)
+    return client.get_or_create_collection(COLLECTION_NAME)
 
 
 def retrieve_context(
     query: str,
     subject: Optional[str] = None,
     class_level: Optional[str] = None,
+    chapter: Optional[str] = None,
+    topic: Optional[str] = None,
     n_results: int = 3,
 ) -> list[dict]:
+    """
+    Retrieve context from ChromaDB with optional chapter and topic filtering.
+    """
+    try:
+        collection = get_collection()
+    except Exception as exc:
+        print(f"[!] ChromaDB connection failed: {exc}")
+        return []
 
-    collection = get_collection()
-
-    total = collection.count()
+    try:
+        total = collection.count()
+    except Exception as exc:
+        print(f"[!] ChromaDB count() failed: {exc}")
+        return []
 
     if total == 0:
         return []
 
+    try:
+        query_embedding = list(_get_model().embed([query]))[0].tolist()
+    except Exception as exc:
+        print(f"[!] Embedding failed for query '{query[:80]}': {exc}")
+        return []
 
+    where_clauses = []
 
-    query_embedding = model.encode(
-        query,
-        normalize_embeddings=True
-    ).tolist()
+    if subject:
+        where_clauses.append({"subject": subject.lower()})
+    if class_level:
+        where_clauses.append({"class": str(class_level)})
+    if chapter:
+        where_clauses.append({"chapter": chapter})
+    if topic:
+        where_clauses.append({"topic": topic})
 
-
-    where = None
-
-    if subject and class_level:
-        where = {
-            "$and": [
-                {"subject": subject},
-                {"class": class_level}
-            ]
-        }
-
-    elif subject:
-        where = {"subject": subject}
-
-    elif class_level:
-        where = {"class": class_level}
-
+    if len(where_clauses) == 1:
+        where = where_clauses[0]
+    elif len(where_clauses) > 1:
+        where = {"$and": where_clauses}
+    else:
+        where = None
 
     kwargs = {
         "query_embeddings": [query_embedding],
         "n_results": min(n_results, total),
-        "include": [
-            "documents",
-            "metadatas",
-            "distances"
-        ],
+        "include": ["documents", "metadatas", "distances"],
     }
 
     if where:
         kwargs["where"] = where
 
-    results = collection.query(**kwargs)
+    try:
+        results = collection.query(**kwargs)
+    except Exception as exc:
+        print(f"[!] ChromaDB query failed: {exc}")
+        return []
 
+    # Fallback: if no results with chapter/topic filters, retry without them
+    docs = results["documents"][0] if results and results["documents"] else []
+    if not docs and (chapter or topic):
+        fallback_clauses = []
+        if subject:
+            fallback_clauses.append({"subject": subject.lower()})
+        if class_level:
+            fallback_clauses.append({"class": str(class_level)})
+
+        if len(fallback_clauses) == 1:
+            kwargs["where"] = fallback_clauses[0]
+        elif len(fallback_clauses) > 1:
+            kwargs["where"] = {"$and": fallback_clauses}
+        else:
+            kwargs.pop("where", None)
+
+        try:
+            results = collection.query(**kwargs)
+        except Exception as exc:
+            print(f"[!] ChromaDB fallback query failed: {exc}")
+            return []
 
     output = []
 
-    docs = results["documents"][0]
-    metas = results["metadatas"][0]
-    dists = results["distances"][0]
+    docs = results["documents"][0] if results and results["documents"] else []
+    metas = results["metadatas"][0] if results and results["metadatas"] else []
+    dists = results["distances"][0] if results and results["distances"] else []
 
     for doc, meta, dist in zip(docs, metas, dists):
-
-        output.append({
-            "text": doc,
-            "subject": meta.get("subject", ""),
-            "class": meta.get("class", ""),
-            "chapter": meta.get("chapter", ""),
-            "source": meta.get("source", ""),
-            "distance": round(float(dist), 4),
-        })
+        output.append(
+            {
+                "text": doc,
+                "subject": meta.get("subject", ""),
+                "class": meta.get("class", ""),
+                "chapter": meta.get("chapter", ""),
+                "topic": meta.get("topic", ""),
+                "source": meta.get("source", ""),
+                "distance": round(float(dist), 4),
+            }
+        )
 
     return output
-
-
 
 
 def build_rag_context(
     query: str,
     subject: Optional[str] = None,
     class_level: Optional[str] = None,
+    chapter: Optional[str] = None,
+    topic: Optional[str] = None,
 ) -> str:
 
     chunks = retrieve_context(
         query,
         subject=subject,
         class_level=class_level,
+        chapter=chapter,
+        topic=topic,
     )
 
     if not chunks:
@@ -131,7 +180,6 @@ def build_rag_context(
     parts = []
 
     for i, c in enumerate(chunks, 1):
-
         parts.append(
             f"[Chunk {i} | "
             f"{c['subject'].title()} "
@@ -141,3 +189,49 @@ def build_rag_context(
         )
 
     return "\n\n".join(parts)
+
+
+def get_unique_chapters(
+    subject: Optional[str] = None,
+    class_level: Optional[str] = None,
+) -> list[dict]:
+    """
+    Retrieve all unique chapters from ChromaDB.
+    Returns a list of dicts: [{"subject": "...", "chapter": "..."}]
+    """
+    collection = get_collection()
+    total = collection.count()
+    if total == 0:
+        return []
+
+    where_clauses = []
+    if subject:
+        where_clauses.append({"subject": subject.lower()})
+    if class_level:
+        where_clauses.append({"class": str(class_level)})
+
+    kwargs = {"include": ["metadatas"]}
+    if len(where_clauses) == 1:
+        kwargs["where"] = where_clauses[0]
+    elif len(where_clauses) > 1:
+        kwargs["where"] = {"$and": where_clauses}
+
+    results = collection.get(**kwargs)
+    metas = results.get("metadatas", [])
+    if not metas:
+        return []
+
+    seen = set()
+    output = []
+    for meta in metas:
+        subj = meta.get("subject", "").lower()
+        chap = meta.get("chapter", "")
+        if not subj or not chap:
+            continue
+        key = (subj, chap)
+        if key not in seen:
+            seen.add(key)
+            output.append({"subject": subj, "chapter": chap})
+
+    output.sort(key=lambda x: (x["subject"], x["chapter"]))
+    return output

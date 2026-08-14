@@ -1,12 +1,14 @@
-# import logging
+import json
+import logging
 
-# from sqlalchemy.orm import Session
+# from sqlalchemy import select
+from sqlalchemy.orm import Session
 
 # from app.core.responses import AppError
 # from app.db.models import Attempt, Exam
 # from app.db.transactions import safe_commit
 # from app.external.rag_client import RagClient
-# from app.schemas.exam import ExamGenerateRequest, ExamResponse, ExamSubmitRequest, ExamSubmitResponse
+# from app.schemas.exam import ExamGenerateRequest, ExamResponse, ExamSubmitRequest, ExamSubmitResponse, GeneratedNote, GeneratedNote
 # from app.services.grading_service import GradingService
 # from app.services.profile_service import ProfileService
 # from app.services.student_service import StudentService
@@ -133,19 +135,38 @@
 import logging
 from typing import Any
 
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.responses import AppError
-from app.db.models import Attempt, Exam
+from app.db.models import Attempt, CurriculumTopic, Exam, Subtopic
 from app.db.transactions import safe_commit
 from app.external.rag_client import RagClient
-from app.schemas.exam import ExamGenerateRequest, ExamResponse, ExamSubmitRequest, ExamSubmitResponse
+from app.schemas.exam import ExamGenerateRequest, ExamResponse, ExamSubmitRequest, ExamSubmitResponse, GeneratedNote
 from app.services.grading_service import GradingService
 from app.services.note_generation_service import NoteGenerationService
 from app.services.profile_service import ProfileService
 from app.services.student_service import StudentService
+from app.services.subtopic_service import SubtopicService
 
 logger = logging.getLogger("shikkhaai")
+
+
+def _safe_json_list(value: Any) -> list[Any]:
+    """Safely coerce a JSON column value to a Python list.
+
+    Handles the case where a TEXT-typed JSON column returns a raw string
+    instead of a parsed list (e.g. after an ALTER TABLE migration bug).
+    """
+    if isinstance(value, list):
+        return value
+    if isinstance(value, str):
+        try:
+            parsed = json.loads(value)
+            return parsed if isinstance(parsed, list) else []
+        except (json.JSONDecodeError, TypeError):
+            return []
+    return []
 
 
 class ExamService:
@@ -155,6 +176,60 @@ class ExamService:
         self.grading_service = GradingService()
         self.profile_service = ProfileService()
         self.note_generation_service = NoteGenerationService()
+        self.subtopic_service = SubtopicService()
+
+    def _get_subtopic_ids_for_topic(self, db: Session, topic: str) -> list[int]:
+        """Look up all subtopic IDs for a given curriculum topic name.
+        Returns empty list if the topic has no subtopics in the database."""
+        if not topic:
+            return []
+        curriculum_topic = db.scalar(
+            select(CurriculumTopic).where(CurriculumTopic.topic == topic)
+        )
+        if curriculum_topic is None:
+            return []
+        subtopic_rows = db.scalars(
+            select(Subtopic).where(Subtopic.curriculum_topic_id == curriculum_topic.id)
+        ).all()
+        return [st.id for st in subtopic_rows]
+
+    def _inject_subtopics(
+        self,
+        db: Session,
+        questions: list[dict[str, Any]],
+        answer_key: list[dict[str, Any]],
+        subtopic_ids: list[int],
+    ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+        """When the caller requested specific subtopic_ids, ensure every
+        question and answer_key item carries exactly those IDs (looked up
+        by name) so subtopic performance tracking works reliably even when
+        RAG/Gemini omits or mislabels subtopics."""
+        if not subtopic_ids:
+            return questions, answer_key
+
+        # Look up subtopic names once
+        subtopic_rows = db.scalars(
+            select(Subtopic).where(Subtopic.id.in_(subtopic_ids))
+        ).all()
+        id_name_map = {st.id: st.name for st in subtopic_rows}
+        if not id_name_map:
+            return questions, answer_key
+
+        # Distribute requested subtopic_ids round-robin across questions.
+        # This overrides any subtopic metadata RAG/Gemini returned so that
+        # grading tracks the subtopics the student actually asked to practice.
+        for i, q in enumerate(questions):
+            assigned_id = subtopic_ids[i % len(subtopic_ids)]
+            assigned_name = id_name_map.get(assigned_id, "Unknown")
+            q["subtopics"] = [assigned_name]
+            q["subtopic_ids"] = [assigned_id]
+        for i, ak in enumerate(answer_key):
+            assigned_id = subtopic_ids[i % len(subtopic_ids)]
+            assigned_name = id_name_map.get(assigned_id, "Unknown")
+            ak["subtopics"] = [assigned_name]
+            ak["subtopic_ids"] = [assigned_id]
+
+        return questions, answer_key
 
     def generate_exam(self, db: Session, payload: ExamGenerateRequest) -> ExamResponse:
         self.student_service.fetch_student(db=db, student_id=payload.student_id)
@@ -166,15 +241,43 @@ class ExamService:
             rag_exam.get("source"),
         )
 
+        questions = rag_exam.get("questions", [])
+        answer_key = rag_exam.get("answer_key", [])
+
+        # Auto-discover subtopics for the selected topic so that EVERY exam
+        # tracks subtopic performance — weak subtopics naturally surface over
+        # time without requiring the user to manually select them.
+        subtopic_ids = payload.subtopic_ids
+        if not subtopic_ids and payload.topic:
+            subtopic_ids = self._get_subtopic_ids_for_topic(db, payload.topic)
+            if subtopic_ids:
+                logger.info(
+                    "Auto-discovered %s subtopic(s) for topic=%s",
+                    len(subtopic_ids),
+                    payload.topic,
+                )
+
+        questions, answer_key = self._inject_subtopics(
+            db, questions, answer_key, subtopic_ids
+        )
+        logger.info(
+            "Injected subtopics for exam student_id=%s topic=%s subtopic_ids=%s questions_with_ids=%s answer_key_with_ids=%s",
+            payload.student_id,
+            payload.topic,
+            subtopic_ids,
+            sum(1 for q in questions if q.get("subtopic_ids")),
+            sum(1 for ak in answer_key if ak.get("subtopic_ids")),
+        )
+
         exam = Exam(
             student_id=payload.student_id,
             subject=payload.subject,
             class_level=payload.class_level,
             topic=payload.topic,
             difficulty=payload.difficulty,
-            questions=rag_exam["questions"],
-            answer_key=rag_exam["answer_key"],
-            source=rag_exam["source"],
+            questions=questions,
+            answer_key=answer_key,
+            source=rag_exam.get("source", "unknown"),
         )
         db.add(exam)
         safe_commit(db)
@@ -217,6 +320,7 @@ class ExamService:
             db=db,
             student_id=payload.student_id,
             question_results=grade_result.question_results,
+            subject=exam.subject,
         )
         weak_topics = self.profile_service.detect_weak_topics(
             db=db,
@@ -231,7 +335,59 @@ class ExamService:
             touched_topics=touched_topics,
         )
 
+        # ── Subtopic performance tracking ──────────────────────────────────────
+        touched_subtopic_ids = self.subtopic_service.update_subtopic_performance(
+            db=db,
+            student_id=payload.student_id,
+            question_results=grade_result.question_results,
+            subject=exam.subject,
+        )
+        weak_subtopics = self.subtopic_service.detect_weak_subtopics(
+            db=db,
+            student_id=payload.student_id,
+            touched_subtopic_ids=touched_subtopic_ids,
+        )
+
+        # ── Auto-generate notes for weak topics/subtopics ──────────────────────
+        # Compute notes BEFORE persisting attempt so we can store them together
+        generated_notes: list[Any] = []
+        if weak_subtopics:
+            notes = self.note_generation_service.generate_notes_for_weak_subtopics(
+                db=db,
+                student_id=payload.student_id,
+                weak_subtopics=weak_subtopics,
+                subject=exam.subject,
+                class_level=exam.class_level,
+            )
+            if notes:
+                generated_notes = notes
+                logger.info(
+                    "Auto-generated %d focused note(s) for student_id=%s weak subtopics",
+                    len(notes),
+                    payload.student_id,
+                )
+        elif weak_topics:
+            notes = self.note_generation_service.generate_notes_for_weak_topics(
+                db=db,
+                student_id=payload.student_id,
+                weak_topics=weak_topics,
+                subject=exam.subject,
+                class_level=exam.class_level,
+            )
+            if notes:
+                generated_notes = notes
+                logger.info(
+                    "Auto-generated %d note(s) for student_id=%s weak topics",
+                    len(notes),
+                    payload.student_id,
+                )
+
         # ── Persist attempt ────────────────────────────────────────────────────
+        # Serialize Note ORM objects to plain dicts for JSON storage
+        generated_notes_data = [
+            GeneratedNote.model_validate(n).model_dump(mode="json")
+            for n in generated_notes
+        ]
         attempt = Attempt(
             student_id=payload.student_id,
             exam_id=payload.exam_id,
@@ -241,6 +397,8 @@ class ExamService:
             mcq_total=grade_result.mcq_total,
             short_answer_feedback=short_answer_feedback,
             weak_topics=weak_topics,
+            weak_subtopics=weak_subtopics,
+            generated_notes=generated_notes_data,
             readiness_score=readiness_score,
         )
         db.add(attempt)
@@ -256,22 +414,9 @@ class ExamService:
             [wt.get("topic") for wt in weak_topics],
         )
 
-        # ── Auto-generate notes for weak topics ────────────────────────────────
-        # Runs after attempt is saved — failure here never breaks the response
-        if weak_topics:
-            generated_notes = self.note_generation_service.generate_notes_for_weak_topics(
-                db=db,
-                student_id=payload.student_id,
-                weak_topics=weak_topics,
-                subject=exam.subject,
-                class_level=exam.class_level,
-            )
-            if generated_notes:
-                logger.info(
-                    "Auto-generated %d note(s) for student_id=%s weak topics",
-                    len(generated_notes),
-                    payload.student_id,
-                )
+        # Defensively coerce JSON columns in case DB stores them as TEXT strings
+        _weak_subtopics = _safe_json_list(attempt.weak_subtopics)
+        _generated_notes = _safe_json_list(attempt.generated_notes)
 
         return ExamSubmitResponse(
             attempt_id=attempt.id,
@@ -281,7 +426,11 @@ class ExamService:
             mcq_correct=attempt.mcq_correct,
             mcq_total=attempt.mcq_total,
             weak_topics=attempt.weak_topics,
+            weak_subtopics=_weak_subtopics,
             readiness_score=attempt.readiness_score,
             short_answer_feedback=attempt.short_answer_feedback,
             mcq_feedback=grade_result.mcq_feedback,
+            generated_notes=[
+                GeneratedNote.model_validate(n) for n in _generated_notes
+            ],
         )

@@ -89,8 +89,7 @@ class DashboardService:
     def _build_weak_subjects(self, performances: list) -> list[dict[str, Any]]:
         subject_scores: dict[str, list[float]] = {}
         for p in performances:
-            # TopicPerformance doesn't store subject, so we use the topic name itself
-            subject = p.topic  # fallback: treat topic as subject label
+            subject = p.subject.title()
             subject_scores.setdefault(subject, []).append(p.average_score)
 
         weak = []

@@ -10,14 +10,30 @@ jobs:
   ping:
     runs-on: ubuntu-latest
     steps:
-      - name: Ping RAG service health
+      - name: Ping Render services
+        env:
+          RAG_HEALTH_URL: ${{ vars.RAG_HEALTH_URL || secrets.RAG_HEALTH_URL }}
+          BACKEND_HEALTH_URL: ${{ vars.BACKEND_HEALTH_URL || secrets.BACKEND_HEALTH_URL }}
         run: |
-          echo "Pinging RAG service at ${{ vars.RAG_HEALTH_URL || secrets.RAG_HEALTH_URL }}"
-          # Render free-tier cold starts need ~50-60s; use 90s timeout
-          curl -sfS --retry 2 --retry-delay 5 -m 90 "${{ vars.RAG_HEALTH_URL || secrets.RAG_HEALTH_URL }}" || echo "RAG ping failed"
+          set -euo pipefail
 
-      - name: Ping backend health
-        run: |
-          echo "Pinging backend at ${{ vars.BACKEND_HEALTH_URL || secrets.BACKEND_HEALTH_URL }}"
-          # Render free-tier cold starts need ~50-60s; use 90s timeout
-          curl -sfS --retry 2 --retry-delay 5 -m 90 "${{ vars.BACKEND_HEALTH_URL || secrets.BACKEND_HEALTH_URL }}" || echo "Backend ping failed"
+          ping_service() {
+            local name="$1"
+            local url="$2"
+
+            if [ -z "$url" ]; then
+              echo "$name URL is not configured; skipping."
+              return 0
+            fi
+
+            echo "Pinging $name health endpoint"
+            # Render free-tier cold starts can take over a minute. Retry the
+            # complete request instead of masking a failed health check.
+            curl --fail --silent --show-error \
+              --retry 3 --retry-all-errors --retry-delay 5 \
+              --max-time 120 "$url"
+            echo
+          }
+
+          ping_service "RAG" "$RAG_HEALTH_URL"
+          ping_service "Backend" "$BACKEND_HEALTH_URL"

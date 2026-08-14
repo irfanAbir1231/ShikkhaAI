@@ -1,0 +1,24 @@
+# RAG service dependencies.
+# IMPORTANT: install in a Python 3.11 venv — the Render RAG service uses
+# fastembed/ONNX and keeps the embedding model lazy-loaded.
+#
+#   py -3.11 -m venv .rag-venv
+#   .rag-venv\Scripts\activate
+#   pip install -r rag/requirements.txt
+#   uvicorn rag_server:app --port 8100
+#
+# On Render set PYTHON_VERSION=3.11.9 (see render.yaml).
+
+pymupdf
+ebooklib
+beautifulsoup4
+chromadb
+fastembed>=0.3.0
+# Code uses `from google import genai` -> this is the google-genai SDK,
+# NOT the older google-generativeai package.
+google-genai
+fastapi
+uvicorn[standard]
+pydantic
+python-dotenv
+python-multipart
